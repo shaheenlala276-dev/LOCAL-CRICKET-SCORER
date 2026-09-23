@@ -3,29 +3,350 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+    <meta name="theme-color" content="#1a5f3f">
     <title>Local Cricket Scorer</title>
-
-    <!-- Connect CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
+    <div class="app-container">
 
-    <h1>🏏 Local Cricket Scorer</h1>
+        <!-- ===== HOME SCREEN ===== -->
+        <section id="home-screen" class="screen active">
+            <header class="app-header">
+                <h1>🏏 Local Cricket Scorer</h1>
+            </header>
+            
+            <div class="content">
+                <div class="button-group">
+                    <button id="btn-new-tournament" class="btn btn-primary btn-large">
+                        Create New Tournament
+                    </button>
+                    <button id="btn-view-tournaments" class="btn btn-secondary btn-large">
+                        View Saved Tournaments
+                    </button>
+                </div>
+            </div>
+        </section>
 
-    <p>Offline cricket tournament scoring app</p>
+        <!-- ===== CREATE TOURNAMENT SCREEN ===== -->
+        <section id="create-tournament-screen" class="screen">
+            <header class="app-header">
+                <button id="btn-back-home-from-create-tourn" class="btn-back">← Back</button>
+                <h2>Create Tournament</h2>
+            </header>
 
-    <button id="create-tournament-btn">
-        🏆 Create Tournament
-    </button>
+            <div class="content">
+                <form id="create-tournament-form" class="form">
+                    <div class="form-group">
+                        <label for="tournament-name">Tournament Name *</label>
+                        <input 
+                            type="text" 
+                            id="tournament-name" 
+                            class="form-input" 
+                            placeholder="e.g., Bannu Local Cricket Tournament"
+                            required
+                        >
+                    </div>
 
-    <button id="start-match-btn">
-        🏏 Start Match
-    </button>
+                    <div class="form-group">
+                        <label for="tournament-date">Tournament Date *</label>
+                        <input 
+                            type="date" 
+                            id="tournament-date" 
+                            class="form-input"
+                            required
+                        >
+                    </div>
 
-    <!-- Connect JavaScript -->
+                    <div class="form-group">
+                        <label for="tournament-location">Location (Optional)</label>
+                        <input 
+                            type="text" 
+                            id="tournament-location" 
+                            class="form-input"
+                            placeholder="e.g., Bannu Cricket Ground"
+                        >
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-large">
+                        Create Tournament
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- ===== SAVED TOURNAMENTS SCREEN ===== -->
+        <section id="saved-tournaments-screen" class="screen">
+            <header class="app-header">
+                <button id="btn-back-home-from-saved" class="btn-back">← Back</button>
+                <h2>Saved Tournaments</h2>
+            </header>
+
+            <div class="content">
+                <div id="tournaments-list" class="tournaments-list">
+                    <!-- Tournament cards will be inserted here -->
+                </div>
+
+                <div id="no-tournaments-message" class="empty-state">
+                    <p>No tournaments yet. Create one to get started!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== TOURNAMENT DASHBOARD SCREEN ===== -->
+        <section id="tournament-dashboard-screen" class="screen">
+            <header class="app-header">
+                <button id="btn-back-to-tournaments" class="btn-back">← Back</button>
+                <h2 id="tournament-title-display">Tournament Name</h2>
+            </header>
+
+            <div class="content">
+                <div class="tournament-info-card">
+                    <p><strong>Date:</strong> <span id="tournament-date-display">-</span></p>
+                    <p><strong>Location:</strong> <span id="tournament-location-display">-</span></p>
+                    <p><strong>Teams:</strong> <span id="tournament-team-count">0</span></p>
+                </div>
+
+                <div class="section-title">Teams</div>
+
+                <button id="btn-add-team" class="btn btn-primary btn-large">
+                    + Add Team
+                </button>
+
+                <div id="teams-list" class="teams-list">
+                    <!-- Team cards will be inserted here -->
+                </div>
+
+                <div id="no-teams-message" class="empty-state">
+                    <p>No teams added yet.</p>
+                </div>
+
+                <div class="button-group">
+                    <button id="btn-delete-tournament" class="btn btn-danger">
+                        Delete Tournament
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== ADD TEAM SCREEN ===== -->
+        <section id="add-team-screen" class="screen">
+            <header class="app-header">
+                <button id="btn-back-to-dashboard" class="btn-back">← Back</button>
+                <h2>Add Team</h2>
+            </header>
+
+            <div class="content">
+                <form id="add-team-form" class="form">
+                    <div class="form-group">
+                        <label for="team-name">Team Name *</label>
+                        <input 
+                            type="text" 
+                            id="team-name" 
+                            class="form-input"
+                            placeholder="e.g., Janikhel XI"
+                            required
+                        >
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-large">
+                        Create Team
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- ===== TEAM DETAILS SCREEN ===== -->
+        <section id="team-details-screen" class="screen">
+            <header class="app-header">
+                <button id="btn-back-to-dashboard-from-team" class="btn-back">← Back</button>
+                <h2 id="team-name-display">Team Name</h2>
+            </header>
+
+            <div class="content">
+                <div class="section-title">Players</div>
+
+                <button id="btn-add-player" class="btn btn-primary btn-large">
+                    + Add Player
+                </button>
+
+                <div id="players-list" class="players-list">
+                    <!-- Player cards will be inserted here -->
+                </div>
+
+                <div id="no-players-message" class="empty-state">
+                    <p>No players added yet.</p>
+                </div>
+
+                <div class="button-group">
+                    <button id="btn-edit-team" class="btn btn-secondary">
+                        Edit Team Name
+                    </button>
+                    <button id="btn-delete-team" class="btn btn-danger">
+                        Delete Team
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== ADD PLAYER SCREEN ===== -->
+        <section id="add-player-screen" class="screen">
+            <header class="app-header">
+                <button id="btn-back-to-team-details" class="btn-back">← Back</button>
+                <h2>Add Player</h2>
+            </header>
+
+            <div class="content">
+                <form id="add-player-form" class="form">
+                    <div class="form-group">
+                        <label for="player-name">Player Name *</label>
+                        <input 
+                            type="text" 
+                            id="player-name" 
+                            class="form-input"
+                            placeholder="e.g., Ali"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="player-number">Player Number (Optional)</label>
+                        <input 
+                            type="number" 
+                            id="player-number" 
+                            class="form-input"
+                            placeholder="e.g., 1"
+                            min="1"
+                        >
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-large">
+                        Add Player
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- ===== EDIT TEAM SCREEN ===== -->
+        <section id="edit-team-screen" class="screen">
+            <header class="app-header">
+                <button id="btn-back-to-team-details-from-edit" class="btn-back">← Back</button>
+                <h2>Edit Team</h2>
+            </header>
+
+            <div class="content">
+                <form id="edit-team-form" class="form">
+                    <div class="form-group">
+                        <label for="edit-team-name">Team Name *</label>
+                        <input 
+                            type="text" 
+                            id="edit-team-name" 
+                            class="form-input"
+                            required
+                        >
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-large">
+                        Update Team
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- ===== EDIT PLAYER SCREEN ===== -->
+        <section id="edit-player-screen" class="screen">
+            <header class="app-header">
+                <button id="btn-back-to-team-details-from-edit-player" class="btn-back">← Back</button>
+                <h2>Edit Player</h2>
+            </header>
+
+            <div class="content">
+                <form id="edit-player-form" class="form">
+                    <div class="form-group">
+                        <label for="edit-player-name">Player Name *</label>
+                        <input 
+                            type="text" 
+                            id="edit-player-name" 
+                            class="form-input"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="edit-player-number">Player Number (Optional)</label>
+                        <input 
+                            type="number" 
+                            id="edit-player-number" 
+                            class="form-input"
+                            min="1"
+                        >
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-large">
+                        Update Player
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- ===== MATCH SETUP SCREEN (PLACEHOLDER) ===== -->
+        <section id="match-setup-screen" class="screen">
+            <header class="app-header">
+                <button id="btn-back-from-match-setup" class="btn-back">← Back</button>
+                <h2>Match Setup</h2>
+            </header>
+
+            <div class="content">
+                <div class="placeholder-message">
+                    <p>Match Setup will be implemented in Version 1.2</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== LIVE SCORING SCREEN (PLACEHOLDER) ===== -->
+        <section id="live-scoring-screen" class="screen">
+            <header class="app-header">
+                <button id="btn-back-from-live-scoring" class="btn-back">← Back</button>
+                <h2>Live Scoring</h2>
+            </header>
+
+            <div class="content">
+                <div class="placeholder-message">
+                    <p>Live Ball-by-Ball Scoring will be implemented in Version 1.3</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== SCORECARD SCREEN (PLACEHOLDER) ===== -->
+        <section id="scorecard-screen" class="screen">
+            <header class="app-header">
+                <button id="btn-back-from-scorecard" class="btn-back">← Back</button>
+                <h2>Scorecard</h2>
+            </header>
+
+            <div class="content">
+                <div class="placeholder-message">
+                    <p>Scorecard will be implemented in Version 1.4</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== MATCH RESULT SCREEN (PLACEHOLDER) ===== -->
+        <section id="match-result-screen" class="screen">
+            <header class="app-header">
+                <button id="btn-back-from-match-result" class="btn-back">← Back</button>
+                <h2>Match Result</h2>
+            </header>
+
+            <div class="content">
+                <div class="placeholder-message">
+                    <p>Match Result will be implemented in Version 1.5</p>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
     <script src="script.js"></script>
-
 </body>
 </html>
