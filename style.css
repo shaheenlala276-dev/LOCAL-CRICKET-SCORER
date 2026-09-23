@@ -1,1 +1,42 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
+body {
+    font-family: Arial, sans-serif;
+    background: #f1f8f4;
+    color: #1b1b1b;
+    text-align: center;
+    padding: 30px 15px;
+}
+
+h1 {
+    color: #087f3f;
+    margin-bottom: 12px;
+}
+
+p {
+    margin-bottom: 25px;
+    color: #555;
+}
+
+button {
+    display: block;
+    width: 90%;
+    max-width: 350px;
+    margin: 15px auto;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    background: #087f3f;
+    color: white;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button:active {
+    transform: scale(0.98);
+}
