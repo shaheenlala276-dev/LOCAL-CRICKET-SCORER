@@ -1,22 +1,25 @@
-/* ===== LOCAL CRICKET SCORER APP - VERSION 1.1 ===== */
-/* Tournament Setup: Create, Teams, Players, and Navigation */
+/* ===== LOCAL CRICKET SCORER APP - VERSION 1.2 ===== */
+/* Tournament Setup + Match Setup */
 
 /* ===== DATA STRUCTURE ===== */
 const AppData = {
     tournaments: [],
     teams: [],
-    players: []
+    players: [],
+    matches: []
 };
 
 const STORAGE_KEY = 'cricket_scorer_v1';
 const TOURNAMENT_PREFIX = 'tourn_';
 const TEAM_PREFIX = 'team_';
 const PLAYER_PREFIX = 'player_';
+const MATCH_PREFIX = 'match_';
 
 /* Current state for navigation */
 const CurrentState = {
     currentTournamentId: null,
     currentTeamId: null,
+    currentMatchId: null,
     editingTeamId: null,
     editingPlayerId: null
 };
@@ -33,6 +36,17 @@ function showAlert(message, type = 'info') {
 
 function confirmAction(message) {
     return confirm(message);
+}
+
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
 }
 
 /* ===== LOCALSTORAGE FUNCTIONS ===== */
@@ -53,12 +67,14 @@ function loadFromLocalStorage() {
             AppData.tournaments = parsed.tournaments || [];
             AppData.teams = parsed.teams || [];
             AppData.players = parsed.players || [];
+            AppData.matches = parsed.matches || [];
         }
     } catch (error) {
         showAlert('Failed to load data: ' + error.message);
         AppData.tournaments = [];
         AppData.teams = [];
         AppData.players = [];
+        AppData.matches = [];
     }
 }
 
@@ -135,6 +151,9 @@ function deleteTournament(id) {
             }
         }
     });
+
+    // Delete all matches associated with this tournament
+    AppData.matches = AppData.matches.filter(m => m.tournamentId !== id);
 
     AppData.tournaments.splice(tournamentIndex, 1);
     saveToLocalStorage();
@@ -301,6 +320,101 @@ function deletePlayer(id) {
     return true;
 }
 
+/* ===== MATCH FUNCTIONS ===== */
+
+function createMatch(tournamentId, team1Id, team2Id, overs, matchDate, matchTime, venue, tossWinnerId, tossDecision, team1XI, team2XI) {
+    // Validation
+    if (!team1Id || !team2Id) {
+        showAlert('Both teams must be selected');
+        return null;
+    }
+
+    if (team1Id === team2Id) {
+        showAlert('Team 1 and Team 2 must be different');
+        return null;
+    }
+
+    if (!overs || overs < 1) {
+        showAlert('Number of overs must be a positive number');
+        return null;
+    }
+
+    if (!matchDate || !matchTime) {
+        showAlert('Match date and time are required');
+        return null;
+    }
+
+    if (!tossWinnerId || !tossDecision) {
+        showAlert('Toss information is required');
+        return null;
+    }
+
+    if (!team1XI || team1XI.length < 2 || team1XI.length > 11) {
+        showAlert('Team 1 must have between 2 and 11 players');
+        return null;
+    }
+
+    if (!team2XI || team2XI.length < 2 || team2XI.length > 11) {
+        showAlert('Team 2 must have between 2 and 11 players');
+        return null;
+    }
+
+    const match = {
+        id: generateId(MATCH_PREFIX),
+        tournamentId: tournamentId,
+        team1Id: team1Id,
+        team2Id: team2Id,
+        overs: parseInt(overs),
+        matchDate: matchDate,
+        matchTime: matchTime,
+        venue: venue ? venue.trim() : '',
+        tossWinnerId: tossWinnerId,
+        tossDecision: tossDecision,
+        team1PlayingXI: team1XI,
+        team2PlayingXI: team2XI,
+        status: 'Not Started',
+        innings: [],
+        createdAt: new Date().toISOString()
+    };
+
+    AppData.matches.push(match);
+    saveToLocalStorage();
+    return match;
+}
+
+function getMatch(id) {
+    return AppData.matches.find(m => m.id === id) || null;
+}
+
+function getMatchesByTournament(tournamentId) {
+    return AppData.matches.filter(m => m.tournamentId === tournamentId);
+}
+
+function deleteMatch(id) {
+    if (!confirmAction('Are you sure you want to delete this match?')) {
+        return false;
+    }
+
+    const matchIndex = AppData.matches.findIndex(m => m.id === id);
+    if (matchIndex !== -1) {
+        AppData.matches.splice(matchIndex, 1);
+        saveToLocalStorage();
+        showAlert('Match deleted successfully');
+        return true;
+    }
+    return false;
+}
+
+function updateMatchStatus(id, status) {
+    const match = getMatch(id);
+    if (match) {
+        match.status = status;
+        saveToLocalStorage();
+        return true;
+    }
+    return false;
+}
+
 /* ===== SCREEN NAVIGATION ===== */
 
 function showScreen(screenId) {
@@ -372,6 +486,220 @@ function showEditPlayer(playerId) {
     showScreen('edit-player-screen');
 }
 
+function showMatchSetup() {
+    resetMatchSetupForm();
+    populateTeamSelects();
+    showScreen('match-setup-screen');
+}
+
+function showLiveScoring() {
+    showScreen('live-scoring-screen');
+}
+
+/* ===== MATCH SETUP FUNCTIONS ===== */
+
+function resetMatchSetupForm() {
+    document.getElementById('match-info-form').reset();
+    document.getElementById('match-setup-step-1').classList.add('active');
+    document.getElementById('match-setup-step-2').classList.remove('active');
+    document.getElementById('match-setup-error').style.display = 'none';
+    document.getElementById('match-setup-error').textContent = '';
+}
+
+function populateTeamSelects() {
+    const teams = getTeamsByTournament(CurrentState.currentTournamentId);
+    const team1Select = document.getElementById('match-team1');
+    const team2Select = document.getElementById('match-team2');
+    const tossWinnerSelect = document.getElementById('match-toss-winner');
+
+    // Clear existing options (keep default)
+    team1Select.innerHTML = '<option value="">-- Select Team --</option>';
+    team2Select.innerHTML = '<option value="">-- Select Team --</option>';
+    tossWinnerSelect.innerHTML = '<option value="">-- Select Winner --</option>';
+
+    teams.forEach(team => {
+        const option1 = document.createElement('option');
+        option1.value = team.id;
+        option1.textContent = team.name;
+        team1Select.appendChild(option1);
+
+        const option2 = document.createElement('option');
+        option2.value = team.id;
+        option2.textContent = team.name;
+        team2Select.appendChild(option2);
+
+        const optionToss = document.createElement('option');
+        optionToss.value = team.id;
+        optionToss.textContent = team.name;
+        tossWinnerSelect.appendChild(optionToss);
+    });
+}
+
+function proceedToPlayingXI() {
+    const team1Id = document.getElementById('match-team1').value;
+    const team2Id = document.getElementById('match-team2').value;
+    const overs = document.getElementById('match-overs').value;
+    const matchDate = document.getElementById('match-date').value;
+    const matchTime = document.getElementById('match-time').value;
+    const tossWinner = document.getElementById('match-toss-winner').value;
+    const tossDecision = document.getElementById('match-toss-decision').value;
+
+    const errorDiv = document.getElementById('match-setup-error');
+
+    // Validate match info
+    if (!team1Id || !team2Id) {
+        errorDiv.textContent = 'Please select both teams';
+        errorDiv.style.display = 'block';
+        return;
+    }
+
+    if (team1Id === team2Id) {
+        errorDiv.textContent = 'Team 1 and Team 2 must be different';
+        errorDiv.style.display = 'block';
+        return;
+    }
+
+    if (!overs || overs < 1) {
+        errorDiv.textContent = 'Number of overs must be a positive number';
+        errorDiv.style.display = 'block';
+        return;
+    }
+
+    if (!matchDate || !matchTime) {
+        errorDiv.textContent = 'Match date and time are required';
+        errorDiv.style.display = 'block';
+        return;
+    }
+
+    if (!tossWinner || !tossDecision) {
+        errorDiv.textContent = 'Toss information is required';
+        errorDiv.style.display = 'block';
+        return;
+    }
+
+    errorDiv.style.display = 'none';
+
+    // Populate playing XI selections
+    renderPlayingXISelection(team1Id, team2Id);
+
+    // Move to step 2
+    document.getElementById('match-setup-step-1').classList.remove('active');
+    document.getElementById('match-setup-step-2').classList.add('active');
+}
+
+function renderPlayingXISelection(team1Id, team2Id) {
+    const team1 = getTeam(team1Id);
+    const team2 = getTeam(team2Id);
+
+    // Team 1 XI
+    const team1Title = document.getElementById('team1-playing-xi-title');
+    team1Title.textContent = team1.name;
+
+    const team1PlayersDiv = document.getElementById('team1-xi-players');
+    team1PlayersDiv.innerHTML = '';
+
+    const team1Players = getPlayersByTeam(team1Id);
+    team1Players.forEach(player => {
+        const checkboxDiv = document.createElement('div');
+        checkboxDiv.className = 'xi-player-checkbox';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = player.id;
+        checkbox.className = 'team1-xi-checkbox';
+        checkbox.id = `team1-player-${player.id}`;
+
+        const label = document.createElement('label');
+        label.htmlFor = `team1-player-${player.id}`;
+        label.textContent = player.name + (player.number ? ` (${player.number})` : '');
+
+        checkboxDiv.appendChild(checkbox);
+        checkboxDiv.appendChild(label);
+        team1PlayersDiv.appendChild(checkboxDiv);
+
+        checkbox.addEventListener('change', updateTeam1XICount);
+    });
+
+    // Team 2 XI
+    const team2Title = document.getElementById('team2-playing-xi-title');
+    team2Title.textContent = team2.name;
+
+    const team2PlayersDiv = document.getElementById('team2-xi-players');
+    team2PlayersDiv.innerHTML = '';
+
+    const team2Players = getPlayersByTeam(team2Id);
+    team2Players.forEach(player => {
+        const checkboxDiv = document.createElement('div');
+        checkboxDiv.className = 'xi-player-checkbox';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = player.id;
+        checkbox.className = 'team2-xi-checkbox';
+        checkbox.id = `team2-player-${player.id}`;
+
+        const label = document.createElement('label');
+        label.htmlFor = `team2-player-${player.id}`;
+        label.textContent = player.name + (player.number ? ` (${player.number})` : '');
+
+        checkboxDiv.appendChild(checkbox);
+        checkboxDiv.appendChild(label);
+        team2PlayersDiv.appendChild(checkboxDiv);
+
+        checkbox.addEventListener('change', updateTeam2XICount);
+    });
+
+    updateTeam1XICount();
+    updateTeam2XICount();
+}
+
+function updateTeam1XICount() {
+    const checkboxes = document.querySelectorAll('.team1-xi-checkbox:checked');
+    const countSpan = document.getElementById('team1-xi-count');
+    countSpan.textContent = checkboxes.length + ' / 11';
+}
+
+function updateTeam2XICount() {
+    const checkboxes = document.querySelectorAll('.team2-xi-checkbox:checked');
+    const countSpan = document.getElementById('team2-xi-count');
+    countSpan.textContent = checkboxes.length + ' / 11';
+}
+
+function startMatch() {
+    const team1Id = document.getElementById('match-team1').value;
+    const team2Id = document.getElementById('match-team2').value;
+    const overs = document.getElementById('match-overs').value;
+    const matchDate = document.getElementById('match-date').value;
+    const matchTime = document.getElementById('match-time').value;
+    const venue = document.getElementById('match-venue').value;
+    const tossWinner = document.getElementById('match-toss-winner').value;
+    const tossDecision = document.getElementById('match-toss-decision').value;
+
+    const team1XI = Array.from(document.querySelectorAll('.team1-xi-checkbox:checked')).map(cb => cb.value);
+    const team2XI = Array.from(document.querySelectorAll('.team2-xi-checkbox:checked')).map(cb => cb.value);
+
+    const match = createMatch(
+        CurrentState.currentTournamentId,
+        team1Id,
+        team2Id,
+        overs,
+        matchDate,
+        matchTime,
+        venue,
+        tossWinner,
+        tossDecision,
+        team1XI,
+        team2XI
+    );
+
+    if (match) {
+        CurrentState.currentMatchId = match.id;
+        showAlert('Match created successfully!');
+        updateMatchStatus(match.id, 'In Progress');
+        showLiveScoring();
+    }
+}
+
 /* ===== RENDER FUNCTIONS ===== */
 
 function renderTournaments() {
@@ -433,6 +761,78 @@ function renderTournaments() {
     });
 }
 
+function renderMatches() {
+    const container = document.getElementById('matches-list');
+    const noMessage = document.getElementById('no-matches-message');
+    const matches = getMatchesByTournament(CurrentState.currentTournamentId);
+
+    container.innerHTML = '';
+
+    if (matches.length === 0) {
+        noMessage.style.display = 'block';
+        return;
+    }
+
+    noMessage.style.display = 'none';
+
+    matches.forEach(match => {
+        const team1 = getTeam(match.team1Id);
+        const team2 = getTeam(match.team2Id);
+
+        const matchCard = document.createElement('div');
+        matchCard.className = 'match-card';
+
+        const dateObj = new Date(match.matchDate);
+        const formattedDate = dateObj.toLocaleDateString();
+
+        matchCard.innerHTML = `
+            <div class="match-card-header">
+                <div class="match-card-teams">${escapeHtml(team1.name)} vs ${escapeHtml(team2.name)}</div>
+                <span class="match-card-status">${match.status}</span>
+            </div>
+            <div class="match-card-details">
+                <strong>Overs:</strong> ${match.overs}
+            </div>
+            <div class="match-card-details">
+                <strong>Date:</strong> ${formattedDate}
+            </div>
+            <div class="match-card-details">
+                <strong>Time:</strong> ${match.matchTime}
+            </div>
+            ${match.venue ? `<div class="match-card-details"><strong>Venue:</strong> ${escapeHtml(match.venue)}</div>` : ''}
+            <div class="match-card-actions">
+                <button class="btn btn-primary btn-start-match-live" data-id="${match.id}">Start Match</button>
+                <button class="btn btn-danger btn-delete-match" data-id="${match.id}">Delete</button>
+            </div>
+        `;
+
+        container.appendChild(matchCard);
+    });
+
+    // Attach event listeners
+    document.querySelectorAll('.btn-start-match-live').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const matchId = e.target.dataset.id;
+            const match = getMatch(matchId);
+            if (match) {
+                CurrentState.currentMatchId = matchId;
+                updateMatchStatus(matchId, 'In Progress');
+                showLiveScoring();
+            }
+        });
+    });
+
+    document.querySelectorAll('.btn-delete-match').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const matchId = e.target.dataset.id;
+            if (deleteMatch(matchId)) {
+                renderMatches();
+            }
+        });
+    });
+}
+
 function renderTournamentDashboard() {
     const tournament = getTournament(CurrentState.currentTournamentId);
     if (!tournament) {
@@ -445,6 +845,9 @@ function renderTournamentDashboard() {
     document.getElementById('tournament-date-display').textContent = new Date(tournament.date).toLocaleDateString();
     document.getElementById('tournament-location-display').textContent = tournament.location || '-';
     document.getElementById('tournament-team-count').textContent = tournament.teamIds.length;
+
+    // Render matches
+    renderMatches();
 
     // Render teams
     const container = document.getElementById('teams-list');
@@ -561,19 +964,6 @@ function renderTeamDetails() {
     });
 }
 
-/* ===== HELPER FUNCTIONS ===== */
-
-function escapeHtml(text) {
-    const map = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-    };
-    return text.replace(/[&<>"']/g, m => map[m]);
-}
-
 /* ===== EVENT LISTENERS ===== */
 
 function setupEventListeners() {
@@ -600,6 +990,7 @@ function setupEventListeners() {
     /* TOURNAMENT DASHBOARD */
     document.getElementById('btn-back-to-tournaments').addEventListener('click', showSavedTournaments);
     document.getElementById('btn-add-team').addEventListener('click', showAddTeam);
+    document.getElementById('btn-create-match').addEventListener('click', showMatchSetup);
     document.getElementById('btn-delete-tournament').addEventListener('click', () => {
         if (deleteTournament(CurrentState.currentTournamentId)) {
             showSavedTournaments();
@@ -672,10 +1063,26 @@ function setupEventListeners() {
         }
     });
 
-    /* PLACEHOLDER SCREENS BACK BUTTONS */
-    document.getElementById('btn-back-from-match-setup').addEventListener('click', showHome);
-    document.getElementById('btn-back-from-live-scoring').addEventListener('click', showHome);
+    /* MATCH SETUP */
+    document.getElementById('btn-back-from-match-setup').addEventListener('click', () => {
+        showTournamentDashboard(CurrentState.currentTournamentId);
+    });
+    document.getElementById('btn-next-to-playing-xi').addEventListener('click', proceedToPlayingXI);
+    document.getElementById('btn-back-to-match-info').addEventListener('click', () => {
+        document.getElementById('match-setup-step-1').classList.add('active');
+        document.getElementById('match-setup-step-2').classList.remove('active');
+    });
+    document.getElementById('btn-start-match').addEventListener('click', startMatch);
+
+    /* LIVE SCORING PLACEHOLDER */
+    document.getElementById('btn-back-from-live-scoring').addEventListener('click', () => {
+        showTournamentDashboard(CurrentState.currentTournamentId);
+    });
+
+    /* SCORECARD PLACEHOLDER */
     document.getElementById('btn-back-from-scorecard').addEventListener('click', showHome);
+
+    /* MATCH RESULT PLACEHOLDER */
     document.getElementById('btn-back-from-match-result').addEventListener('click', showHome);
 }
 
