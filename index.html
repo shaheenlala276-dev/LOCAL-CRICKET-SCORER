@@ -1,1 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Local Cricket Scorer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app-container">
 
+    <!-- HOME SCREEN -->
+    <section id="home-screen" class="screen active">
+      <header class="screen-header">
+        <h1>Cricket Scorer</h1>
+      </header>
+      <main class="screen-content">
+        <button id="btn-view-tournaments" class="btn btn-primary btn-large">View Tournaments</button>
+        <button id="btn-new-tournament" class="btn btn-secondary btn-large">New Tournament</button>
+      </main>
+    </section>
+
+    <!-- TOURNAMENTS SCREEN -->
+    <section id="tournaments-screen" class="screen">
+      <header class="screen-header">
+        <h2>Tournaments</h2>
+        <button id="btn-back-home-tournaments" class="btn btn-secondary">Back</button>
+      </header>
+      <main class="screen-content">
+        <button id="btn-create-tournament" class="btn btn-primary">+ New Tournament</button>
+        <div id="tournament-list" class="list-container"></div>
+      </main>
+    </section>
+
+    <!-- CREATE TOURNAMENT SCREEN -->
+    <section id="create-tournament-screen" class="screen">
+      <header class="screen-header">
+        <h2>Create Tournament</h2>
+        <button id="btn-back-tournaments-create" class="btn btn-secondary">Back</button>
+      </header>
+      <main class="screen-content">
+        <form id="tournament-form" class="form-container">
+          <div class="form-group">
+            <label for="tournament-name">Tournament Name</label>
+            <input type="text" id="tournament-name" placeholder="Enter tournament name" required>
+          </div>
+          <div class="form-group">
+            <label for="tournament-location">Location</label>
+            <input type="text" id="tournament-location" placeholder="Enter location">
+          </div>
+          <div class="form-group">
+            <label for="tournament-start-date">Start Date</label>
+            <input type="date" id="tournament-start-date">
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Create Tournament</button>
+        </form>
+      </main>
+    </section>
+
+    <!-- TOURNAMENT DASHBOARD SCREEN -->
+    <section id="tournament-dashboard-screen" class="screen">
+      <header class="screen-header">
+        <h2 id="tournament-title">Tournament</h2>
+        <button id="btn-back-tournaments-dashboard" class="btn btn-secondary">Back</button>
+      </header>
+      <main class="screen-content">
+        <nav class="tab-navigation">
+          <button class="tab-btn active" data-tab="teams-tab">Teams</button>
+          <button class="tab-btn" data-tab="matches-tab">Matches</button>
+        </nav>
+
+        <!-- TEAMS TAB -->
+        <div id="teams-tab" class="tab-content active">
+          <button id="btn-add-team" class="btn btn-primary">+ Add Team</button>
+          <div id="team-list" class="list-container"></div>
+        </div>
+
+        <!-- MATCHES TAB -->
+        <div id="matches-tab" class="tab-content">
+          <button id="btn-create-match" class="btn btn-primary">+ Create Match</button>
+          <div id="match-list" class="list-container"></div>
+        </div>
+      </main>
+    </section>
+
+    <!-- ADD TEAM SCREEN -->
+    <section id="add-team-screen" class="screen">
+      <header class="screen-header">
+        <h2>Add Team</h2>
+        <button id="btn-back-dashboard-team" class="btn btn-secondary">Back</button>
+      </header>
+      <main class="screen-content">
+        <form id="team-form" class="form-container">
+          <div class="form-group">
+            <label for="team-name">Team Name</label>
+            <input type="text" id="team-name" placeholder="Enter team name" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Add Team</button>
+        </form>
+      </main>
+    </section>
+
+    <!-- TEAM DETAILS SCREEN -->
+    <section id="team-details-screen" class="screen">
+      <header class="screen-header">
+        <h2 id="team-title">Team</h2>
+        <button id="btn-back-dashboard-team-details" class="btn btn-secondary">Back</button>
+      </header>
+      <main class="screen-content">
+        <button id="btn-add-player" class="btn btn-primary">+ Add Player</button>
+        <div id="player-list" class="list-container"></div>
+      </main>
+    </section>
+
+    <!-- ADD PLAYER SCREEN -->
+    <section id="add-player-screen" class="screen">
+      <header class="screen-header">
+        <h2>Add Player</h2>
+        <button id="btn-back-team-player" class="btn btn-secondary">Back</button>
+      </header>
+      <main class="screen-content">
+        <form id="player-form" class="form-container">
+          <div class="form-group">
+            <label for="player-name">Player Name</label>
+            <input type="text" id="player-name" placeholder="Enter player name" required>
+          </div>
+          <div class="form-group">
+            <label for="player-jersey">Jersey Number</label>
+            <input type="number" id="player-jersey" placeholder="Enter jersey number" min="1" max="99">
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Add Player</button>
+        </form>
+      </main>
+    </section>
+
+    <!-- MATCH SETUP SCREEN -->
+    <section id="match-setup-screen" class="screen">
+      <header class="screen-header">
+        <h2>Create Match</h2>
+        <button id="btn-back-dashboard-match" class="btn btn-secondary">Back</button>
+      </header>
+      <main class="screen-content">
+        <form id="match-setup-form" class="form-container">
+          <div class="form-group">
+            <label for="match-team1">Team 1</label>
+            <select id="match-team1" required>
+              <option value="">Select Team</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="match-team2">Team 2</label>
+            <select id="match-team2" required>
+              <option value="">Select Team</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="match-overs">Overs</label>
+            <input type="number" id="match-overs" value="50" min="1" required>
+          </div>
+          <div class="form-group">
+            <label for="match-venue">Venue</label>
+            <input type="text" id="match-venue" placeholder="Enter venue">
+          </div>
+          <div class="form-group">
+            <label for="match-date">Date</label>
+            <input type="date" id="match-date">
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Next: Toss</button>
+        </form>
+      </main>
+    </section>
+
+    <!-- TOSS SCREEN -->
+    <section id="toss-screen" class="screen">
+      <header class="screen-header">
+        <h2>Toss</h2>
+        <button id="btn-back-setup-toss" class="btn btn-secondary">Back</button>
+      </header>
+      <main class="screen-content">
+        <form id="toss-form" class="form-container">
+          <div class="form-group">
+            <label for="toss-winner">Toss Winner</label>
+            <select id="toss-winner" required>
+              <option value="">Select Team</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="toss-decision">Toss Decision</label>
+            <div class="radio-group">
+              <label>
+                <input type="radio" name="toss-decision" value="bat" required> Bat
+              </label>
+              <label>
+                <input type="radio" name="toss-decision" value="field" required> Field
+              </label>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Next: Playing XI</button>
+        </form>
+      </main>
+    </section>
+
+    <!-- PLAYING XI SCREEN -->
+    <section id="playing-xi-screen" class="screen">
+      <header class="screen-header">
+        <h2>Select Playing XI</h2>
+        <button id="btn-back-toss-xi" class="btn btn-secondary">Back</button>
+      </header>
+      <main class="screen-content">
+        <div class="xi-container">
+          <div id="batting-xi-section" class="xi-section">
+            <h3>Batting Team XI</h3>
+            <div id="batting-xi-list" class="player-checkbox-list"></div>
+          </div>
+          <div id="bowling-xi-section" class="xi-section">
+            <h3>Bowling Team XI</h3>
+            <div id="bowling-xi-list" class="player-checkbox-list"></div>
+          </div>
+        </div>
+        <button id="btn-start-match" class="btn btn-primary btn-block">Start Match</button>
+      </main>
+    </section>
+
+    <!-- LIVE SCORING SCREEN -->
+    <section id="live-scoring-screen" class="screen">
+      <header class="screen-header">
+        <h2>Live Scoring</h2>
+        <button id="btn-back-from-live-scoring" class="btn btn-secondary">Back</button>
+      </header>
+      <main class="screen-content">
+
+        <!-- MATCH INFO -->
+        <div class="match-info-bar">
+          <div class="team-info">
+            <h3 id="batting-team-name">Batting Team</h3>
+            <p class="team-role">Batting</p>
+          </div>
+          <div class="match-score">
+            <div class="score-display">
+              <span id="current-score" class="score-number">0</span>
+              <span class="score-label">Runs</span>
+            </div>
+            <div class="score-display">
+              <span id="current-wickets" class="score-number">0</span>
+              <span class="score-label">Wickets</span>
+            </div>
+            <div class="score-display">
+              <span id="current-overs" class="score-number">0.0</span>
+              <span class="score-label">Overs</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- STRIKER AND NON-STRIKER -->
+        <div class="batsmen-info">
+          <div class="batsman-card striker-card">
+            <h4>Striker</h4>
+            <p id="striker-name">-</p>
+            <span class="badge">On Strike</span>
+          </div>
+          <div class="batsman-card">
+            <h4>Non-Striker</h4>
+            <p id="non-striker-name">-</p>
+          </div>
+        </div>
+
+        <!-- BOWLER INFO -->
+        <div class="bowler-info">
+          <h4>Bowler</h4>
+          <p id="bowler-name">-</p>
+        </div>
+
+        <!-- SCORING CONTROLS -->
+        <div class="scoring-controls">
+          <div class="runs-buttons">
+            <button class="run-btn" data-runs="0">0</button>
+            <button class="run-btn" data-runs="1">1</button>
+            <button class="run-btn" data-runs="2">2</button>
+            <button class="run-btn" data-runs="3">3</button>
+            <button class="run-btn" data-runs="4">4</button>
+            <button class="run-btn" data-runs="6">6</button>
+          </div>
+          <div class="action-buttons">
+            <button id="btn-wide" class="btn btn-secondary">Wide</button>
+            <button id="btn-noball" class="btn btn-secondary">No Ball</button>
+            <button id="btn-wicket" class="btn btn-danger">Wicket</button>
+            <button id="btn-undo-live-ball" class="btn btn-warning">↶ Undo</button>
+          </div>
+        </div>
+
+        <!-- BALL HISTORY -->
+        <div class="ball-history-section">
+          <h4>Ball History</h4>
+          <div id="ball-history-list" class="ball-history-list"></div>
+        </div>
+
+      </main>
+    </section>
+
+    <!-- NEW BATSMAN SELECTOR SCREEN -->
+    <section id="new-batsman-screen" class="screen">
+      <header class="screen-header">
+        <h2>Select New Batsman</h2>
+      </header>
+      <main class="screen-content">
+        <p class="screen-subtitle">Batsman dismissed. Choose next batsman:</p>
+        <div id="new-batsman-list" class="player-selection-list"></div>
+      </main>
+    </section>
+
+    <!-- MATCH SUMMARY SCREEN -->
+    <section id="match-summary-screen" class="screen">
+      <header class="screen-header">
+        <h2>Match Summary</h2>
+        <button id="btn-back-summary" class="btn btn-secondary">Back</button>
+      </header>
+      <main class="screen-content">
+        <div class="summary-container">
+          <div class="innings-summary">
+            <h3>Innings 1</h3>
+            <div id="innings1-summary" class="innings-details"></div>
+          </div>
+          <div class="innings-summary">
+            <h3>Innings 2</h3>
+            <div id="innings2-summary" class="innings-details"></div>
+          </div>
+          <div id="match-result" class="match-result"></div>
+        </div>
+        <button id="btn-save-match" class="btn btn-primary btn-block">Save Match</button>
+      </main>
+    </section>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
