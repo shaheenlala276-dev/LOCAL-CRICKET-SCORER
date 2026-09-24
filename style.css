@@ -1,1 +1,397 @@
 
+/* =========================================================
+LOCAL CRICKET SCORER — VERSION 1.1
+STYLE.CSS
+========================================================= */
+
+/* ---------- BASIC RESET ---------- */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  }
+
+html {
+scroll-behavior: smooth;
+}
+
+body {
+font-family: Arial, Helvetica, sans-serif;
+background: #f3f7f6;
+color: #17201e;
+min-height: 100vh;
+line-height: 1.5;
+}
+
+/* ---------- APP HEADER ---------- */
+
+.app-header {
+background: linear-gradient(135deg, #0f766e, #115e59);
+color: white;
+padding: 24px 18px;
+box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
+}
+
+.app-header h1 {
+font-size: 26px;
+margin-bottom: 4px;
+}
+
+.app-header p {
+font-size: 14px;
+opacity: 0.9;
+}
+
+/* ---------- MAIN CONTAINER ---------- */
+
+.container {
+width: 100%;
+max-width: 900px;
+margin: 0 auto;
+padding: 20px 16px 90px;
+}
+
+/* ---------- SCREENS ---------- */
+
+.screen {
+display: none;
+}
+
+.screen.active {
+display: block;
+}
+
+/* ---------- WELCOME CARD ---------- */
+
+.welcome-card {
+background: white;
+border-radius: 18px;
+padding: 24px 20px;
+margin-bottom: 20px;
+box-shadow: 0 5px 18px rgba(0, 0, 0, 0.07);
+}
+
+.welcome-card h2 {
+color: #0f766e;
+margin-bottom: 8px;
+font-size: 24px;
+}
+
+.welcome-card p {
+color: #5b6865;
+font-size: 15px;
+}
+
+/* ---------- HOME ACTION GRID ---------- */
+
+.action-grid {
+display: grid;
+grid-template-columns: repeat(2, 1fr);
+gap: 15px;
+margin-bottom: 20px;
+}
+
+.action-card {
+border: none;
+background: white;
+border-radius: 18px;
+padding: 22px 15px;
+min-height: 150px;
+cursor: pointer;
+text-align: left;
+box-shadow: 0 5px 18px rgba(0, 0, 0, 0.07);
+transition: transform 0.2s ease, box-shadow 0.2s ease;
+color: #17201e;
+}
+
+.action-card:hover {
+transform: translateY(-3px);
+box-shadow: 0 8px 22px rgba(0, 0, 0, 0.11);
+}
+
+.action-card:active {
+transform: scale(0.98);
+}
+
+.action-icon {
+display: block;
+font-size: 38px;
+margin-bottom: 12px;
+}
+
+.action-card strong {
+display: block;
+font-size: 18px;
+margin-bottom: 5px;
+}
+
+.action-card small {
+display: block;
+color: #687572;
+font-size: 13px;
+}
+
+/* ---------- INFO CARD ---------- */
+
+.info-card {
+background: #e2f4f1;
+border-left: 5px solid #0f766e;
+border-radius: 12px;
+padding: 16px;
+}
+
+.info-card h3 {
+color: #0f766e;
+margin-bottom: 5px;
+}
+
+.info-card p {
+color: #53615e;
+font-size: 14px;
+}
+
+/* ---------- SCREEN HEADER ---------- */
+
+.screen-header {
+display: flex;
+align-items: center;
+gap: 12px;
+margin-bottom: 20px;
+}
+
+.screen-header h2 {
+font-size: 23px;
+color: #173c38;
+}
+
+.back-btn {
+border: none;
+background: white;
+color: #0f766e;
+border-radius: 10px;
+padding: 9px 13px;
+cursor: pointer;
+font-size: 14px;
+font-weight: bold;
+box-shadow: 0 3px 10px rgba(0, 0, 0, 0.07);
+}
+
+.back-btn:hover {
+background: #e8f5f3;
+}
+
+/* ---------- FORM CARD ---------- */
+
+.form-card {
+background: white;
+border-radius: 18px;
+padding: 20px;
+margin-bottom: 20px;
+box-shadow: 0 5px 18px rgba(0, 0, 0, 0.07);
+}
+
+.form-card label {
+display: block;
+font-weight: bold;
+margin-bottom: 8px;
+color: #263532;
+}
+
+.form-card input {
+width: 100%;
+border: 2px solid #d8e4e1;
+border-radius: 11px;
+padding: 13px 14px;
+font-size: 16px;
+outline: none;
+margin-bottom: 13px;
+background: #fbfdfc;
+color: #17201e;
+}
+
+.form-card input:focus {
+border-color: #0f766e;
+background: white;
+}
+
+/* ---------- PRIMARY BUTTON ---------- */
+
+.primary-btn {
+width: 100%;
+border: none;
+border-radius: 11px;
+padding: 13px 16px;
+background: linear-gradient(135deg, #0f766e, #0d9488);
+color: white;
+font-size: 16px;
+font-weight: bold;
+cursor: pointer;
+transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.primary-btn:hover {
+opacity: 0.93;
+}
+
+.primary-btn:active {
+transform: scale(0.98);
+}
+
+/* ---------- LIST CONTAINER ---------- */
+
+.list-container {
+display: flex;
+flex-direction: column;
+gap: 12px;
+}
+
+/* ---------- LIST ITEM ---------- */
+
+.list-item {
+background: white;
+border-radius: 15px;
+padding: 16px;
+box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+}
+
+.list-item-header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+gap: 10px;
+}
+
+.list-item-title {
+font-size: 17px;
+font-weight: bold;
+color: #173c38;
+word-break: break-word;
+}
+
+.list-item-info {
+color: #687572;
+font-size: 13px;
+margin-top: 4px;
+}
+
+/* ---------- LIST BUTTONS ---------- */
+
+.list-actions {
+display: flex;
+gap: 8px;
+margin-top: 12px;
+flex-wrap: wrap;
+}
+
+.small-btn {
+border: none;
+border-radius: 9px;
+padding: 9px 12px;
+cursor: pointer;
+font-size: 13px;
+font-weight: bold;
+}
+
+.manage-btn {
+background: #dff4f0;
+color: #0f766e;
+}
+
+.delete-btn {
+background: #fde8e8;
+color: #b42318;
+}
+
+.small-btn:hover {
+opacity: 0.85;
+}
+
+/* ---------- SELECTED TEAM INFO ---------- */
+
+.selected-info {
+background: #e2f4f1;
+border-radius: 14px;
+padding: 14px 16px;
+margin-bottom: 15px;
+color: #0f766e;
+font-weight: bold;
+}
+
+/* ---------- EMPTY MESSAGE ---------- */
+
+.empty-message {
+background: white;
+border-radius: 15px;
+padding: 25px 15px;
+text-align: center;
+color: #788580;
+box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+/* ---------- FOOTER ---------- */
+
+.app-footer {
+text-align: center;
+padding: 18px 15px;
+color: #71807c;
+font-size: 13px;
+border-top: 1px solid #dce7e4;
+background: white;
+}
+
+/* ---------- MOBILE ---------- */
+
+@media (max-width: 600px) {
+
+.app-header {
+    padding: 20px 15px;
+}
+
+.app-header h1 {
+    font-size: 22px;
+}
+
+.container {
+    padding: 16px 12px 80px;
+}
+
+.action-grid {
+    grid-template-columns: 1fr;
+}
+
+.action-card {
+    min-height: 125px;
+}
+
+.screen-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.screen-header h2 {
+    font-size: 21px;
+}
+
+.form-card {
+    padding: 16px;
+}
+
+}
+
+/* ---------- ACCESSIBILITY ---------- */
+
+button:focus-visible,
+input:focus-visible {
+outline: 3px solid rgba(15, 118, 110, 0.25);
+outline-offset: 2px;
+}
+
+/* ---------- REDUCED MOTION ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+* {
+scroll-behavior: auto !important;
+transition: none !important;
+}
+}
