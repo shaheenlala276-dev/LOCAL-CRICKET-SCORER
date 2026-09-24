@@ -94,7 +94,32 @@ function initializeApp() {
     console.log("Local Cricket Scorer started.");
 }
 
+/* =========================================
+   TOURNAMENT MANAGEMENT
+   ========================================= */
 
+function createTournament() {
+
+    const name = prompt("Enter tournament name:");
+
+    if (!name || !name.trim()) {
+        return;
+    }
+
+    const tournament = {
+        id: generateId("tourn_"),
+        name: name.trim(),
+        createdAt: new Date().toISOString()
+    };
+
+    AppData.tournaments.push(tournament);
+
+    saveData();
+
+    alert("Tournament created successfully!");
+
+    console.log("Tournament created:", tournament);
+}
 /* =========================================
    START WHEN PAGE LOADS
    ========================================= */
