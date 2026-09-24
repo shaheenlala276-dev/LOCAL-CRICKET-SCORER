@@ -1,10 +1,10 @@
-
 /* =========================================================
-LOCAL CRICKET SCORER — VERSION 1.1
+LOCAL CRICKET SCORER — VERSION 1.2
 STYLE.CSS
+Tournament + Team + Player + Match Setup
 ========================================================= */
 
-/* ---------- BASIC RESET ---------- */
+/* ================= BASIC RESET ================= */
 
 * {
   box-sizing: border-box;
@@ -24,7 +24,7 @@ min-height: 100vh;
 line-height: 1.5;
 }
 
-/* ---------- APP HEADER ---------- */
+/* ================= APP HEADER ================= */
 
 .app-header {
 background: linear-gradient(135deg, #0f766e, #115e59);
@@ -43,7 +43,7 @@ font-size: 14px;
 opacity: 0.9;
 }
 
-/* ---------- MAIN CONTAINER ---------- */
+/* ================= MAIN CONTAINER ================= */
 
 .container {
 width: 100%;
@@ -52,7 +52,7 @@ margin: 0 auto;
 padding: 20px 16px 90px;
 }
 
-/* ---------- SCREENS ---------- */
+/* ================= SCREENS ================= */
 
 .screen {
 display: none;
@@ -62,7 +62,7 @@ display: none;
 display: block;
 }
 
-/* ---------- WELCOME CARD ---------- */
+/* ================= WELCOME CARD ================= */
 
 .welcome-card {
 background: white;
@@ -83,7 +83,7 @@ color: #5b6865;
 font-size: 15px;
 }
 
-/* ---------- HOME ACTION GRID ---------- */
+/* ================= HOME ACTION GRID ================= */
 
 .action-grid {
 display: grid;
@@ -132,7 +132,7 @@ color: #687572;
 font-size: 13px;
 }
 
-/* ---------- INFO CARD ---------- */
+/* ================= INFO CARD ================= */
 
 .info-card {
 background: #e2f4f1;
@@ -151,7 +151,7 @@ color: #53615e;
 font-size: 14px;
 }
 
-/* ---------- SCREEN HEADER ---------- */
+/* ================= SCREEN HEADER ================= */
 
 .screen-header {
 display: flex;
@@ -181,7 +181,7 @@ box-shadow: 0 3px 10px rgba(0, 0, 0, 0.07);
 background: #e8f5f3;
 }
 
-/* ---------- FORM CARD ---------- */
+/* ================= FORM CARD ================= */
 
 .form-card {
 background: white;
@@ -194,34 +194,58 @@ box-shadow: 0 5px 18px rgba(0, 0, 0, 0.07);
 .form-card label {
 display: block;
 font-weight: bold;
-margin-bottom: 8px;
+margin: 16px 0 8px;
 color: #263532;
 }
 
-.form-card input {
+.form-card label:first-of-type {
+margin-top: 0;
+}
+
+/* ================= INPUTS ================= */
+
+.form-card input,
+.form-card select {
 width: 100%;
 border: 2px solid #d8e4e1;
 border-radius: 11px;
 padding: 13px 14px;
 font-size: 16px;
 outline: none;
-margin-bottom: 13px;
+margin-bottom: 4px;
 background: #fbfdfc;
 color: #17201e;
 }
 
-.form-card input:focus {
+.form-card input:focus,
+.form-card select:focus {
 border-color: #0f766e;
 background: white;
 }
 
-/* ---------- PRIMARY BUTTON ---------- */
+/* ================= SELECT ================= */
+
+.form-card select {
+cursor: pointer;
+appearance: auto;
+}
+
+/* ================= FORM TITLE ================= */
+
+.form-title {
+color: #0f766e;
+font-size: 21px;
+margin-bottom: 18px;
+}
+
+/* ================= PRIMARY BUTTON ================= */
 
 .primary-btn {
 width: 100%;
 border: none;
 border-radius: 11px;
 padding: 13px 16px;
+margin-top: 16px;
 background: linear-gradient(135deg, #0f766e, #0d9488);
 color: white;
 font-size: 16px;
@@ -238,7 +262,7 @@ opacity: 0.93;
 transform: scale(0.98);
 }
 
-/* ---------- LIST CONTAINER ---------- */
+/* ================= LIST CONTAINER ================= */
 
 .list-container {
 display: flex;
@@ -246,7 +270,7 @@ flex-direction: column;
 gap: 12px;
 }
 
-/* ---------- LIST ITEM ---------- */
+/* ================= LIST ITEM ================= */
 
 .list-item {
 background: white;
@@ -275,7 +299,7 @@ font-size: 13px;
 margin-top: 4px;
 }
 
-/* ---------- LIST BUTTONS ---------- */
+/* ================= LIST BUTTONS ================= */
 
 .list-actions {
 display: flex;
@@ -307,7 +331,7 @@ color: #b42318;
 opacity: 0.85;
 }
 
-/* ---------- SELECTED TEAM INFO ---------- */
+/* ================= SELECTED TEAM INFO ================= */
 
 .selected-info {
 background: #e2f4f1;
@@ -318,7 +342,7 @@ color: #0f766e;
 font-weight: bold;
 }
 
-/* ---------- EMPTY MESSAGE ---------- */
+/* ================= EMPTY MESSAGE ================= */
 
 .empty-message {
 background: white;
@@ -329,7 +353,7 @@ color: #788580;
 box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 
-/* ---------- FOOTER ---------- */
+/* ================= FOOTER ================= */
 
 .app-footer {
 text-align: center;
@@ -340,7 +364,7 @@ border-top: 1px solid #dce7e4;
 background: white;
 }
 
-/* ---------- MOBILE ---------- */
+/* ================= MOBILE ================= */
 
 @media (max-width: 600px) {
 
@@ -377,21 +401,31 @@ background: white;
     padding: 16px;
 }
 
+.form-card input,
+.form-card select {
+    font-size: 16px;
 }
 
-/* ---------- ACCESSIBILITY ---------- */
+}
+
+/* ================= ACCESSIBILITY ================= */
 
 button:focus-visible,
-input:focus-visible {
+input:focus-visible,
+select:focus-visible {
 outline: 3px solid rgba(15, 118, 110, 0.25);
 outline-offset: 2px;
 }
 
-/* ---------- REDUCED MOTION ---------- */
+/* ================= REDUCED MOTION ================= */
 
 @media (prefers-reduced-motion: reduce) {
+
 * {
-scroll-behavior: auto !important;
-transition: none !important;
+    scroll-behavior: auto !important;
+    transition: none !important;
 }
+
 }
+
+/* ================= END V1.2 CSS ================= */
