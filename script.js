@@ -1,4 +1,4 @@
- /* =========================================================
+/* =========================================================
    LOCAL CRICKET SCORER
    VERSION 1.3
    LIVE BALL-BY-BALL SCORING
@@ -83,34 +83,56 @@ document.addEventListener("DOMContentLoaded", function () {
 
 function showScreen(screenId) {
 
-    const screens = document.querySelectorAll(".screen");
+    const screens =
+        document.querySelectorAll(".screen");
 
     screens.forEach(function (screen) {
+
         screen.classList.remove("active");
+
     });
 
-    const selectedScreen = document.getElementById(screenId);
+
+    const selectedScreen =
+        document.getElementById(screenId);
+
 
     if (selectedScreen) {
+
         selectedScreen.classList.add("active");
+
     }
+
 
     if (screenId === "tournamentScreen") {
+
         renderTournaments();
+
     }
+
 
     if (screenId === "teamScreen") {
+
         renderTeams();
+
     }
+
 
     if (screenId === "matchScreen") {
+
         renderMatches();
+
         populateMatchSetup();
+
     }
 
+
     if (screenId === "liveScoringScreen") {
+
         renderLiveScoring();
+
     }
+
 
     window.scrollTo({
         top: 0,
@@ -134,39 +156,53 @@ function saveData() {
 
 function loadData() {
 
-    const savedData = localStorage.getItem(STORAGE_KEY);
+    const savedData =
+        localStorage.getItem(STORAGE_KEY);
+
 
     if (!savedData) {
+
         return;
+
     }
+
 
     try {
 
-        const parsedData = JSON.parse(savedData);
+        const parsedData =
+            JSON.parse(savedData);
+
 
         AppData.tournaments =
             Array.isArray(parsedData.tournaments)
                 ? parsedData.tournaments
                 : [];
 
+
         AppData.teams =
             Array.isArray(parsedData.teams)
                 ? parsedData.teams
                 : [];
+
 
         AppData.players =
             Array.isArray(parsedData.players)
                 ? parsedData.players
                 : [];
 
+
         AppData.matches =
             Array.isArray(parsedData.matches)
                 ? parsedData.matches
                 : [];
 
+
     } catch (error) {
 
-        console.error("Could not load saved data:", error);
+        console.error(
+            "Could not load saved data:",
+            error
+        );
 
     }
 }
@@ -178,13 +214,15 @@ function loadData() {
 
 function createId(prefix) {
 
-    return prefix +
+    return (
+        prefix +
         "_" +
         Date.now() +
         "_" +
         Math.random()
             .toString(36)
-            .substring(2, 8);
+            .substring(2, 8)
+    );
 }
 
 
@@ -195,19 +233,34 @@ function createId(prefix) {
 function addTournament() {
 
     const input =
-        document.getElementById("tournamentName");
+        document.getElementById(
+            "tournamentName"
+        );
+
+
+    if (!input) {
+
+        return;
+
+    }
+
 
     const name =
         input.value.trim();
 
+
     if (!name) {
 
-        alert("Please enter tournament name.");
+        alert(
+            "Please enter tournament name."
+        );
 
         input.focus();
 
         return;
+
     }
+
 
     const tournament = {
 
@@ -215,11 +268,16 @@ function addTournament() {
 
         name: name,
 
-        createdAt: new Date().toISOString()
+        createdAt:
+            new Date().toISOString()
 
     };
 
-    AppData.tournaments.push(tournament);
+
+    AppData.tournaments.push(
+        tournament
+    );
+
 
     saveData();
 
@@ -234,48 +292,65 @@ function addTournament() {
 function renderTournaments() {
 
     const container =
-        document.getElementById("tournamentList");
+        document.getElementById(
+            "tournamentList"
+        );
+
 
     if (!container) {
+
         return;
+
     }
+
 
     if (AppData.tournaments.length === 0) {
 
         container.innerHTML =
-            `<div class="empty-message">
+            `
+            <div class="empty-message">
                 No tournaments yet.
-            </div>`;
-
-        return;
-    }
-
-    container.innerHTML =
-        AppData.tournaments.map(function (tournament) {
-
-            return `
-                <div class="list-item">
-
-                    <h3>🏆 ${escapeHTML(tournament.name)}</h3>
-
-                    <p>
-                        Tournament
-                    </p>
-
-                    <div class="list-actions">
-
-                        <button
-                            class="small-btn delete-btn"
-                            onclick="deleteTournament('${tournament.id}')">
-                            Delete
-                        </button>
-
-                    </div>
-
-                </div>
+            </div>
             `;
 
-        }).join("");
+        return;
+
+    }
+
+
+    container.innerHTML =
+        AppData.tournaments
+            .map(function (tournament) {
+
+                return `
+                    <div class="list-item">
+
+                        <h3>
+                            🏆
+                            ${escapeHTML(
+                                tournament.name
+                            )}
+                        </h3>
+
+                        <p>
+                            Tournament
+                        </p>
+
+                        <div class="list-actions">
+
+                            <button
+                                class="small-btn delete-btn"
+                                onclick="deleteTournament('${tournament.id}')">
+                                Delete
+                            </button>
+
+                        </div>
+
+                    </div>
+                `;
+
+            })
+            .join("");
 }
 
 
@@ -284,36 +359,55 @@ function deleteTournament(tournamentId) {
     const tournament =
         AppData.tournaments.find(
             function (item) {
-                return item.id === tournamentId;
+
+                return item.id ===
+                    tournamentId;
+
             }
         );
 
+
     if (!tournament) {
+
         return;
+
     }
+
 
     const confirmed =
         confirm(
             `Delete tournament "${tournament.name}"?`
         );
 
+
     if (!confirmed) {
+
         return;
+
     }
+
 
     AppData.tournaments =
         AppData.tournaments.filter(
             function (item) {
-                return item.id !== tournamentId;
+
+                return item.id !==
+                    tournamentId;
+
             }
         );
+
 
     AppData.matches =
         AppData.matches.filter(
             function (match) {
-                return match.tournamentId !== tournamentId;
+
+                return match.tournamentId !==
+                    tournamentId;
+
             }
         );
+
 
     saveData();
 
@@ -332,19 +426,34 @@ function deleteTournament(tournamentId) {
 function addTeam() {
 
     const input =
-        document.getElementById("teamName");
+        document.getElementById(
+            "teamName"
+        );
+
+
+    if (!input) {
+
+        return;
+
+    }
+
 
     const name =
         input.value.trim();
 
+
     if (!name) {
 
-        alert("Please enter team name.");
+        alert(
+            "Please enter team name."
+        );
 
         input.focus();
 
         return;
+
     }
+
 
     const team = {
 
@@ -352,9 +461,11 @@ function addTeam() {
 
         name: name,
 
-        createdAt: new Date().toISOString()
+        createdAt:
+            new Date().toISOString()
 
     };
+
 
     AppData.teams.push(team);
 
@@ -371,61 +482,82 @@ function addTeam() {
 function renderTeams() {
 
     const container =
-        document.getElementById("teamList");
+        document.getElementById(
+            "teamList"
+        );
+
 
     if (!container) {
+
         return;
+
     }
+
 
     if (AppData.teams.length === 0) {
 
         container.innerHTML =
-            `<div class="empty-message">
+            `
+            <div class="empty-message">
                 No teams yet.
-            </div>`;
-
-        return;
-    }
-
-    container.innerHTML =
-        AppData.teams.map(function (team) {
-
-            const playerCount =
-                AppData.players.filter(
-                    function (player) {
-                        return player.teamId === team.id;
-                    }
-                ).length;
-
-            return `
-                <div class="list-item">
-
-                    <h3>👥 ${escapeHTML(team.name)}</h3>
-
-                    <p>
-                        ${playerCount} player(s)
-                    </p>
-
-                    <div class="list-actions">
-
-                        <button
-                            class="small-btn manage-btn"
-                            onclick="openPlayers('${team.id}')">
-                            Manage Players
-                        </button>
-
-                        <button
-                            class="small-btn delete-btn"
-                            onclick="deleteTeam('${team.id}')">
-                            Delete
-                        </button>
-
-                    </div>
-
-                </div>
+            </div>
             `;
 
-        }).join("");
+        return;
+
+    }
+
+
+    container.innerHTML =
+        AppData.teams
+            .map(function (team) {
+
+                const playerCount =
+                    AppData.players.filter(
+                        function (player) {
+
+                            return player.teamId ===
+                                team.id;
+
+                        }
+                    ).length;
+
+
+                return `
+                    <div class="list-item">
+
+                        <h3>
+                            👥
+                            ${escapeHTML(
+                                team.name
+                            )}
+                        </h3>
+
+                        <p>
+                            ${playerCount} player(s)
+                        </p>
+
+                        <div class="list-actions">
+
+                            <button
+                                class="small-btn manage-btn"
+                                onclick="openPlayers('${team.id}')">
+                                Manage Players
+                            </button>
+
+                            <button
+                                class="small-btn delete-btn"
+                                onclick="deleteTeam('${team.id}')">
+                                Delete
+                            </button>
+
+                        </div>
+
+                    </div>
+                `;
+
+            })
+            .join("");
 }
 
 
@@ -434,36 +566,55 @@ function deleteTeam(teamId) {
     const team =
         AppData.teams.find(
             function (item) {
-                return item.id === teamId;
+
+                return item.id ===
+                    teamId;
+
             }
         );
 
+
     if (!team) {
+
         return;
+
     }
+
 
     const confirmed =
         confirm(
             `Delete team "${team.name}" and its players/matches?`
         );
 
+
     if (!confirmed) {
+
         return;
+
     }
+
 
     AppData.teams =
         AppData.teams.filter(
             function (item) {
-                return item.id !== teamId;
+
+                return item.id !==
+                    teamId;
+
             }
         );
+
 
     AppData.players =
         AppData.players.filter(
             function (player) {
-                return player.teamId !== teamId;
+
+                return player.teamId !==
+                    teamId;
+
             }
         );
+
 
     AppData.matches =
         AppData.matches.filter(
@@ -476,6 +627,7 @@ function deleteTeam(teamId) {
 
             }
         );
+
 
     saveData();
 
@@ -493,28 +645,46 @@ function deleteTeam(teamId) {
 
 function openPlayers(teamId) {
 
-    CurrentState.currentTeamId = teamId;
+    CurrentState.currentTeamId =
+        teamId;
+
 
     const team =
         AppData.teams.find(
             function (item) {
-                return item.id === teamId;
+
+                return item.id ===
+                    teamId;
+
             }
         );
 
+
     if (!team) {
+
         return;
+
     }
 
+
     const info =
-        document.getElementById("selectedTeamInfo");
+        document.getElementById(
+            "selectedTeamInfo"
+        );
+
 
     if (info) {
 
         info.innerHTML =
-            `Managing players for:
-             <strong>${escapeHTML(team.name)}</strong>`;
+            `
+            Managing players for:
+            <strong>
+                ${escapeHTML(team.name)}
+            </strong>
+            `;
+
     }
+
 
     renderPlayers();
 
@@ -525,38 +695,60 @@ function openPlayers(teamId) {
 function addPlayer() {
 
     const input =
-        document.getElementById("playerName");
+        document.getElementById(
+            "playerName"
+        );
+
+
+    if (!input) {
+
+        return;
+
+    }
+
 
     const name =
         input.value.trim();
 
+
     if (!name) {
 
-        alert("Please enter player name.");
+        alert(
+            "Please enter player name."
+        );
 
         input.focus();
 
         return;
+
     }
+
 
     if (!CurrentState.currentTeamId) {
 
-        alert("Please select a team first.");
+        alert(
+            "Please select a team first."
+        );
 
         return;
+
     }
+
 
     const player = {
 
         id: createId("player"),
 
-        teamId: CurrentState.currentTeamId,
+        teamId:
+            CurrentState.currentTeamId,
 
         name: name,
 
-        createdAt: new Date().toISOString()
+        createdAt:
+            new Date().toISOString()
 
     };
+
 
     AppData.players.push(player);
 
@@ -573,53 +765,76 @@ function addPlayer() {
 function renderPlayers() {
 
     const container =
-        document.getElementById("playerList");
+        document.getElementById(
+            "playerList"
+        );
+
 
     if (!container) {
+
         return;
+
     }
+
 
     const players =
         AppData.players.filter(
             function (player) {
-                return player.teamId === CurrentState.currentTeamId;
+
+                return player.teamId ===
+                    CurrentState.currentTeamId;
+
             }
         );
+
 
     if (players.length === 0) {
 
         container.innerHTML =
-            `<div class="empty-message">
+            `
+            <div class="empty-message">
                 No players yet.
-            </div>`;
-
-        return;
-    }
-
-    container.innerHTML =
-        players.map(function (player) {
-
-            return `
-                <div class="list-item">
-
-                    <h3>🏏 ${escapeHTML(player.name)}</h3>
-
-                    <p>Player</p>
-
-                    <div class="list-actions">
-
-                        <button
-                            class="small-btn delete-btn"
-                            onclick="deletePlayer('${player.id}')">
-                            Delete
-                        </button>
-
-                    </div>
-
-                </div>
+            </div>
             `;
 
-        }).join("");
+        return;
+
+    }
+
+
+    container.innerHTML =
+        players
+            .map(function (player) {
+
+                return `
+                    <div class="list-item">
+
+                        <h3>
+                            🏏
+                            ${escapeHTML(
+                                player.name
+                            )}
+                        </h3>
+
+                        <p>
+                            Player
+                        </p>
+
+                        <div class="list-actions">
+
+                            <button
+                                class="small-btn delete-btn"
+                                onclick="deletePlayer('${player.id}')">
+                                Delete
+                            </button>
+
+                        </div>
+
+                    </div>
+                `;
+
+            })
+            .join("");
 }
 
 
@@ -628,29 +843,44 @@ function deletePlayer(playerId) {
     const player =
         AppData.players.find(
             function (item) {
-                return item.id === playerId;
+
+                return item.id ===
+                    playerId;
+
             }
         );
 
+
     if (!player) {
+
         return;
+
     }
+
 
     const confirmed =
         confirm(
             `Delete player "${player.name}"?`
         );
 
+
     if (!confirmed) {
+
         return;
+
     }
+
 
     AppData.players =
         AppData.players.filter(
             function (item) {
-                return item.id !== playerId;
+
+                return item.id !==
+                    playerId;
+
             }
         );
+
 
     saveData();
 
@@ -675,41 +905,60 @@ function populateMatchSetup() {
 function populateTournamentSelect() {
 
     const select =
-        document.getElementById("matchTournament");
+        document.getElementById(
+            "matchTournament"
+        );
+
 
     if (!select) {
+
         return;
+
     }
+
 
     const currentValue =
         select.value;
 
+
     select.innerHTML =
-        `<option value="">
+        `
+        <option value="">
             Select Tournament
-        </option>`;
+        </option>
+        `;
+
 
     AppData.tournaments.forEach(
         function (tournament) {
 
-            select.innerHTML += `
+            select.innerHTML +=
+                `
                 <option value="${tournament.id}">
-                    ${escapeHTML(tournament.name)}
+                    ${escapeHTML(
+                        tournament.name
+                    )}
                 </option>
-            `;
+                `;
 
         }
     );
 
+
     if (
         AppData.tournaments.some(
             function (item) {
-                return item.id === currentValue;
+
+                return item.id ===
+                    currentValue;
+
             }
         )
     ) {
 
-        select.value = currentValue;
+        select.value =
+            currentValue;
+
     }
 }
 
@@ -717,62 +966,95 @@ function populateTournamentSelect() {
 function populateTeamSelects() {
 
     const teamA =
-        document.getElementById("teamA");
+        document.getElementById(
+            "teamA"
+        );
 
     const teamB =
-        document.getElementById("teamB");
+        document.getElementById(
+            "teamB"
+        );
+
 
     if (!teamA || !teamB) {
+
         return;
+
     }
 
-    const currentA = teamA.value;
 
-    const currentB = teamB.value;
+    const currentA =
+        teamA.value;
+
+    const currentB =
+        teamB.value;
+
 
     const options =
-        AppData.teams.map(
-            function (team) {
+        AppData.teams
+            .map(function (team) {
 
                 return `
                     <option value="${team.id}">
-                        ${escapeHTML(team.name)}
+                        ${escapeHTML(
+                            team.name
+                        )}
                     </option>
                 `;
 
-            }
-        ).join("");
+            })
+            .join("");
+
 
     teamA.innerHTML =
-        `<option value="">
+        `
+        <option value="">
             Select Team A
-        </option>` +
+        </option>
+        ` +
         options;
+
 
     teamB.innerHTML =
-        `<option value="">
+        `
+        <option value="">
             Select Team B
-        </option>` +
+        </option>
+        ` +
         options;
 
-    if (
-        AppData.teams.some(
-            function (item) {
-                return item.id === currentA;
-            }
-        )
-    ) {
-        teamA.value = currentA;
-    }
 
     if (
         AppData.teams.some(
             function (item) {
-                return item.id === currentB;
+
+                return item.id ===
+                    currentA;
+
             }
         )
     ) {
-        teamB.value = currentB;
+
+        teamA.value =
+            currentA;
+
+    }
+
+
+    if (
+        AppData.teams.some(
+            function (item) {
+
+                return item.id ===
+                    currentB;
+
+            }
+        )
+    ) {
+
+        teamB.value =
+            currentB;
+
     }
 }
 
@@ -783,50 +1065,115 @@ function populateTeamSelects() {
 
 function createMatch() {
 
-    const tournamentId =
-        document.getElementById("matchTournament").value;
-
-    const teamAId =
-        document.getElementById("teamA").value;
-
-    const teamBId =
-        document.getElementById("teamB").value;
-
-    const overs =
-        Number(
-            document.getElementById("matchOvers").value
+    const tournamentElement =
+        document.getElementById(
+            "matchTournament"
         );
 
+    const teamAElement =
+        document.getElementById(
+            "teamA"
+        );
+
+    const teamBElement =
+        document.getElementById(
+            "teamB"
+        );
+
+    const oversElement =
+        document.getElementById(
+            "matchOvers"
+        );
+
+    const dateElement =
+        document.getElementById(
+            "matchDate"
+        );
+
+    const tossWinnerElement =
+        document.getElementById(
+            "tossWinner"
+        );
+
+    const tossDecisionElement =
+        document.getElementById(
+            "tossDecision"
+        );
+
+
+    if (
+        !tournamentElement ||
+        !teamAElement ||
+        !teamBElement ||
+        !oversElement ||
+        !dateElement ||
+        !tossWinnerElement ||
+        !tossDecisionElement
+    ) {
+
+        alert(
+            "Match setup fields are missing."
+        );
+
+        return;
+
+    }
+
+
+    const tournamentId =
+        tournamentElement.value;
+
+    const teamAId =
+        teamAElement.value;
+
+    const teamBId =
+        teamBElement.value;
+
+    const overs =
+        Number(oversElement.value);
+
     const date =
-        document.getElementById("matchDate").value;
+        dateElement.value;
 
     const tossWinner =
-        document.getElementById("tossWinner").value;
+        tossWinnerElement.value;
 
     const tossDecision =
-        document.getElementById("tossDecision").value;
+        tossDecisionElement.value;
 
 
     if (!tournamentId) {
 
-        alert("Please select a tournament.");
+        alert(
+            "Please select a tournament."
+        );
 
         return;
+
     }
+
 
     if (!teamAId || !teamBId) {
 
-        alert("Please select both teams.");
+        alert(
+            "Please select both teams."
+        );
 
         return;
+
     }
+
 
     if (teamAId === teamBId) {
 
-        alert("Team A and Team B must be different.");
+        alert(
+            "Team A and Team B must be different."
+        );
 
         return;
+
     }
+
 
     if (
         !Number.isInteger(overs) ||
@@ -834,23 +1181,34 @@ function createMatch() {
         overs > 50
     ) {
 
-        alert("Overs must be between 1 and 50.");
+        alert(
+            "Overs must be between 1 and 50."
+        );
 
         return;
+
     }
+
 
     if (!date) {
 
-        alert("Please select match date.");
+        alert(
+            "Please select match date."
+        );
 
         return;
+
     }
+
 
     if (!tossWinner || !tossDecision) {
 
-        alert("Please complete the toss information.");
+        alert(
+            "Please complete the toss information."
+        );
 
         return;
+
     }
 
 
@@ -863,27 +1221,42 @@ function createMatch() {
 
         if (tossDecision === "bat") {
 
-            battingFirstId = teamAId;
-            bowlingFirstId = teamBId;
+            battingFirstId =
+                teamAId;
+
+            bowlingFirstId =
+                teamBId;
 
         } else {
 
-            battingFirstId = teamBId;
-            bowlingFirstId = teamAId;
+            battingFirstId =
+                teamBId;
+
+            bowlingFirstId =
+                teamAId;
+
         }
 
     } else {
 
         if (tossDecision === "bat") {
 
-            battingFirstId = teamBId;
-            bowlingFirstId = teamAId;
+            battingFirstId =
+                teamBId;
+
+            bowlingFirstId =
+                teamAId;
 
         } else {
 
-            battingFirstId = teamAId;
-            bowlingFirstId = teamBId;
+            battingFirstId =
+                teamAId;
+
+            bowlingFirstId =
+                teamBId;
+
         }
+
     }
 
 
@@ -891,27 +1264,38 @@ function createMatch() {
 
         id: createId("match"),
 
-        tournamentId: tournamentId,
+        tournamentId:
+            tournamentId,
 
-        teamAId: teamAId,
+        teamAId:
+            teamAId,
 
-        teamBId: teamBId,
+        teamBId:
+            teamBId,
 
-        overs: overs,
+        overs:
+            overs,
 
-        date: date,
+        date:
+            date,
 
-        tossWinner: tossWinner,
+        tossWinner:
+            tossWinner,
 
-        tossDecision: tossDecision,
+        tossDecision:
+            tossDecision,
 
-        battingFirstId: battingFirstId,
+        battingFirstId:
+            battingFirstId,
 
-        bowlingFirstId: bowlingFirstId,
+        bowlingFirstId:
+            bowlingFirstId,
 
-        status: "Not Started",
+        status:
+            "Not Started",
 
-        createdAt: new Date().toISOString(),
+        createdAt:
+            new Date().toISOString(),
 
         innings: []
 
@@ -924,8 +1308,9 @@ function createMatch() {
 
     renderMatches();
 
-    alert("Match created successfully.");
-
+    alert(
+        "Match created successfully."
+    );
 }
 
 
@@ -936,143 +1321,182 @@ function createMatch() {
 function renderMatches() {
 
     const container =
-        document.getElementById("matchList");
+        document.getElementById(
+            "matchList"
+        );
+
 
     if (!container) {
+
         return;
+
     }
+
 
     if (AppData.matches.length === 0) {
 
         container.innerHTML =
-            `<div class="empty-message">
+            `
+            <div class="empty-message">
                 No matches yet.
-            </div>`;
+            </div>
+            `;
 
         return;
+
     }
 
 
     container.innerHTML =
-        AppData.matches.map(function (match) {
+        AppData.matches
+            .map(function (match) {
 
-            const teamA =
-                getTeamName(match.teamAId);
+                const teamA =
+                    getTeamName(
+                        match.teamAId
+                    );
 
-            const teamB =
-                getTeamName(match.teamBId);
+                const teamB =
+                    getTeamName(
+                        match.teamBId
+                    );
 
-            const tournament =
-                getTournamentName(match.tournamentId);
+                const tournament =
+                    getTournamentName(
+                        match.tournamentId
+                    );
 
-            const battingFirst =
-                getTeamName(match.battingFirstId);
+                const battingFirst =
+                    getTeamName(
+                        match.battingFirstId
+                    );
 
-            const canStart =
-                hasEnoughPlayersForMatch(match);
-
-
-            let scoringButton = "";
-
-            if (
-                match.status === "Completed"
-            ) {
-
-                scoringButton = `
-                    <button
-                        class="small-btn manage-btn"
-                        onclick="openLiveScoring('${match.id}')">
-                        View Score
-                    </button>
-                `;
-
-            } else if (canStart) {
-
-                scoringButton = `
-                    <button
-                        class="small-btn manage-btn"
-                        onclick="openLiveScoring('${match.id}')">
-                        ${match.status === "Live"
-                            ? "Continue Scoring"
-                            : "Start Scoring"}
-                    </button>
-                `;
-
-            } else {
-
-                scoringButton = `
-                    <button
-                        class="small-btn manage-btn"
-                        onclick="showPlayerRequirement()">
-                        Add Players
-                    </button>
-                `;
-            }
+                const canStart =
+                    hasEnoughPlayersForMatch(
+                        match
+                    );
 
 
-            return `
-                <div class="list-item">
+                let scoringButton = "";
 
-                    <h3>
-                        🏏 ${escapeHTML(teamA)}
-                        vs
-                        ${escapeHTML(teamB)}
-                    </h3>
 
-                    <p>
-                        Tournament:
-                        ${escapeHTML(tournament)}
-                    </p>
+                if (
+                    match.status ===
+                    "Completed"
+                ) {
 
-                    <p>
-                        Date:
-                        ${escapeHTML(match.date)}
-                    </p>
-
-                    <p>
-                        Overs:
-                        ${match.overs}
-                    </p>
-
-                    <p>
-                        Toss:
-                        ${escapeHTML(getTossTeamName(match))}
-                        —
-                        ${match.tossDecision === "bat"
-                            ? "Bat First"
-                            : "Bowl First"}
-                    </p>
-
-                    <p>
-                        Batting First:
-                        <strong>
-                            ${escapeHTML(battingFirst)}
-                        </strong>
-                    </p>
-
-                    <p>
-                        Status:
-                        <strong>
-                            ${escapeHTML(match.status || "Not Started")}
-                        </strong>
-                    </p>
-
-                    <div class="list-actions">
-
-                        ${scoringButton}
-
+                    scoringButton =
+                        `
                         <button
-                            class="small-btn delete-btn"
-                            onclick="deleteMatch('${match.id}')">
-                            Delete
+                            class="small-btn manage-btn"
+                            onclick="openLiveScoring('${match.id}')">
+                            View Score
                         </button>
+                        `;
+
+                } else if (canStart) {
+
+                    scoringButton =
+                        `
+                        <button
+                            class="small-btn manage-btn"
+                            onclick="openLiveScoring('${match.id}')">
+                            ${
+                                match.status === "Live"
+                                    ? "Continue Scoring"
+                                    : "Start Scoring"
+                            }
+                        </button>
+                        `;
+
+                } else {
+
+                    scoringButton =
+                        `
+                        <button
+                            class="small-btn manage-btn"
+                            onclick="showPlayerRequirement()">
+                            Add Players
+                        </button>
+                        `;
+
+                }
+
+
+                return `
+                    <div class="list-item">
+
+                        <h3>
+                            🏏
+                            ${escapeHTML(teamA)}
+                            vs
+                            ${escapeHTML(teamB)}
+                        </h3>
+
+                        <p>
+                            Tournament:
+                            ${escapeHTML(tournament)}
+                        </p>
+
+                        <p>
+                            Date:
+                            ${escapeHTML(match.date)}
+                        </p>
+
+                        <p>
+                            Overs:
+                            ${match.overs}
+                        </p>
+
+                        <p>
+                            Toss:
+                            ${escapeHTML(
+                                getTossTeamName(match)
+                            )}
+                            —
+                            ${
+                                match.tossDecision === "bat"
+                                    ? "Bat First"
+                                    : "Bowl First"
+                            }
+                        </p>
+
+                        <p>
+                            Batting First:
+                            <strong>
+                                ${escapeHTML(
+                                    battingFirst
+                                )}
+                            </strong>
+                        </p>
+
+                        <p>
+                            Status:
+                            <strong>
+                                ${escapeHTML(
+                                    match.status ||
+                                    "Not Started"
+                                )}
+                            </strong>
+                        </p>
+
+                        <div class="list-actions">
+
+                            ${scoringButton}
+
+                            <button
+                                class="small-btn delete-btn"
+                                onclick="deleteMatch('${match.id}')">
+                                Delete
+                            </button>
+
+                        </div>
 
                     </div>
+                `;
 
-                </div>
-            `;
-
-        }).join("");
+            })
+            .join("");
 }
 
 
@@ -1081,16 +1505,24 @@ function hasEnoughPlayersForMatch(match) {
     const battingPlayers =
         AppData.players.filter(
             function (player) {
-                return player.teamId === match.battingFirstId;
+
+                return player.teamId ===
+                    match.battingFirstId;
+
             }
         );
+
 
     const bowlingPlayers =
         AppData.players.filter(
             function (player) {
-                return player.teamId === match.bowlingFirstId;
+
+                return player.teamId ===
+                    match.bowlingFirstId;
+
             }
         );
+
 
     return (
         battingPlayers.length >= 2 &&
@@ -1112,27 +1544,44 @@ function deleteMatch(matchId) {
     const match =
         AppData.matches.find(
             function (item) {
-                return item.id === matchId;
+
+                return item.id ===
+                    matchId;
+
             }
         );
 
+
     if (!match) {
+
         return;
+
     }
+
 
     const confirmed =
-        confirm("Delete this match?");
+        confirm(
+            "Delete this match?"
+        );
+
 
     if (!confirmed) {
+
         return;
+
     }
+
 
     AppData.matches =
         AppData.matches.filter(
             function (item) {
-                return item.id !== matchId;
+
+                return item.id !==
+                    matchId;
+
             }
         );
+
 
     saveData();
 
@@ -1142,13 +1591,29 @@ function deleteMatch(matchId) {
 
 function getTossTeamName(match) {
 
-    if (match.tossWinner === "teamA") {
-        return getTeamName(match.teamAId);
+    if (
+        match.tossWinner ===
+        "teamA"
+    ) {
+
+        return getTeamName(
+            match.teamAId
+        );
+
     }
 
-    if (match.tossWinner === "teamB") {
-        return getTeamName(match.teamBId);
+
+    if (
+        match.tossWinner ===
+        "teamB"
+    ) {
+
+        return getTeamName(
+            match.teamBId
+        );
+
     }
+
 
     return "Unknown";
 }
@@ -1163,19 +1628,27 @@ function openLiveScoring(matchId) {
     const match =
         AppData.matches.find(
             function (item) {
-                return item.id === matchId;
+
+                return item.id ===
+                    matchId;
+
             }
         );
 
+
     if (!match) {
 
-        alert("Match not found.");
+        alert(
+            "Match not found."
+        );
 
         return;
+
     }
 
 
-    CurrentState.currentMatchId = matchId;
+    CurrentState.currentMatchId =
+        matchId;
 
 
     if (
@@ -1184,25 +1657,41 @@ function openLiveScoring(matchId) {
     ) {
 
         const started =
-            initializeLiveMatch(match);
+            initializeLiveMatch(
+                match
+            );
+
 
         if (!started) {
+
             return;
+
         }
 
     } else {
 
-        restoreLiveState(match);
+        restoreLiveState(
+            match
+        );
+
     }
 
 
-    match.status = "Live";
+    match.status =
+        "Live";
+
+
+    saveLiveStateToMatch(
+        match
+    );
 
     saveData();
 
     renderMatches();
 
-    showScreen("liveScoringScreen");
+    showScreen(
+        "liveScoringScreen"
+    );
 
     renderLiveScoring();
 }
@@ -1217,14 +1706,21 @@ function initializeLiveMatch(match) {
     const battingPlayers =
         AppData.players.filter(
             function (player) {
-                return player.teamId === match.battingFirstId;
+
+                return player.teamId ===
+                    match.battingFirstId;
+
             }
         );
+
 
     const bowlingPlayers =
         AppData.players.filter(
             function (player) {
-                return player.teamId === match.bowlingFirstId;
+
+                return player.teamId ===
+                    match.bowlingFirstId;
+
             }
         );
 
@@ -1236,7 +1732,9 @@ function initializeLiveMatch(match) {
         );
 
         return false;
+
     }
+
 
     if (bowlingPlayers.length < 1) {
 
@@ -1245,6 +1743,7 @@ function initializeLiveMatch(match) {
         );
 
         return false;
+
     }
 
 
@@ -1254,8 +1753,10 @@ function initializeLiveMatch(match) {
     LiveState.strikerId =
         battingPlayers[0].id;
 
+
     LiveState.nonStrikerId =
         battingPlayers[1].id;
+
 
     LiveState.bowlerId =
         bowlingPlayers[0].id;
@@ -1264,27 +1765,39 @@ function initializeLiveMatch(match) {
     LiveState.batsmen[
         battingPlayers[0].id
     ] = {
+
         runs: 0,
+
         balls: 0,
+
         out: false
+
     };
 
 
     LiveState.batsmen[
         battingPlayers[1].id
     ] = {
+
         runs: 0,
+
         balls: 0,
+
         out: false
+
     };
 
 
     LiveState.bowlers[
         bowlingPlayers[0].id
     ] = {
+
         runs: 0,
+
         wickets: 0,
+
         legalBalls: 0
+
     };
 
 
@@ -1296,7 +1809,9 @@ function initializeLiveMatch(match) {
     ];
 
 
-    saveLiveStateToMatch(match);
+    saveLiveStateToMatch(
+        match
+    );
 
     return true;
 }
@@ -1309,9 +1824,11 @@ function createNewInnings(
 
     return {
 
-        battingTeamId: battingTeamId,
+        battingTeamId:
+            battingTeamId,
 
-        bowlingTeamId: bowlingTeamId,
+        bowlingTeamId:
+            bowlingTeamId,
 
         runs: 0,
 
@@ -1327,29 +1844,41 @@ function createNewInnings(
 
 function resetLiveState() {
 
-    LiveState.inningsIndex = 0;
+    LiveState.inningsIndex =
+        0;
 
-    LiveState.strikerId = null;
+    LiveState.strikerId =
+        null;
 
-    LiveState.nonStrikerId = null;
+    LiveState.nonStrikerId =
+        null;
 
-    LiveState.bowlerId = null;
+    LiveState.bowlerId =
+        null;
 
-    LiveState.runs = 0;
+    LiveState.runs =
+        0;
 
-    LiveState.wickets = 0;
+    LiveState.wickets =
+        0;
 
-    LiveState.legalBalls = 0;
+    LiveState.legalBalls =
+        0;
 
-    LiveState.currentOverBalls = [];
+    LiveState.currentOverBalls =
+        [];
 
-    LiveState.ballHistory = [];
+    LiveState.ballHistory =
+        [];
 
-    LiveState.batsmen = {};
+    LiveState.batsmen =
+        {};
 
-    LiveState.bowlers = {};
+    LiveState.bowlers =
+        {};
 
-    LiveState.innings = [];
+    LiveState.innings =
+        [];
 }
 
 
@@ -1362,50 +1891,70 @@ function restoreLiveState(match) {
     const saved =
         match.liveState;
 
+
     if (!saved) {
+
         return;
+
     }
 
 
     LiveState.inningsIndex =
         saved.inningsIndex || 0;
 
+
     LiveState.strikerId =
         saved.strikerId || null;
+
 
     LiveState.nonStrikerId =
         saved.nonStrikerId || null;
 
+
     LiveState.bowlerId =
         saved.bowlerId || null;
+
 
     LiveState.runs =
         saved.runs || 0;
 
+
     LiveState.wickets =
         saved.wickets || 0;
+
 
     LiveState.legalBalls =
         saved.legalBalls || 0;
 
+
     LiveState.currentOverBalls =
-        Array.isArray(saved.currentOverBalls)
+        Array.isArray(
+            saved.currentOverBalls
+        )
             ? saved.currentOverBalls
             : [];
 
+
     LiveState.ballHistory =
-        Array.isArray(saved.ballHistory)
+        Array.isArray(
+            saved.ballHistory
+        )
             ? saved.ballHistory
             : [];
+
 
     LiveState.batsmen =
         saved.batsmen || {};
 
+
     LiveState.bowlers =
         saved.bowlers || {};
 
+
     LiveState.innings =
-        Array.isArray(saved.innings)
+        Array.isArray(
+            saved.innings
+        )
             ? saved.innings
             : [];
 }
@@ -1419,7 +1968,8 @@ function saveLiveStateToMatch(match) {
 
     match.liveState = {
 
-        initialized: true,
+        initialized:
+            true,
 
         inningsIndex:
             LiveState.inningsIndex,
@@ -1464,26 +2014,37 @@ function saveLiveStateToMatch(match) {
    RECORD LIVE BALL
    ========================================================= */
 
-function recordLiveBall(type, value) {
+function recordLiveBall(
+    type,
+    value
+) {
 
     const match =
         getCurrentMatch();
 
+
     if (!match) {
 
-        alert("No active match.");
+        alert(
+            "No active match."
+        );
 
         return;
+
     }
 
 
     if (
-        match.status === "Completed"
+        match.status ===
+        "Completed"
     ) {
 
-        alert("This match is already completed.");
+        alert(
+            "This match is already completed."
+        );
 
         return;
+
     }
 
 
@@ -1492,10 +2053,12 @@ function recordLiveBall(type, value) {
             LiveState.strikerId
         );
 
+
     const nonStriker =
         getPlayerById(
             LiveState.nonStrikerId
         );
+
 
     const bowler =
         getPlayerById(
@@ -1503,13 +2066,18 @@ function recordLiveBall(type, value) {
         );
 
 
-    if (!striker || !nonStriker || !bowler) {
+    if (
+        !striker ||
+        !nonStriker ||
+        !bowler
+    ) {
 
         alert(
             "Player information is missing."
         );
 
         return;
+
     }
 
 
@@ -1526,83 +2094,135 @@ function recordLiveBall(type, value) {
     let wicket = false;
 
 
-    /* ================= NORMAL RUN ================= */
+    /* =========================
+       NORMAL RUN
+       ========================= */
 
     if (type === "run") {
 
-        totalRuns = Number(value);
+        totalRuns =
+            Number(value);
 
-        batsmanRuns = Number(value);
+        batsmanRuns =
+            Number(value);
 
-        legalBall = true;
+        legalBall =
+            true;
+
     }
 
 
-    /* ================= WIDE ================= */
+    /* =========================
+       WIDE
+       ========================= */
 
     else if (type === "wide") {
 
-        totalRuns = Number(value);
+        totalRuns =
+            Number(value);
 
-        batsmanRuns = 0;
+        batsmanRuns =
+            0;
 
-        legalBall = false;
+        legalBall =
+            false;
+
     }
 
 
-    /* ================= NO BALL ================= */
+    /* =========================
+       NO BALL
+       ========================= */
 
     else if (type === "noball") {
 
-        totalRuns = Number(value);
+        totalRuns =
+            Number(value);
 
-        batsmanRuns = 0;
+        batsmanRuns =
+            0;
 
-        legalBall = false;
+        legalBall =
+            false;
+
     }
 
 
-    /* ================= BYE ================= */
+    /* =========================
+       BYE
+       ========================= */
 
     else if (type === "bye") {
 
-        totalRuns = Number(value);
+        totalRuns =
+            Number(value);
 
-        batsmanRuns = 0;
+        batsmanRuns =
+            0;
 
-        legalBall = true;
+        legalBall =
+            true;
+
     }
 
 
-    /* ================= LEG BYE ================= */
+    /* =========================
+       LEG BYE
+       ========================= */
 
     else if (type === "legbye") {
 
-        totalRuns = Number(value);
+        totalRuns =
+            Number(value);
 
-        batsmanRuns = 0;
+        batsmanRuns =
+            0;
 
-        legalBall = true;
+        legalBall =
+            true;
+
     }
 
 
-    /* ================= WICKET ================= */
+    /* =========================
+       WICKET
+       ========================= */
 
     else if (type === "wicket") {
 
-        totalRuns = 0;
+        totalRuns =
+            0;
 
-        batsmanRuns = 0;
+        batsmanRuns =
+            0;
 
-        legalBall = true;
+        legalBall =
+            true;
 
-        wicket = true;
+        wicket =
+            true;
+
     }
 
 
     else {
 
         return;
+
+    }
+
+
+    /* =====================================================
+       VALIDATE RUN VALUE
+       ===================================================== */
+
+    if (
+        !Number.isFinite(totalRuns) ||
+        totalRuns < 0
+    ) {
+
+        return;
+
     }
 
 
@@ -1610,12 +2230,20 @@ function recordLiveBall(type, value) {
        BATSMAN
        ===================================================== */
 
-    ensureBatsmanRecord(striker.id);
+    ensureBatsmanRecord(
+        striker.id
+    );
 
-    LiveState.batsmen[striker.id].balls +=
+
+    LiveState.batsmen[
+        striker.id
+    ].balls +=
         legalBall ? 1 : 0;
 
-    LiveState.batsmen[striker.id].runs +=
+
+    LiveState.batsmen[
+        striker.id
+    ].runs +=
         batsmanRuns;
 
 
@@ -1623,7 +2251,8 @@ function recordLiveBall(type, value) {
        TOTAL SCORE
        ===================================================== */
 
-    LiveState.runs += totalRuns;
+    LiveState.runs +=
+        totalRuns;
 
 
     /* =====================================================
@@ -1634,7 +2263,10 @@ function recordLiveBall(type, value) {
 
         LiveState.wickets++;
 
-        LiveState.batsmen[striker.id].out = true;
+        LiveState.batsmen[
+            striker.id
+        ].out = true;
+
     }
 
 
@@ -1642,15 +2274,23 @@ function recordLiveBall(type, value) {
        BOWLER
        ===================================================== */
 
-    ensureBowlerRecord(bowler.id);
+    ensureBowlerRecord(
+        bowler.id
+    );
 
-    LiveState.bowlers[bowler.id].runs +=
+
+    LiveState.bowlers[
+        bowler.id
+    ].runs +=
         totalRuns;
 
 
     if (wicket) {
 
-        LiveState.bowlers[bowler.id].wickets++;
+        LiveState.bowlers[
+            bowler.id
+        ].wickets++;
+
     }
 
 
@@ -1662,9 +2302,11 @@ function recordLiveBall(type, value) {
 
         LiveState.legalBalls++;
 
+
         LiveState.bowlers[
             bowler.id
         ].legalBalls++;
+
     }
 
 
@@ -1674,29 +2316,41 @@ function recordLiveBall(type, value) {
 
     const ball = {
 
-        id: createId("ball"),
+        id:
+            createId("ball"),
 
-        type: type,
+        type:
+            type,
 
-        value: Number(value),
+        value:
+            Number(value),
 
-        totalRuns: totalRuns,
+        totalRuns:
+            totalRuns,
 
-        batsmanRuns: batsmanRuns,
+        batsmanRuns:
+            batsmanRuns,
 
-        legalBall: legalBall,
+        legalBall:
+            legalBall,
 
-        wicket: wicket,
+        wicket:
+            wicket,
 
-        strikerId: striker.id,
+        strikerId:
+            striker.id,
 
-        nonStrikerId: nonStriker.id,
+        nonStrikerId:
+            nonStriker.id,
 
-        bowlerId: bowler.id,
+        bowlerId:
+            bowler.id,
 
         overNumber:
             Math.floor(
-                LiveState.legalBalls / 6
+                (
+                    LiveState.legalBalls - 1
+                ) / 6
             ),
 
         createdAt:
@@ -1704,11 +2358,19 @@ function recordLiveBall(type, value) {
     };
 
 
-    LiveState.currentOverBalls.push(ball);
+    LiveState.currentOverBalls.push(
+        ball
+    );
+
 
     LiveState.ballHistory.push({
-        ball: ball,
-        snapshot: snapshot
+
+        ball:
+            ball,
+
+        snapshot:
+            snapshot
+
     });
 
 
@@ -1718,6 +2380,7 @@ function recordLiveBall(type, value) {
 
     const innings =
         getCurrentInnings();
+
 
     if (innings) {
 
@@ -1730,7 +2393,10 @@ function recordLiveBall(type, value) {
         innings.legalBalls =
             LiveState.legalBalls;
 
-        innings.balls.push(ball);
+        innings.balls.push(
+            ball
+        );
+
     }
 
 
@@ -1741,15 +2407,16 @@ function recordLiveBall(type, value) {
     if (
         legalBall &&
         !wicket &&
-        (batsmanRuns % 2 === 1)
+        batsmanRuns % 2 === 1
     ) {
 
         swapStrikers();
+
     }
 
 
     /* =====================================================
-       WICKET NEW BATTER
+       WICKET — NEW BATTER
        ===================================================== */
 
     if (wicket) {
@@ -1778,15 +2445,20 @@ function recordLiveBall(type, value) {
        ===================================================== */
 
     if (
-        checkInningsCompletion(match)
+        checkInningsCompletion(
+            match
+        )
     ) {
 
-        match.status = "Completed";
+        match.status =
+            "Completed";
 
     }
 
 
-    saveLiveStateToMatch(match);
+    saveLiveStateToMatch(
+        match
+    );
 
     saveData();
 
@@ -1804,6 +2476,7 @@ function createLiveSnapshot() {
 
     return JSON.parse(
         JSON.stringify({
+
             inningsIndex:
                 LiveState.inningsIndex,
 
@@ -1836,6 +2509,7 @@ function createLiveSnapshot() {
 
             innings:
                 LiveState.innings
+
         })
     );
 }
@@ -1848,12 +2522,16 @@ function createLiveSnapshot() {
 function undoLastLiveBall() {
 
     if (
-        LiveState.ballHistory.length === 0
+        LiveState.ballHistory.length ===
+        0
     ) {
 
-        alert("There is no ball to undo.");
+        alert(
+            "There is no ball to undo."
+        );
 
         return;
+
     }
 
 
@@ -1864,11 +2542,15 @@ function undoLastLiveBall() {
 
 
     const confirmed =
-        confirm("Undo the last ball?");
+        confirm(
+            "Undo the last ball?"
+        );
 
 
     if (!confirmed) {
+
         return;
+
     }
 
 
@@ -1879,32 +2561,42 @@ function undoLastLiveBall() {
     LiveState.inningsIndex =
         snapshot.inningsIndex;
 
+
     LiveState.strikerId =
         snapshot.strikerId;
+
 
     LiveState.nonStrikerId =
         snapshot.nonStrikerId;
 
+
     LiveState.bowlerId =
         snapshot.bowlerId;
+
 
     LiveState.runs =
         snapshot.runs;
 
+
     LiveState.wickets =
         snapshot.wickets;
+
 
     LiveState.legalBalls =
         snapshot.legalBalls;
 
+
     LiveState.currentOverBalls =
         snapshot.currentOverBalls;
+
 
     LiveState.batsmen =
         snapshot.batsmen;
 
+
     LiveState.bowlers =
         snapshot.bowlers;
+
 
     LiveState.innings =
         snapshot.innings;
@@ -1916,13 +2608,18 @@ function undoLastLiveBall() {
     const match =
         getCurrentMatch();
 
+
     if (match) {
 
-        match.status = "Live";
+        match.status =
+            "Live";
 
-        saveLiveStateToMatch(match);
+        saveLiveStateToMatch(
+            match
+        );
 
         saveData();
+
     }
 
 
@@ -1936,9 +2633,13 @@ function undoLastLiveBall() {
    BATSMAN HELPERS
    ========================================================= */
 
-function ensureBatsmanRecord(playerId) {
+function ensureBatsmanRecord(
+    playerId
+) {
 
-    if (!LiveState.batsmen[playerId]) {
+    if (
+        !LiveState.batsmen[playerId]
+    ) {
 
         LiveState.batsmen[playerId] = {
 
@@ -1947,7 +2648,9 @@ function ensureBatsmanRecord(playerId) {
             balls: 0,
 
             out: false
+
         };
+
     }
 }
 
@@ -1957,22 +2660,29 @@ function replaceStriker() {
     const match =
         getCurrentMatch();
 
+
     if (!match) {
+
         return;
+
     }
 
 
     const battingPlayers =
         AppData.players.filter(
             function (player) {
+
                 return player.teamId ===
                     match.battingFirstId;
+
             }
         );
 
 
     const usedIds =
-        Object.keys(LiveState.batsmen);
+        Object.keys(
+            LiveState.batsmen
+        );
 
 
     const nextPlayer =
@@ -1980,8 +2690,11 @@ function replaceStriker() {
             function (player) {
 
                 return (
-                    !usedIds.includes(player.id) &&
-                    player.id !== LiveState.nonStrikerId
+                    !usedIds.includes(
+                        player.id
+                    ) &&
+                    player.id !==
+                        LiveState.nonStrikerId
                 );
 
             }
@@ -1993,20 +2706,24 @@ function replaceStriker() {
         LiveState.strikerId =
             nextPlayer.id;
 
+
         ensureBatsmanRecord(
             nextPlayer.id
         );
 
+
         return;
+
     }
 
 
     /*
-       If there are no more players,
-       the innings ends.
+       No more players.
+       The innings will end.
     */
 
-    LiveState.strikerId = null;
+    LiveState.strikerId =
+        null;
 }
 
 
@@ -2019,8 +2736,10 @@ function swapStrikers() {
     const temporary =
         LiveState.strikerId;
 
+
     LiveState.strikerId =
         LiveState.nonStrikerId;
+
 
     LiveState.nonStrikerId =
         temporary;
@@ -2034,24 +2753,24 @@ function swapStrikers() {
 function completeOver() {
 
     /*
-       At the end of an over, the batsmen
-       change ends.
+       At the end of an over,
+       batsmen change ends.
     */
 
     swapStrikers();
 
 
     /*
-       Start displaying a fresh over.
+       Start a fresh over display.
     */
 
-    LiveState.currentOverBalls = [];
+    LiveState.currentOverBalls =
+        [];
 
 
     /*
-       Keep the same bowler for V1.3.
-       Bowler selection can be expanded
-       in a later version.
+       Version 1.3 keeps the
+       same bowler for now.
     */
 }
 
@@ -2060,9 +2779,13 @@ function completeOver() {
    BOWLER HELPERS
    ========================================================= */
 
-function ensureBowlerRecord(playerId) {
+function ensureBowlerRecord(
+    playerId
+) {
 
-    if (!LiveState.bowlers[playerId]) {
+    if (
+        !LiveState.bowlers[playerId]
+    ) {
 
         LiveState.bowlers[playerId] = {
 
@@ -2071,7 +2794,9 @@ function ensureBowlerRecord(playerId) {
             wickets: 0,
 
             legalBalls: 0
+
         };
+
     }
 }
 
@@ -2079,78 +2804,15 @@ function ensureBowlerRecord(playerId) {
 /* =========================================================
    INNINGS COMPLETION
    ========================================================= */
-// ========== VERSION 1.4 - INNINGS & TARGET HELPERS ==========
 
-function getCurrentInnings(match) {
-    if (!Array.isArray(LiveState.innings)) {
-        LiveState.innings = [];
-    }
-
-    if (!LiveState.innings[LiveState.inningsIndex]) {
-        LiveState.innings[LiveState.inningsIndex] = {
-            battingTeamId:
-                LiveState.inningsIndex === 0
-                    ? match.battingFirstId
-                    : match.bowlingFirstId,
-
-            bowlingTeamId:
-                LiveState.inningsIndex === 0
-                    ? match.bowlingFirstId
-                    : match.battingFirstId,
-
-            runs: LiveState.runs,
-            wickets: LiveState.wickets,
-            legalBalls: LiveState.legalBalls,
-            completed: false
-        };
-    }
-
-    return LiveState.innings[LiveState.inningsIndex];
-}
-
-
-function updateCurrentInnings(match) {
-    const innings = getCurrentInnings(match);
-
-    innings.runs = LiveState.runs;
-    innings.wickets = LiveState.wickets;
-    innings.legalBalls = LiveState.legalBalls;
-
-    return innings;
-}
-
-
-function getFirstInningsRuns(match) {
-    if (
-        Array.isArray(LiveState.innings) &&
-        LiveState.innings[0] &&
-        typeof LiveState.innings[0].runs === "number"
-    ) {
-        return LiveState.innings[0].runs;
-    }
-
-    return 0;
-}
-
-
-function getChaseTarget(match) {
-    return getFirstInningsRuns(match) + 1;
-}
-
-
-function getRunsRemaining(match) {
-    const target = getChaseTarget(match);
-
-    if (LiveState.inningsIndex !== 1) {
-        return null;
-    }
-
-    return Math.max(0, target - LiveState.runs);
-}
-function checkInningsCompletion(match) {
+function checkInningsCompletion(
+    match
+) {
 
     if (!match) {
+
         return false;
+
     }
 
 
@@ -2158,14 +2820,23 @@ function checkInningsCompletion(match) {
         Number(match.overs) * 6;
 
 
+    /* =========================
+       OVER LIMIT
+       ========================= */
+
     if (
         LiveState.legalBalls >=
         maximumBalls
     ) {
 
         return true;
+
     }
 
+
+    /* =========================
+       ALL OUT
+       ========================= */
 
     if (
         LiveState.wickets >=
@@ -2173,12 +2844,20 @@ function checkInningsCompletion(match) {
     ) {
 
         return true;
+
     }
 
 
-    if (!LiveState.strikerId) {
+    /* =========================
+       NO BATTER LEFT
+       ========================= */
+
+    if (
+        !LiveState.strikerId
+    ) {
 
         return true;
+
     }
 
 
@@ -2186,7 +2865,9 @@ function checkInningsCompletion(match) {
 }
 
 
-function getBattingPlayerCount(match) {
+function getBattingPlayerCount(
+    match
+) {
 
     return AppData.players.filter(
         function (player) {
@@ -2208,16 +2889,24 @@ function renderLiveScoring() {
     const match =
         getCurrentMatch();
 
+
     if (!match) {
+
         return;
+
     }
 
 
     const battingTeam =
-        getTeamName(match.battingFirstId);
+        getTeamName(
+            match.battingFirstId
+        );
+
 
     const bowlingTeam =
-        getTeamName(match.bowlingFirstId);
+        getTeamName(
+            match.bowlingFirstId
+        );
 
 
     setText(
@@ -2289,84 +2978,117 @@ function renderCurrentOver() {
             "currentOverBalls"
         );
 
+
     if (!container) {
+
         return;
+
     }
 
 
     if (
-        LiveState.currentOverBalls.length === 0
+        LiveState.currentOverBalls.length ===
+        0
     ) {
 
         container.innerHTML =
-            `<span class="ball-placeholder">
+            `
+            <span class="ball-placeholder">
                 No balls yet
-            </span>`;
+            </span>
+            `;
 
         return;
+
     }
 
 
     container.innerHTML =
-        LiveState.currentOverBalls.map(
-            function (ball) {
+        LiveState.currentOverBalls
+            .map(function (ball) {
 
                 let text = "";
 
-                let className = "ball";
+                let className =
+                    "ball";
 
 
                 if (ball.wicket) {
 
-                    text = "W";
+                    text =
+                        "W";
 
                     className +=
                         " wicket-ball";
 
                 }
 
-                else if (ball.type === "wide") {
 
-                    text = "Wd";
-
-                    className +=
-                        " extra-ball";
-
-                }
-
-                else if (ball.type === "noball") {
-
-                    text = "Nb";
-
-                    className +=
-                        " extra-ball";
-
-                }
-
-                else if (ball.type === "bye") {
+                else if (
+                    ball.type ===
+                    "wide"
+                ) {
 
                     text =
-                        "B" + ball.totalRuns;
+                        "Wd";
 
                     className +=
                         " extra-ball";
 
                 }
 
-                else if (ball.type === "legbye") {
+
+                else if (
+                    ball.type ===
+                    "noball"
+                ) {
 
                     text =
-                        "Lb" + ball.totalRuns;
+                        "Nb";
 
                     className +=
                         " extra-ball";
 
                 }
+
+
+                else if (
+                    ball.type ===
+                    "bye"
+                ) {
+
+                    text =
+                        "B" +
+                        ball.totalRuns;
+
+                    className +=
+                        " extra-ball";
+
+                }
+
+
+                else if (
+                    ball.type ===
+                    "legbye"
+                ) {
+
+                    text =
+                        "Lb" +
+                        ball.totalRuns;
+
+                    className +=
+                        " extra-ball";
+
+                }
+
 
                 else {
 
                     text =
-                        String(ball.batsmanRuns);
+                        String(
+                            ball.batsmanRuns
+                        );
+
                 }
 
 
@@ -2376,8 +3098,8 @@ function renderCurrentOver() {
                     </span>
                 `;
 
-            }
-        ).join("");
+            })
+            .join("");
 }
 
 
@@ -2392,11 +3114,16 @@ function renderBatsmen() {
             LiveState.strikerId
         );
 
+
     const nonStriker =
         getPlayerById(
             LiveState.nonStrikerId
         );
 
+
+    /* =========================
+       STRIKER
+       ========================= */
 
     if (striker) {
 
@@ -2404,8 +3131,11 @@ function renderBatsmen() {
             LiveState.batsmen[
                 striker.id
             ] || {
+
                 runs: 0,
+
                 balls: 0
+
             };
 
 
@@ -2414,15 +3144,18 @@ function renderBatsmen() {
             striker.name
         );
 
+
         setText(
             "strikerRuns",
             stats.runs
         );
 
+
         setText(
             "strikerBalls",
             stats.balls
         );
+
 
     } else {
 
@@ -2431,17 +3164,24 @@ function renderBatsmen() {
             "No Batter"
         );
 
+
         setText(
             "strikerRuns",
             "0"
         );
 
+
         setText(
             "strikerBalls",
             "0"
         );
+
     }
 
+
+    /* =========================
+       NON-STRIKER
+       ========================= */
 
     if (nonStriker) {
 
@@ -2449,8 +3189,11 @@ function renderBatsmen() {
             LiveState.batsmen[
                 nonStriker.id
             ] || {
+
                 runs: 0,
+
                 balls: 0
+
             };
 
 
@@ -2459,15 +3202,18 @@ function renderBatsmen() {
             nonStriker.name
         );
 
+
         setText(
             "nonStrikerRuns",
             stats.runs
         );
 
+
         setText(
             "nonStrikerBalls",
             stats.balls
         );
+
 
     } else {
 
@@ -2476,15 +3222,18 @@ function renderBatsmen() {
             "No Batter"
         );
 
+
         setText(
             "nonStrikerRuns",
             "0"
         );
 
+
         setText(
             "nonStrikerBalls",
             "0"
         );
+
     }
 }
 
@@ -2508,22 +3257,27 @@ function renderBowler() {
             "No Bowler"
         );
 
+
         setText(
             "bowlerOvers",
             "0.0"
         );
+
 
         setText(
             "bowlerRuns",
             "0"
         );
 
+
         setText(
             "bowlerWickets",
             "0"
         );
 
+
         return;
+
     }
 
 
@@ -2531,9 +3285,13 @@ function renderBowler() {
         LiveState.bowlers[
             bowler.id
         ] || {
+
             runs: 0,
+
             wickets: 0,
+
             legalBalls: 0
+
         };
 
 
@@ -2570,15 +3328,24 @@ function renderBowler() {
 
 function calculateRunRate() {
 
-    if (LiveState.legalBalls === 0) {
+    if (
+        LiveState.legalBalls ===
+        0
+    ) {
+
         return "0.00";
+
     }
+
 
     const overs =
         LiveState.legalBalls / 6;
 
+
     const rate =
-        LiveState.runs / overs;
+        LiveState.runs /
+        overs;
+
 
     return rate.toFixed(2);
 }
@@ -2588,13 +3355,19 @@ function calculateRunRate() {
    OVERS FORMAT
    ========================================================= */
 
-function formatOvers(legalBalls) {
+function formatOvers(
+    legalBalls
+) {
 
     const overs =
-        Math.floor(legalBalls / 6);
+        Math.floor(
+            legalBalls / 6
+        );
+
 
     const balls =
         legalBalls % 6;
+
 
     return `${overs}.${balls}`;
 }
@@ -2606,9 +3379,14 @@ function formatOvers(legalBalls) {
 
 function getCurrentMatch() {
 
-    if (!CurrentState.currentMatchId) {
+    if (
+        !CurrentState.currentMatchId
+    ) {
+
         return null;
+
     }
+
 
     return AppData.matches.find(
         function (match) {
@@ -2623,9 +3401,11 @@ function getCurrentMatch() {
 
 function getCurrentInnings() {
 
-    return LiveState.innings[
-        LiveState.inningsIndex
-    ] || null;
+    return (
+        LiveState.innings[
+            LiveState.inningsIndex
+        ] || null
+    );
 }
 
 
@@ -2638,9 +3418,13 @@ function getTeamName(teamId) {
     const team =
         AppData.teams.find(
             function (item) {
-                return item.id === teamId;
+
+                return item.id ===
+                    teamId;
+
             }
         );
+
 
     return team
         ? team.name
@@ -2648,14 +3432,20 @@ function getTeamName(teamId) {
 }
 
 
-function getTournamentName(tournamentId) {
+function getTournamentName(
+    tournamentId
+) {
 
     const tournament =
         AppData.tournaments.find(
             function (item) {
-                return item.id === tournamentId;
+
+                return item.id ===
+                    tournamentId;
+
             }
         );
+
 
     return tournament
         ? tournament.name
@@ -2663,16 +3453,22 @@ function getTournamentName(tournamentId) {
 }
 
 
-function getPlayerById(playerId) {
+function getPlayerById(
+    playerId
+) {
 
     if (!playerId) {
+
         return null;
+
     }
+
 
     return AppData.players.find(
         function (player) {
 
-            return player.id === playerId;
+            return player.id ===
+                playerId;
 
         }
     ) || null;
@@ -2683,15 +3479,22 @@ function getPlayerById(playerId) {
    TEXT HELPER
    ========================================================= */
 
-function setText(elementId, value) {
+function setText(
+    elementId,
+    value
+) {
 
     const element =
-        document.getElementById(elementId);
+        document.getElementById(
+            elementId
+        );
+
 
     if (element) {
 
         element.textContent =
             String(value);
+
     }
 }
 
@@ -2703,11 +3506,31 @@ function setText(elementId, value) {
 function escapeHTML(value) {
 
     return String(value)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+
+        .replace(
+            /</g,
+            "&lt;"
+        )
+
+        .replace(
+            />/g,
+            "&gt;"
+        )
+
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+
+        .replace(
+            /'/g,
+            "&#039;"
+        );
 }
 
 
@@ -2722,19 +3545,25 @@ function setupEnterKeys() {
             "tournamentName"
         );
 
+
     if (tournamentInput) {
 
         tournamentInput.addEventListener(
             "keydown",
             function (event) {
 
-                if (event.key === "Enter") {
+                if (
+                    event.key ===
+                    "Enter"
+                ) {
 
                     addTournament();
+
                 }
 
             }
         );
+
     }
 
 
@@ -2743,19 +3572,25 @@ function setupEnterKeys() {
             "teamName"
         );
 
+
     if (teamInput) {
 
         teamInput.addEventListener(
             "keydown",
             function (event) {
 
-                if (event.key === "Enter") {
+                if (
+                    event.key ===
+                    "Enter"
+                ) {
 
                     addTeam();
+
                 }
 
             }
         );
+
     }
 
 
@@ -2764,18 +3599,24 @@ function setupEnterKeys() {
             "playerName"
         );
 
+
     if (playerInput) {
 
         playerInput.addEventListener(
             "keydown",
             function (event) {
 
-                if (event.key === "Enter") {
+                if (
+                    event.key ===
+                    "Enter"
+                ) {
 
                     addPlayer();
+
                 }
 
             }
         );
+
     }
 }
