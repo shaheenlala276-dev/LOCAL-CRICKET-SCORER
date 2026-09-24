@@ -1,95 +1,1289 @@
-/* =========================================
-   LOCAL CRICKET SCORER
-   CLEAN VERSION 1
-   ========================================= */
+/* ============================================================================
+   LOCAL CRICKET SCORER - COMPLETE STYLESHEET
+   ============================================================================ */
+
+/* 1. RESET & VARIABLES
+   ============================================================================ */
 
 * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  /* Colors */
+  --color-primary: #1e3c72;
+  --color-primary-light: #2a5298;
+  --color-primary-dark: #0f1d3d;
+  --color-secondary: #ff6b35;
+  --color-success: #2ecc71;
+  --color-warning: #f39c12;
+  --color-danger: #e74c3c;
+  --color-info: #3498db;
+  
+  --color-background: #f5f7fa;
+  --color-card-bg: #ffffff;
+  --color-border: #e0e6ed;
+  --color-text: #2c3e50;
+  --color-text-light: #7f8c8d;
+  --color-text-lighter: #bdc3c7;
+  
+  --color-wicket: #c0392b;
+  --color-wide: #f39c12;
+  --color-noball: #f39c12;
+  --color-run: #27ae60;
+  
+  /* Typography */
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-size-base: 16px;
+  --font-size-small: 14px;
+  --font-size-large: 18px;
+  --font-size-xl: 24px;
+  --font-size-2xl: 32px;
+  --font-size-3xl: 40px;
+  
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-loose: 1.8;
+  
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+  
+  /* Borders & Shadows */
+  --border-radius: 8px;
+  --border-radius-lg: 12px;
+  --box-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  --box-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --box-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.18);
+  
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-slow: 350ms ease;
+}
+
+/* 2. BASE STYLES
+   ============================================================================ */
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
 }
 
 body {
-    font-family: Arial, sans-serif;
-    background: #f4f7f6;
-    color: #222;
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  color: var(--color-text);
+  background-color: var(--color-background);
+  overflow-x: hidden;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
-#app {
-    width: 100%;
-    min-height: 100vh;
+#app-container {
+  width: 100%;
+  max-width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
+
+/* 3. SCREEN SYSTEM
+   ============================================================================ */
 
 .screen {
-    display: none;
-    min-height: 100vh;
+  display: none;
+  width: 100%;
+  min-height: 100vh;
+  padding-bottom: var(--spacing-lg);
+  animation: fadeIn var(--transition-fast) ease;
 }
 
 .screen.active {
-    display: block;
+  display: flex;
+  flex-direction: column;
 }
 
-/* HEADER */
-
-.app-header {
-    background: #0b6b3a;
-    color: white;
-    text-align: center;
-    padding: 30px 20px;
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
-.app-header h1 {
-    font-size: 28px;
-    margin-bottom: 8px;
+.screen-header {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+  color: white;
+  padding: var(--spacing-lg) var(--spacing-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: var(--box-shadow-md);
+  padding-top: calc(var(--spacing-lg) + env(safe-area-inset-top));
 }
 
-.app-header p {
-    font-size: 15px;
-    opacity: 0.9;
+.screen-header h1,
+.screen-header h2,
+.screen-header h3 {
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  margin: 0;
+  flex: 1;
 }
 
-/* HOME */
-
-.home-content {
-    max-width: 500px;
-    margin: 50px auto;
-    padding: 20px;
+.screen-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-lg) var(--spacing-md);
+  width: 100%;
 }
 
-/* BUTTONS */
+.screen-subtitle {
+  color: var(--color-text-light);
+  font-size: var(--font-size-small);
+  margin-bottom: var(--spacing-md);
+  text-align: center;
+}
+
+/* 4. HEADER & TYPOGRAPHY
+   ============================================================================ */
+
+h1 {
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  line-height: var(--line-height-tight);
+  margin-bottom: var(--spacing-md);
+  color: var(--color-text);
+}
+
+h2 {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  line-height: var(--line-height-tight);
+  margin-bottom: var(--spacing-md);
+  color: var(--color-text);
+}
+
+h3 {
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  line-height: var(--line-height-tight);
+  margin-bottom: var(--spacing-sm);
+  color: var(--color-text);
+}
+
+h4 {
+  font-size: var(--font-size-large);
+  font-weight: 600;
+  line-height: var(--line-height-tight);
+  margin-bottom: var(--spacing-sm);
+  color: var(--color-text);
+}
+
+h5 {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  line-height: var(--line-height-tight);
+  margin-bottom: var(--spacing-xs);
+  color: var(--color-text);
+}
+
+p {
+  line-height: var(--line-height-normal);
+  color: var(--color-text);
+  margin-bottom: var(--spacing-sm);
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--color-primary-light);
+}
+
+/* 5. BUTTONS
+   ============================================================================ */
 
 .btn {
-    width: 100%;
-    border: none;
-    border-radius: 10px;
-    padding: 15px;
-    margin-bottom: 15px;
-    font-size: 17px;
-    font-weight: bold;
-    cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-height: 44px;
+  font-family: var(--font-family);
+}
+
+.btn:active {
+  transform: scale(0.98);
 }
 
 .btn-primary {
-    background: #0b6b3a;
-    color: white;
+  background-color: var(--color-primary);
+  color: white;
+  box-shadow: var(--box-shadow-sm);
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primary-light);
+  box-shadow: var(--box-shadow);
+}
+
+.btn-primary:active {
+  background-color: var(--color-primary-dark);
 }
 
 .btn-secondary {
-    background: #e5e5e5;
-    color: #222;
+  background-color: var(--color-text-lighter);
+  color: white;
+  box-shadow: var(--box-shadow-sm);
 }
 
-.btn:hover {
-    opacity: 0.9;
+.btn-secondary:hover {
+  background-color: var(--color-text-light);
+  box-shadow: var(--box-shadow);
 }
 
-@media (max-width: 600px) {
+.btn-secondary:active {
+  background-color: var(--color-text);
+}
 
-    .app-header h1 {
-        font-size: 24px;
-    }
+.btn-danger {
+  background-color: var(--color-danger);
+  color: white;
+  box-shadow: var(--box-shadow-sm);
+}
 
-    .home-content {
-        margin-top: 30px;
-    }
+.btn-danger:hover {
+  background-color: #c0392b;
+  box-shadow: var(--box-shadow);
+}
+
+.btn-danger:active {
+  background-color: #a93226;
+}
+
+.btn-warning {
+  background-color: var(--color-warning);
+  color: white;
+  box-shadow: var(--box-shadow-sm);
+}
+
+.btn-warning:hover {
+  background-color: #e67e22;
+  box-shadow: var(--box-shadow);
+}
+
+.btn-warning:active {
+  background-color: #d35400;
+}
+
+.btn-back {
+  background-color: transparent;
+  color: white;
+  padding: var(--spacing-md) var(--spacing-md);
+  font-size: var(--font-size-base);
+  min-height: auto;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.btn-back:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.btn-large {
+  width: 100%;
+  padding: var(--spacing-lg) var(--spacing-lg);
+  font-size: var(--font-size-large);
+  min-height: 50px;
+  margin-bottom: var(--spacing-md);
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.btn-small {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-small);
+  min-height: 36px;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 6. FORMS & INPUTS
+   ============================================================================ */
+
+.form-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  font-weight: 600;
+  font-size: var(--font-size-base);
+  color: var(--color-text);
+  margin-bottom: var(--spacing-sm);
+  display: block;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+input[type="email"],
+input[type="password"],
+select,
+textarea {
+  width: 100%;
+  padding: var(--spacing-md) var(--spacing-md);
+  font-size: var(--font-size-base);
+  font-family: var(--font-family);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  background-color: var(--color-card-bg);
+  color: var(--color-text);
+  transition: all var(--transition-fast);
+  -webkit-appearance: none;
+  appearance: none;
+  min-height: 44px;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="date"]:focus,
+input[type="time"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.1);
+  background-color: var(--color-card-bg);
+}
+
+select {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232c3e50' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right var(--spacing-md) center;
+  background-size: 20px;
+  padding-right: 40px;
+}
+
+textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.radio-group {
+  display: flex;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
+  margin-top: var(--spacing-sm);
+}
+
+.radio-group label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: 0;
+  font-weight: 400;
+}
+
+input[type="radio"],
+input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: var(--color-primary);
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  background-color: var(--color-card-bg);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.checkbox-label:hover {
+  background-color: #f9fafb;
+  border-color: var(--color-primary);
+}
+
+.checkbox-label input[type="checkbox"]:checked + span {
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+}
+
+/* 7. CARDS
+   ============================================================================ */
+
+.card {
+  background-color: var(--color-card-bg);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-md);
+  box-shadow: var(--box-shadow-sm);
+  transition: all var(--transition-fast);
+  margin-bottom: var(--spacing-md);
+}
+
+.card:hover {
+  box-shadow: var(--box-shadow);
+}
+
+.card-content {
+  flex: 1;
+}
+
+.card-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+}
+
+.card-meta {
+  font-size: var(--font-size-small);
+  color: var(--color-text-light);
+  margin-bottom: var(--spacing-sm);
+}
+
+.card-stats {
+  font-size: var(--font-size-small);
+  color: var(--color-text-light);
+  font-weight: 500;
+}
+
+/* 8. TOURNAMENT UI
+   ============================================================================ */
+
+.tournament-card {
+  background-color: var(--color-card-bg);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--box-shadow-sm);
+  margin-bottom: var(--spacing-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-md);
+  transition: all var(--transition-fast);
+}
+
+.tournament-card:hover {
+  box-shadow: var(--box-shadow-md);
+  transform: translateY(-2px);
+}
+
+.tournament-card h3 {
+  margin-bottom: var(--spacing-xs);
+}
+
+.tournament-card .card-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: 0;
+}
+
+.tournament-card .btn {
+  flex: 1;
+  min-width: 80px;
+}
+
+.list-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.empty-message {
+  text-align: center;
+  color: var(--color-text-light);
+  padding: var(--spacing-2xl) var(--spacing-md);
+  font-style: italic;
+}
+
+/* 9. TEAM UI
+   ============================================================================ */
+
+.team-card {
+  background-color: var(--color-card-bg);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--box-shadow-sm);
+  margin-bottom: var(--spacing-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-md);
+  transition: all var(--transition-fast);
+}
+
+.team-card:hover {
+  box-shadow: var(--box-shadow-md);
+  transform: translateY(-2px);
+}
+
+.team-card h4 {
+  margin-bottom: var(--spacing-xs);
+}
+
+.team-card .card-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: 0;
+}
+
+.team-card .btn {
+  flex: 1;
+  min-width: 70px;
+}
+
+/* 10. PLAYER UI
+   ============================================================================ */
+
+.player-card {
+  background-color: var(--color-card-bg);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--box-shadow-sm);
+  margin-bottom: var(--spacing-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-md);
+  transition: all var(--transition-fast);
+}
+
+.player-card:hover {
+  box-shadow: var(--box-shadow-md);
+  transform: translateY(-2px);
+}
+
+.player-card h5 {
+  margin-bottom: 0;
+}
+
+.player-card .card-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: 0;
+}
+
+.player-card .btn {
+  flex: 1;
+  min-width: 60px;
+}
+
+/* 11. MATCH SETUP
+   ============================================================================ */
+
+.match-setup-section {
+  background-color: var(--color-card-bg);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  box-shadow: var(--box-shadow-sm);
+}
+
+.match-setup-section h3 {
+  margin-top: 0;
+}
+
+/* 12. PLAYING XI
+   ============================================================================ */
+
+.xi-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.xi-section {
+  background-color: var(--color-card-bg);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--box-shadow-sm);
+}
+
+.xi-section h3 {
+  margin-top: 0;
+  margin-bottom: var(--spacing-md);
+  color: var(--color-primary);
+}
+
+.player-checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.xi-checkbox {
+  cursor: pointer;
+}
+
+/* 13. TOSS
+   ============================================================================ */
+
+.toss-container {
+  background-color: var(--color-card-bg);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--box-shadow-sm);
+}
+
+/* 14. TAB NAVIGATION
+   ============================================================================ */
+
+.tab-navigation {
+  display: flex;
+  gap: 0;
+  margin-bottom: var(--spacing-lg);
+  border-bottom: 2px solid var(--color-border);
+  background-color: var(--color-card-bg);
+  border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+  overflow: hidden;
+  box-shadow: var(--box-shadow-sm);
+}
+
+.tab-btn {
+  flex: 1;
+  padding: var(--spacing-md);
+  background: none;
+  border: none;
+  color: var(--color-text-light);
+  font-weight: 600;
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border-bottom: 3px solid transparent;
+  margin-bottom: -3px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tab-btn.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.tab-btn:hover {
+  color: var(--color-primary);
+}
+
+.tab-content {
+  display: none;
+  animation: fadeIn var(--transition-fast) ease;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* 15. LIVE SCORING - MAIN SCREEN
+   ============================================================================ */
+
+.match-info-bar {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+  color: white;
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  box-shadow: var(--box-shadow-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.team-info {
+  flex: 1;
+}
+
+.team-info h3 {
+  color: white;
+  margin-bottom: var(--spacing-xs);
+  font-size: var(--font-size-large);
+}
+
+.team-role {
+  font-size: var(--font-size-small);
+  opacity: 0.9;
+  margin: 0;
+}
+
+.match-score {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.score-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 60px;
+  background-color: rgba(255, 255, 255, 0.15);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius);
+}
+
+.score-number {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  line-height: var(--line-height-tight);
+}
+
+.score-label {
+  font-size: var(--font-size-small);
+  opacity: 0.9;
+  margin-top: var(--spacing-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* 16. BATSMEN INFO
+   ============================================================================ */
+
+.batsmen-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.batsman-card {
+  background-color: var(--color-card-bg);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-md);
+  box-shadow: var(--box-shadow-sm);
+}
+
+.batsman-card h4 {
+  margin-bottom: var(--spacing-xs);
+  font-size: var(--font-size-base);
+  color: var(--color-text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.batsman-card p {
+  font-size: var(--font-size-large);
+  font-weight: 600;
+  color: var(--color-primary);
+  margin: 0;
+}
+
+.striker-card {
+  border: 2px solid var(--color-primary);
+}
+
+.badge {
+  display: inline-block;
+  background-color: var(--color-primary);
+  color: white;
+  font-size: var(--font-size-small);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  font-weight: 600;
+  margin-top: var(--spacing-sm);
+}
+
+/* 17. BOWLER INFO
+   ============================================================================ */
+
+.bowler-info {
+  background-color: var(--color-card-bg);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-md);
+  box-shadow: var(--box-shadow-sm);
+  margin-bottom: var(--spacing-lg);
+}
+
+.bowler-info h4 {
+  margin-bottom: var(--spacing-xs);
+  font-size: var(--font-size-base);
+  color: var(--color-text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.bowler-info p {
+  font-size: var(--font-size-large);
+  font-weight: 600;
+  color: var(--color-secondary);
+  margin: 0;
+}
+
+/* 18. SCORING CONTROLS
+   ============================================================================ */
+
+.scoring-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.runs-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-sm);
+}
+
+.run-btn {
+  background-color: var(--color-run);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--box-shadow-sm);
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.run-btn:hover {
+  background-color: #229954;
+  box-shadow: var(--box-shadow);
+  transform: translateY(-2px);
+}
+
+.run-btn:active {
+  background-color: #1e8449;
+  transform: scale(0.95);
+}
+
+.action-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-sm);
+}
+
+.action-buttons .btn {
+  padding: var(--spacing-md);
+  min-height: 50px;
+}
+
+#btn-wicket {
+  background-color: var(--color-wicket);
+  color: white;
+  grid-column: span 1;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  box-shadow: var(--box-shadow-sm);
+}
+
+#btn-wicket:hover {
+  background-color: #a93226;
+  box-shadow: var(--box-shadow);
+  transform: translateY(-2px);
+}
+
+#btn-wicket:active {
+  background-color: #922b21;
+  transform: scale(0.95);
+}
+
+#btn-wide,
+#btn-noball {
+  background-color: var(--color-warning);
+  color: white;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: var(--box-shadow-sm);
+}
+
+#btn-wide:hover,
+#btn-noball:hover {
+  background-color: #e67e22;
+  box-shadow: var(--box-shadow);
+  transform: translateY(-2px);
+}
+
+#btn-wide:active,
+#btn-noball:active {
+  background-color: #d35400;
+  transform: scale(0.95);
+}
+
+#btn-undo-live-ball {
+  background-color: var(--color-info);
+  color: white;
+  grid-column: span 2;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: var(--box-shadow-sm);
+}
+
+#btn-undo-live-ball:hover {
+  background-color: #2980b9;
+  box-shadow: var(--box-shadow);
+  transform: translateY(-2px);
+}
+
+#btn-undo-live-ball:active {
+  background-color: #2471a3;
+  transform: scale(0.95);
+}
+
+/* 19. BALL HISTORY
+   ============================================================================ */
+
+.ball-history-section {
+  background-color: var(--color-card-bg);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--box-shadow-sm);
+}
+
+.ball-history-section h4 {
+  margin-top: 0;
+  margin-bottom: var(--spacing-md);
+  color: var(--color-primary);
+}
+
+.ball-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.ball-history-item {
+  background-color: #f9fafb;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius);
+  border-left: 3px solid var(--color-primary);
+  display: flex;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-small);
+}
+
+.ball-number {
+  font-weight: 600;
+  color: var(--color-text-light);
+  min-width: 45px;
+}
+
+.ball-detail {
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.empty-history {
+  text-align: center;
+  color: var(--color-text-light);
+  padding: var(--spacing-lg);
+  font-style: italic;
+}
+
+/* 20. NEW BATSMAN SELECTOR
+   ============================================================================ */
+
+.player-selection-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.new-batsman-btn {
+  background-color: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--box-shadow-sm);
+  min-height: 50px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.new-batsman-btn:hover {
+  background-color: var(--color-primary-light);
+  box-shadow: var(--box-shadow);
+  transform: translateY(-2px);
+}
+
+.new-batsman-btn:active {
+  background-color: var(--color-primary-dark);
+  transform: scale(0.98);
+}
+
+/* 21. MATCH SUMMARY
+   ============================================================================ */
+
+.summary-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.innings-summary {
+  background-color: var(--color-card-bg);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--box-shadow-sm);
+}
+
+.innings-summary h3 {
+  margin-top: 0;
+  color: var(--color-primary);
+  border-bottom: 2px solid var(--color-border);
+  padding-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.innings-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.innings-details p {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-xs);
+}
+
+.innings-details strong {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.match-result {
+  background: linear-gradient(135deg, var(--color-success) 0%, #27ae60 100%);
+  color: white;
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
+  text-align: center;
+  box-shadow: var(--box-shadow-md);
+}
+
+.match-result h3 {
+  color: white;
+  margin: 0;
+  font-size: var(--font-size-2xl);
+}
+
+/* 22. RESPONSIVE DESIGN
+   ============================================================================ */
+
+@media (min-width: 480px) {
+  .screen-header {
+    padding: var(--spacing-lg) var(--spacing-lg);
+  }
+
+  .screen-content {
+    padding: var(--spacing-lg);
+  }
+
+  .runs-buttons {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .action-buttons {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  #btn-wicket {
+    grid-column: span 1;
+  }
+
+  #btn-undo-live-ball {
+    grid-column: span 2;
+  }
+
+  .match-info-bar {
+    flex-wrap: wrap;
+  }
+
+  .tournament-card,
+  .team-card,
+  .player-card {
+    flex-direction: row;
+  }
+}
+
+@media (min-width: 768px) {
+  :root {
+    --font-size-base: 18px;
+    --font-size-large: 20px;
+    --font-size-xl: 28px;
+    --spacing-lg: 32px;
+  }
+
+  .screen-content {
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .runs-buttons {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .action-buttons {
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-md);
+  }
+
+  #btn-wicket {
+    grid-column: span 1;
+  }
+
+  #btn-undo-live-ball {
+    grid-column: span 4;
+  }
+
+  .batsmen-info {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .tournament-card,
+  .team-card,
+  .player-card {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  h1 {
+    font-size: var(--font-size-3xl);
+  }
+
+  .btn-large {
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+@media (min-width: 1024px) {
+  .screen-content {
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .match-info-bar {
+    gap: var(--spacing-xl);
+  }
+
+  .runs-buttons {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+/* UTILITIES */
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.mt-1 {
+  margin-top: var(--spacing-sm);
+}
+
+.mt-2 {
+  margin-top: var(--spacing-md);
+}
+
+.mb-1 {
+  margin-bottom: var(--spacing-sm);
+}
+
+.mb-2 {
+  margin-bottom: var(--spacing-md);
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* SCROLL BEHAVIOR */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-light);
 }
