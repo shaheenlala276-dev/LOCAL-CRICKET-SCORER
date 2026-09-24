@@ -1,2415 +1,2714 @@
 /* =========================================================
-LOCAL CRICKET SCORER — VERSION 1.2
-SCRIPT.JS
+   LOCAL CRICKET SCORER
+   VERSION 1.3
+   LIVE BALL-BY-BALL SCORING
+   ========================================================= */
 
-Features:
-
-- Tournament management
-- Team management
-- Player management
-- Match setup
-- Toss management
-- Local storage
-  ========================================================= */
 
 /* =========================================================
-STORAGE
-========================================================= */
+   STORAGE
+   ========================================================= */
 
 const STORAGE_KEY = "local_cricket_scorer_v1_2";
 
+
 /* =========================================================
-APP DATA
-========================================================= */
+   APP DATA
+   ========================================================= */
 
 const AppData = {
-
-tournaments: [],
-
-teams: [],
-
-players: [],
-
-matches: []
-
+    tournaments: [],
+    teams: [],
+    players: [],
+    matches: []
 };
 
+
 /* =========================================================
-CURRENT STATE
-========================================================= */
+   CURRENT STATE
+   ========================================================= */
 
 const CurrentState = {
-
-currentTeamId: null
-
+    currentTeamId: null,
+    currentMatchId: null
 };
 
+
 /* =========================================================
-START APP
-========================================================= */
+   LIVE SCORING STATE
+   ========================================================= */
+
+const LiveState = {
+    inningsIndex: 0,
+    strikerId: null,
+    nonStrikerId: null,
+    bowlerId: null,
+
+    runs: 0,
+    wickets: 0,
+
+    legalBalls: 0,
+    currentOverBalls: [],
+
+    ballHistory: [],
+
+    batsmen: {},
+    bowlers: {},
+
+    innings: []
+};
+
+
+/* =========================================================
+   PAGE START
+   ========================================================= */
 
 document.addEventListener("DOMContentLoaded", function () {
 
-loadData();
-
-renderTournaments();
-
-renderTeams();
-
-renderMatches();
-
-populateMatchSetup();
-
-});
-
-/* =========================================================
-SCREEN NAVIGATION
-========================================================= */
-
-function showScreen(screenId) {
-
-const screens = document.querySelectorAll(".screen");
-
-screens.forEach(function (screen) {
-
-    screen.classList.remove("active");
-
-});
-
-
-const selectedScreen = document.getElementById(screenId);
-
-if (selectedScreen) {
-
-    selectedScreen.classList.add("active");
-
-}
-
-
-window.scrollTo({
-
-    top: 0,
-
-    behavior: "smooth"
-
-});
-
-
-if (screenId === "tournamentScreen") {
+    loadData();
 
     renderTournaments();
-
-}
-
-
-if (screenId === "teamScreen") {
-
     renderTeams();
-
-}
-
-
-if (screenId === "playerScreen") {
-
-    renderPlayers();
-
-}
-
-
-if (screenId === "matchScreen") {
+    renderMatches();
 
     populateMatchSetup();
 
-    renderMatches();
+    setupEnterKeys();
+});
 
-}
-
-}
 
 /* =========================================================
-STORAGE FUNCTIONS
-========================================================= */
+   SCREEN MANAGEMENT
+   ========================================================= */
+
+function showScreen(screenId) {
+
+    const screens = document.querySelectorAll(".screen");
+
+    screens.forEach(function (screen) {
+        screen.classList.remove("active");
+    });
+
+    const selectedScreen = document.getElementById(screenId);
+
+    if (selectedScreen) {
+        selectedScreen.classList.add("active");
+    }
+
+    if (screenId === "tournamentScreen") {
+        renderTournaments();
+    }
+
+    if (screenId === "teamScreen") {
+        renderTeams();
+    }
+
+    if (screenId === "matchScreen") {
+        renderMatches();
+        populateMatchSetup();
+    }
+
+    if (screenId === "liveScoringScreen") {
+        renderLiveScoring();
+    }
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+}
+
+
+/* =========================================================
+   STORAGE FUNCTIONS
+   ========================================================= */
 
 function saveData() {
 
-localStorage.setItem(
-
-    STORAGE_KEY,
-
-    JSON.stringify(AppData)
-
-);
-
+    localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(AppData)
+    );
 }
 
-/* =========================================================
-LOAD DATA
-========================================================= */
 
 function loadData() {
 
-const savedData = localStorage.getItem(STORAGE_KEY);
+    const savedData = localStorage.getItem(STORAGE_KEY);
 
+    if (!savedData) {
+        return;
+    }
 
-if (!savedData) {
+    try {
 
-    return;
+        const parsedData = JSON.parse(savedData);
 
+        AppData.tournaments =
+            Array.isArray(parsedData.tournaments)
+                ? parsedData.tournaments
+                : [];
+
+        AppData.teams =
+            Array.isArray(parsedData.teams)
+                ? parsedData.teams
+                : [];
+
+        AppData.players =
+            Array.isArray(parsedData.players)
+                ? parsedData.players
+                : [];
+
+        AppData.matches =
+            Array.isArray(parsedData.matches)
+                ? parsedData.matches
+                : [];
+
+    } catch (error) {
+
+        console.error("Could not load saved data:", error);
+
+    }
 }
 
-
-try {
-
-    const parsedData = JSON.parse(savedData);
-
-
-    AppData.tournaments = Array.isArray(parsedData.tournaments)
-
-        ? parsedData.tournaments
-
-        : [];
-
-
-    AppData.teams = Array.isArray(parsedData.teams)
-
-        ? parsedData.teams
-
-        : [];
-
-
-    AppData.players = Array.isArray(parsedData.players)
-
-        ? parsedData.players
-
-        : [];
-
-
-    AppData.matches = Array.isArray(parsedData.matches)
-
-        ? parsedData.matches
-
-        : [];
-
-
-} catch (error) {
-
-    console.error(
-
-        "Could not load saved data:",
-
-        error
-
-    );
-
-
-    AppData.tournaments = [];
-
-    AppData.teams = [];
-
-    AppData.players = [];
-
-    AppData.matches = [];
-
-}
-
-}
 
 /* =========================================================
-ID GENERATOR
-========================================================= */
+   ID GENERATOR
+   ========================================================= */
 
 function createId(prefix) {
 
-return (
-
-    prefix +
-
-    "_" +
-
-    Date.now().toString(36) +
-
-    "_" +
-
-    Math.random()
-
-        .toString(36)
-
-        .substring(2, 8)
-
-);
-
+    return prefix +
+        "_" +
+        Date.now() +
+        "_" +
+        Math.random()
+            .toString(36)
+            .substring(2, 8);
 }
 
+
 /* =========================================================
-TOURNAMENTS
-========================================================= */
+   TOURNAMENTS
+   ========================================================= */
 
 function addTournament() {
 
-const input = document.getElementById(
+    const input =
+        document.getElementById("tournamentName");
 
-    "tournamentName"
+    const name =
+        input.value.trim();
 
-);
+    if (!name) {
 
+        alert("Please enter tournament name.");
 
-if (!input) {
+        input.focus();
 
-    return;
+        return;
+    }
 
+    const tournament = {
+
+        id: createId("tournament"),
+
+        name: name,
+
+        createdAt: new Date().toISOString()
+
+    };
+
+    AppData.tournaments.push(tournament);
+
+    saveData();
+
+    input.value = "";
+
+    renderTournaments();
+
+    populateMatchSetup();
 }
 
-
-const name = input.value.trim();
-
-
-if (name === "") {
-
-    alert(
-
-        "Please enter a tournament name."
-
-    );
-
-    input.focus();
-
-    return;
-
-}
-
-
-const tournament = {
-
-    id: createId("tournament"),
-
-    name: name,
-
-    createdAt: new Date().toISOString()
-
-};
-
-
-AppData.tournaments.push(
-
-    tournament
-
-);
-
-
-saveData();
-
-
-input.value = "";
-
-
-renderTournaments();
-
-
-alert(
-
-    "Tournament created successfully! 🏆"
-
-);
-
-}
-
-/* =========================================================
-RENDER TOURNAMENTS
-========================================================= */
 
 function renderTournaments() {
 
-const list = document.getElementById(
+    const container =
+        document.getElementById("tournamentList");
 
-    "tournamentList"
+    if (!container) {
+        return;
+    }
 
-);
+    if (AppData.tournaments.length === 0) {
 
+        container.innerHTML =
+            `<div class="empty-message">
+                No tournaments yet.
+            </div>`;
 
-if (!list) {
+        return;
+    }
 
-    return;
+    container.innerHTML =
+        AppData.tournaments.map(function (tournament) {
 
-}
+            return `
+                <div class="list-item">
 
+                    <h3>🏆 ${escapeHTML(tournament.name)}</h3>
 
-if (AppData.tournaments.length === 0) {
+                    <p>
+                        Tournament
+                    </p>
 
-    list.innerHTML =
+                    <div class="list-actions">
 
-        '<p class="empty-message">' +
-
-        'No tournaments yet.' +
-
-        '</p>';
-
-    return;
-
-}
-
-
-list.innerHTML = "";
-
-
-AppData.tournaments.forEach(
-
-    function (tournament) {
-
-
-        const matchCount =
-
-            AppData.matches.filter(
-
-                function (match) {
-
-                    return (
-
-                        match.tournamentId ===
-
-                        tournament.id
-
-                    );
-
-                }
-
-            ).length;
-
-
-        const item =
-
-            document.createElement("div");
-
-
-        item.className = "list-item";
-
-
-        item.innerHTML = `
-
-            <div class="list-item-header">
-
-                <div>
-
-                    <div class="list-item-title">
-
-                        🏆
-
-                        ${escapeHTML(
-
-                            tournament.name
-
-                        )}
-
-                    </div>
-
-                    <div class="list-item-info">
-
-                        ${matchCount}
-
-                        match${
-
-                            matchCount === 1
-
-                                ? ""
-
-                                : "es"
-
-                        }
+                        <button
+                            class="small-btn delete-btn"
+                            onclick="deleteTournament('${tournament.id}')">
+                            Delete
+                        </button>
 
                     </div>
 
                 </div>
+            `;
 
-            </div>
-
-
-            <div class="list-actions">
-
-                <button
-
-                    class="small-btn delete-btn"
-
-                    onclick="deleteTournament(
-
-                        '${tournament.id}'
-
-                    )">
-
-                    Delete
-
-                </button>
-
-            </div>
-
-        `;
-
-
-        list.appendChild(item);
-
-    }
-
-);
-
+        }).join("");
 }
 
-/* =========================================================
-DELETE TOURNAMENT
-========================================================= */
 
 function deleteTournament(tournamentId) {
 
-const tournament =
+    const tournament =
+        AppData.tournaments.find(
+            function (item) {
+                return item.id === tournamentId;
+            }
+        );
 
-    AppData.tournaments.find(
+    if (!tournament) {
+        return;
+    }
 
-        function (item) {
+    const confirmed =
+        confirm(
+            `Delete tournament "${tournament.name}"?`
+        );
 
-            return (
+    if (!confirmed) {
+        return;
+    }
 
-                item.id ===
+    AppData.tournaments =
+        AppData.tournaments.filter(
+            function (item) {
+                return item.id !== tournamentId;
+            }
+        );
 
-                tournamentId
+    AppData.matches =
+        AppData.matches.filter(
+            function (match) {
+                return match.tournamentId !== tournamentId;
+            }
+        );
 
-            );
+    saveData();
 
-        }
+    renderTournaments();
 
-    );
+    renderMatches();
 
-
-if (!tournament) {
-
-    return;
-
+    populateMatchSetup();
 }
 
-
-const confirmed = confirm(
-
-    `Delete "${tournament.name}"?`
-
-);
-
-
-if (!confirmed) {
-
-    return;
-
-}
-
-
-AppData.tournaments =
-
-    AppData.tournaments.filter(
-
-        function (item) {
-
-            return (
-
-                item.id !==
-
-                tournamentId
-
-            );
-
-        }
-
-    );
-
-
-/* Remove matches belonging to tournament */
-
-AppData.matches =
-
-    AppData.matches.filter(
-
-        function (match) {
-
-            return (
-
-                match.tournamentId !==
-
-                tournamentId
-
-            );
-
-        }
-
-    );
-
-
-saveData();
-
-
-renderTournaments();
-
-renderMatches();
-
-}
 
 /* =========================================================
-TEAMS
-========================================================= */
+   TEAMS
+   ========================================================= */
 
 function addTeam() {
 
-const input = document.getElementById(
+    const input =
+        document.getElementById("teamName");
 
-    "teamName"
+    const name =
+        input.value.trim();
 
-);
+    if (!name) {
 
+        alert("Please enter team name.");
 
-if (!input) {
+        input.focus();
 
-    return;
+        return;
+    }
 
+    const team = {
+
+        id: createId("team"),
+
+        name: name,
+
+        createdAt: new Date().toISOString()
+
+    };
+
+    AppData.teams.push(team);
+
+    saveData();
+
+    input.value = "";
+
+    renderTeams();
+
+    populateMatchSetup();
 }
 
-
-const name = input.value.trim();
-
-
-if (name === "") {
-
-    alert(
-
-        "Please enter a team name."
-
-    );
-
-    input.focus();
-
-    return;
-
-}
-
-
-const team = {
-
-    id: createId("team"),
-
-    name: name,
-
-    createdAt: new Date().toISOString()
-
-};
-
-
-AppData.teams.push(team);
-
-
-saveData();
-
-
-input.value = "";
-
-
-renderTeams();
-
-
-alert(
-
-    "Team created successfully! 👥"
-
-);
-
-}
-
-/* =========================================================
-RENDER TEAMS
-========================================================= */
 
 function renderTeams() {
 
-const list = document.getElementById(
+    const container =
+        document.getElementById("teamList");
 
-    "teamList"
+    if (!container) {
+        return;
+    }
 
-);
+    if (AppData.teams.length === 0) {
 
+        container.innerHTML =
+            `<div class="empty-message">
+                No teams yet.
+            </div>`;
 
-if (!list) {
+        return;
+    }
 
-    return;
+    container.innerHTML =
+        AppData.teams.map(function (team) {
 
-}
+            const playerCount =
+                AppData.players.filter(
+                    function (player) {
+                        return player.teamId === team.id;
+                    }
+                ).length;
 
+            return `
+                <div class="list-item">
 
-if (AppData.teams.length === 0) {
+                    <h3>👥 ${escapeHTML(team.name)}</h3>
 
-    list.innerHTML =
+                    <p>
+                        ${playerCount} player(s)
+                    </p>
 
-        '<p class="empty-message">' +
+                    <div class="list-actions">
 
-        'No teams yet.' +
+                        <button
+                            class="small-btn manage-btn"
+                            onclick="openPlayers('${team.id}')">
+                            Manage Players
+                        </button>
 
-        '</p>';
-
-    return;
-
-}
-
-
-list.innerHTML = "";
-
-
-AppData.teams.forEach(
-
-    function (team) {
-
-
-        const playerCount =
-
-            AppData.players.filter(
-
-                function (player) {
-
-                    return (
-
-                        player.teamId ===
-
-                        team.id
-
-                    );
-
-                }
-
-            ).length;
-
-
-        const item =
-
-            document.createElement("div");
-
-
-        item.className = "list-item";
-
-
-        item.innerHTML = `
-
-            <div class="list-item-header">
-
-                <div>
-
-                    <div class="list-item-title">
-
-                        👥
-
-                        ${escapeHTML(
-
-                            team.name
-
-                        )}
-
-                    </div>
-
-
-                    <div class="list-item-info">
-
-                        ${playerCount}
-
-                        player${
-
-                            playerCount === 1
-
-                                ? ""
-
-                                : "s"
-
-                        }
+                        <button
+                            class="small-btn delete-btn"
+                            onclick="deleteTeam('${team.id}')">
+                            Delete
+                        </button>
 
                     </div>
 
                 </div>
+            `;
 
-            </div>
-
-
-            <div class="list-actions">
-
-                <button
-
-                    class="small-btn manage-btn"
-
-                    onclick="openPlayers(
-
-                        '${team.id}'
-
-                    )">
-
-                    Manage Players
-
-                </button>
-
-
-                <button
-
-                    class="small-btn delete-btn"
-
-                    onclick="deleteTeam(
-
-                        '${team.id}'
-
-                    )">
-
-                    Delete
-
-                </button>
-
-            </div>
-
-        `;
-
-
-        list.appendChild(item);
-
-    }
-
-);
-
+        }).join("");
 }
 
-/* =========================================================
-DELETE TEAM
-========================================================= */
 
 function deleteTeam(teamId) {
 
-const team = AppData.teams.find(
+    const team =
+        AppData.teams.find(
+            function (item) {
+                return item.id === teamId;
+            }
+        );
 
-    function (item) {
-
-        return item.id === teamId;
-
+    if (!team) {
+        return;
     }
 
-);
+    const confirmed =
+        confirm(
+            `Delete team "${team.name}" and its players/matches?`
+        );
 
+    if (!confirmed) {
+        return;
+    }
 
-if (!team) {
+    AppData.teams =
+        AppData.teams.filter(
+            function (item) {
+                return item.id !== teamId;
+            }
+        );
 
-    return;
+    AppData.players =
+        AppData.players.filter(
+            function (player) {
+                return player.teamId !== teamId;
+            }
+        );
 
+    AppData.matches =
+        AppData.matches.filter(
+            function (match) {
+
+                return (
+                    match.teamAId !== teamId &&
+                    match.teamBId !== teamId
+                );
+
+            }
+        );
+
+    saveData();
+
+    renderTeams();
+
+    renderMatches();
+
+    populateMatchSetup();
 }
 
-
-const confirmed = confirm(
-
-    `Delete "${team.name}" and all its players?`
-
-);
-
-
-if (!confirmed) {
-
-    return;
-
-}
-
-
-AppData.teams =
-
-    AppData.teams.filter(
-
-        function (item) {
-
-            return item.id !== teamId;
-
-        }
-
-    );
-
-
-AppData.players =
-
-    AppData.players.filter(
-
-        function (player) {
-
-            return (
-
-                player.teamId !== teamId
-
-            );
-
-        }
-
-    );
-
-
-/* Remove matches involving this team */
-
-AppData.matches =
-
-    AppData.matches.filter(
-
-        function (match) {
-
-            return (
-
-                match.teamAId !== teamId &&
-
-                match.teamBId !== teamId
-
-            );
-
-        }
-
-    );
-
-
-if (
-
-    CurrentState.currentTeamId ===
-
-    teamId
-
-) {
-
-    CurrentState.currentTeamId = null;
-
-}
-
-
-saveData();
-
-
-renderTeams();
-
-renderMatches();
-
-}
 
 /* =========================================================
-PLAYERS
-========================================================= */
+   PLAYERS
+   ========================================================= */
 
 function openPlayers(teamId) {
 
-const team = AppData.teams.find(
+    CurrentState.currentTeamId = teamId;
 
-    function (item) {
+    const team =
+        AppData.teams.find(
+            function (item) {
+                return item.id === teamId;
+            }
+        );
 
-        return item.id === teamId;
-
+    if (!team) {
+        return;
     }
 
-);
+    const info =
+        document.getElementById("selectedTeamInfo");
 
+    if (info) {
 
-if (!team) {
+        info.innerHTML =
+            `Managing players for:
+             <strong>${escapeHTML(team.name)}</strong>`;
+    }
 
-    return;
+    renderPlayers();
 
+    showScreen("playerScreen");
 }
 
-
-CurrentState.currentTeamId = teamId;
-
-
-const info = document.getElementById(
-
-    "selectedTeamInfo"
-
-);
-
-
-if (info) {
-
-    info.innerHTML =
-
-        "Managing players for: 🏏 " +
-
-        escapeHTML(team.name);
-
-}
-
-
-renderPlayers();
-
-
-showScreen("playerScreen");
-
-}
-
-/* =========================================================
-ADD PLAYER
-========================================================= */
 
 function addPlayer() {
 
-if (!CurrentState.currentTeamId) {
+    const input =
+        document.getElementById("playerName");
 
-    alert(
+    const name =
+        input.value.trim();
 
-        "Please select a team first."
+    if (!name) {
 
-    );
+        alert("Please enter player name.");
 
-    return;
+        input.focus();
 
+        return;
+    }
+
+    if (!CurrentState.currentTeamId) {
+
+        alert("Please select a team first.");
+
+        return;
+    }
+
+    const player = {
+
+        id: createId("player"),
+
+        teamId: CurrentState.currentTeamId,
+
+        name: name,
+
+        createdAt: new Date().toISOString()
+
+    };
+
+    AppData.players.push(player);
+
+    saveData();
+
+    input.value = "";
+
+    renderPlayers();
+
+    renderTeams();
 }
 
-
-const input = document.getElementById(
-
-    "playerName"
-
-);
-
-
-if (!input) {
-
-    return;
-
-}
-
-
-const name = input.value.trim();
-
-
-if (name === "") {
-
-    alert(
-
-        "Please enter a player name."
-
-    );
-
-    input.focus();
-
-    return;
-
-}
-
-
-const player = {
-
-    id: createId("player"),
-
-    teamId:
-
-        CurrentState.currentTeamId,
-
-    name: name,
-
-    createdAt: new Date().toISOString()
-
-};
-
-
-AppData.players.push(player);
-
-
-saveData();
-
-
-input.value = "";
-
-
-renderPlayers();
-
-renderTeams();
-
-}
-
-/* =========================================================
-RENDER PLAYERS
-========================================================= */
 
 function renderPlayers() {
 
-const list = document.getElementById(
+    const container =
+        document.getElementById("playerList");
 
-    "playerList"
+    if (!container) {
+        return;
+    }
 
-);
+    const players =
+        AppData.players.filter(
+            function (player) {
+                return player.teamId === CurrentState.currentTeamId;
+            }
+        );
 
+    if (players.length === 0) {
 
-if (!list) {
+        container.innerHTML =
+            `<div class="empty-message">
+                No players yet.
+            </div>`;
 
-    return;
+        return;
+    }
 
-}
+    container.innerHTML =
+        players.map(function (player) {
 
+            return `
+                <div class="list-item">
 
-if (!CurrentState.currentTeamId) {
+                    <h3>🏏 ${escapeHTML(player.name)}</h3>
 
-    list.innerHTML =
+                    <p>Player</p>
 
-        '<p class="empty-message">' +
+                    <div class="list-actions">
 
-        'Select a team to manage players.' +
-
-        '</p>';
-
-    return;
-
-}
-
-
-const teamPlayers =
-
-    AppData.players.filter(
-
-        function (player) {
-
-            return (
-
-                player.teamId ===
-
-                CurrentState.currentTeamId
-
-            );
-
-        }
-
-    );
-
-
-if (teamPlayers.length === 0) {
-
-    list.innerHTML =
-
-        '<p class="empty-message">' +
-
-        'No players yet.' +
-
-        '</p>';
-
-    return;
-
-}
-
-
-list.innerHTML = "";
-
-
-teamPlayers.forEach(
-
-    function (player, index) {
-
-
-        const item =
-
-            document.createElement("div");
-
-
-        item.className = "list-item";
-
-
-        item.innerHTML = `
-
-            <div class="list-item-header">
-
-                <div>
-
-                    <div class="list-item-title">
-
-                        ${index + 1}.
-
-                        ${escapeHTML(
-
-                            player.name
-
-                        )}
-
-                    </div>
-
-
-                    <div class="list-item-info">
-
-                        Player
+                        <button
+                            class="small-btn delete-btn"
+                            onclick="deletePlayer('${player.id}')">
+                            Delete
+                        </button>
 
                     </div>
 
                 </div>
+            `;
 
-            </div>
-
-
-            <div class="list-actions">
-
-                <button
-
-                    class="small-btn delete-btn"
-
-                    onclick="deletePlayer(
-
-                        '${player.id}'
-
-                    )">
-
-                    Delete
-
-                </button>
-
-            </div>
-
-        `;
-
-
-        list.appendChild(item);
-
-    }
-
-);
-
+        }).join("");
 }
 
-/* =========================================================
-DELETE PLAYER
-========================================================= */
 
 function deletePlayer(playerId) {
 
-const player = AppData.players.find(
+    const player =
+        AppData.players.find(
+            function (item) {
+                return item.id === playerId;
+            }
+        );
 
-    function (item) {
-
-        return item.id === playerId;
-
+    if (!player) {
+        return;
     }
 
-);
+    const confirmed =
+        confirm(
+            `Delete player "${player.name}"?`
+        );
 
+    if (!confirmed) {
+        return;
+    }
 
-if (!player) {
+    AppData.players =
+        AppData.players.filter(
+            function (item) {
+                return item.id !== playerId;
+            }
+        );
 
-    return;
+    saveData();
 
+    renderPlayers();
+
+    renderTeams();
 }
 
-
-const confirmed = confirm(
-
-    `Delete "${player.name}"?`
-
-);
-
-
-if (!confirmed) {
-
-    return;
-
-}
-
-
-AppData.players =
-
-    AppData.players.filter(
-
-        function (item) {
-
-            return item.id !== playerId;
-
-        }
-
-    );
-
-
-saveData();
-
-
-renderPlayers();
-
-renderTeams();
-
-}
 
 /* =========================================================
-MATCH SETUP
-========================================================= */
+   MATCH SETUP
+   ========================================================= */
 
 function populateMatchSetup() {
 
-populateTournamentSelect();
+    populateTournamentSelect();
 
-populateTeamSelects();
-
+    populateTeamSelects();
 }
 
-/* =========================================================
-TOURNAMENT SELECT
-========================================================= */
 
 function populateTournamentSelect() {
 
-const select = document.getElementById(
+    const select =
+        document.getElementById("matchTournament");
 
-    "matchTournament"
-
-);
-
-
-if (!select) {
-
-    return;
-
-}
-
-
-const currentValue = select.value;
-
-
-select.innerHTML = `
-
-    <option value="">
-
-        Select tournament
-
-    </option>
-
-`;
-
-
-AppData.tournaments.forEach(
-
-    function (tournament) {
-
-
-        const option =
-
-            document.createElement("option");
-
-
-        option.value = tournament.id;
-
-
-        option.textContent =
-
-            tournament.name;
-
-
-        select.appendChild(option);
-
+    if (!select) {
+        return;
     }
 
-);
+    const currentValue =
+        select.value;
 
+    select.innerHTML =
+        `<option value="">
+            Select Tournament
+        </option>`;
 
-if (
-
-    AppData.tournaments.some(
-
+    AppData.tournaments.forEach(
         function (tournament) {
 
-            return (
-
-                tournament.id ===
-
-                currentValue
-
-            );
+            select.innerHTML += `
+                <option value="${tournament.id}">
+                    ${escapeHTML(tournament.name)}
+                </option>
+            `;
 
         }
+    );
 
-    )
+    if (
+        AppData.tournaments.some(
+            function (item) {
+                return item.id === currentValue;
+            }
+        )
+    ) {
 
-) {
-
-    select.value = currentValue;
-
+        select.value = currentValue;
+    }
 }
 
-}
-
-/* =========================================================
-TEAM SELECTS
-========================================================= */
 
 function populateTeamSelects() {
 
-const teamA = document.getElementById(
+    const teamA =
+        document.getElementById("teamA");
 
-    "teamA"
+    const teamB =
+        document.getElementById("teamB");
 
-);
-
-
-const teamB = document.getElementById(
-
-    "teamB"
-
-);
-
-
-if (!teamA || !teamB) {
-
-    return;
-
-}
-
-
-const oldTeamA = teamA.value;
-
-const oldTeamB = teamB.value;
-
-
-teamA.innerHTML = `
-
-    <option value="">
-
-        Select Team A
-
-    </option>
-
-`;
-
-
-teamB.innerHTML = `
-
-    <option value="">
-
-        Select Team B
-
-    </option>
-
-`;
-
-
-AppData.teams.forEach(
-
-    function (team) {
-
-
-        const optionA =
-
-            document.createElement("option");
-
-
-        optionA.value = team.id;
-
-
-        optionA.textContent = team.name;
-
-
-        teamA.appendChild(optionA);
-
-
-        const optionB =
-
-            document.createElement("option");
-
-
-        optionB.value = team.id;
-
-
-        optionB.textContent = team.name;
-
-
-        teamB.appendChild(optionB);
-
+    if (!teamA || !teamB) {
+        return;
     }
 
-);
+    const currentA = teamA.value;
 
+    const currentB = teamB.value;
 
-if (
+    const options =
+        AppData.teams.map(
+            function (team) {
 
-    AppData.teams.some(
+                return `
+                    <option value="${team.id}">
+                        ${escapeHTML(team.name)}
+                    </option>
+                `;
 
-        function (team) {
+            }
+        ).join("");
 
-            return team.id === oldTeamA;
+    teamA.innerHTML =
+        `<option value="">
+            Select Team A
+        </option>` +
+        options;
 
-        }
+    teamB.innerHTML =
+        `<option value="">
+            Select Team B
+        </option>` +
+        options;
 
-    )
+    if (
+        AppData.teams.some(
+            function (item) {
+                return item.id === currentA;
+            }
+        )
+    ) {
+        teamA.value = currentA;
+    }
 
-) {
-
-    teamA.value = oldTeamA;
-
+    if (
+        AppData.teams.some(
+            function (item) {
+                return item.id === currentB;
+            }
+        )
+    ) {
+        teamB.value = currentB;
+    }
 }
 
-
-if (
-
-    AppData.teams.some(
-
-        function (team) {
-
-            return team.id === oldTeamB;
-
-        }
-
-    )
-
-) {
-
-    teamB.value = oldTeamB;
-
-}
-
-}
 
 /* =========================================================
-CREATE MATCH
-========================================================= */
+   CREATE MATCH
+   ========================================================= */
 
 function createMatch() {
 
-const tournamentSelect =
+    const tournamentId =
+        document.getElementById("matchTournament").value;
 
-    document.getElementById(
+    const teamAId =
+        document.getElementById("teamA").value;
 
-        "matchTournament"
+    const teamBId =
+        document.getElementById("teamB").value;
 
-    );
+    const overs =
+        Number(
+            document.getElementById("matchOvers").value
+        );
 
+    const date =
+        document.getElementById("matchDate").value;
 
-const teamASelect =
+    const tossWinner =
+        document.getElementById("tossWinner").value;
 
-    document.getElementById(
+    const tossDecision =
+        document.getElementById("tossDecision").value;
 
-        "teamA"
 
-    );
+    if (!tournamentId) {
 
+        alert("Please select a tournament.");
 
-const teamBSelect =
+        return;
+    }
 
-    document.getElementById(
+    if (!teamAId || !teamBId) {
 
-        "teamB"
+        alert("Please select both teams.");
 
-    );
+        return;
+    }
 
+    if (teamAId === teamBId) {
 
-const oversInput =
+        alert("Team A and Team B must be different.");
 
-    document.getElementById(
-
-        "matchOvers"
-
-    );
-
-
-const dateInput =
-
-    document.getElementById(
-
-        "matchDate"
-
-    );
-
-
-const tossWinnerSelect =
-
-    document.getElementById(
-
-        "tossWinner"
-
-    );
-
-
-const tossDecisionSelect =
-
-    document.getElementById(
-
-        "tossDecision"
-
-    );
-
-
-if (
-
-    !tournamentSelect ||
-
-    !teamASelect ||
-
-    !teamBSelect ||
-
-    !oversInput ||
-
-    !dateInput ||
-
-    !tossWinnerSelect ||
-
-    !tossDecisionSelect
-
-) {
-
-    return;
-
-}
-
-
-const tournamentId =
-
-    tournamentSelect.value;
-
-
-const teamAId =
-
-    teamASelect.value;
-
-
-const teamBId =
-
-    teamBSelect.value;
-
-
-const overs =
-
-    Number(oversInput.value);
-
-
-const matchDate =
-
-    dateInput.value;
-
-
-const tossWinner =
-
-    tossWinnerSelect.value;
-
-
-const tossDecision =
-
-    tossDecisionSelect.value;
-
-
-/* ================= VALIDATION ================= */
-
-
-if (!tournamentId) {
-
-    alert(
-
-        "Please select a tournament."
-
-    );
-
-    return;
-
-}
-
-
-if (!teamAId) {
-
-    alert(
-
-        "Please select Team A."
-
-    );
-
-    return;
-
-}
-
-
-if (!teamBId) {
-
-    alert(
-
-        "Please select Team B."
-
-    );
-
-    return;
-
-}
-
-
-if (teamAId === teamBId) {
-
-    alert(
-
-        "Team A and Team B must be different."
-
-    );
-
-    return;
-
-}
-
-
-if (
-
-    !Number.isInteger(overs) ||
-
-    overs < 1 ||
-
-    overs > 50
-
-) {
-
-    alert(
-
-        "Overs must be between 1 and 50."
-
-    );
-
-    return;
-
-}
-
-
-if (!matchDate) {
-
-    alert(
-
-        "Please select the match date."
-
-    );
-
-    return;
-
-}
-
-
-if (!tossWinner) {
-
-    alert(
-
-        "Please select the toss winner."
-
-    );
-
-    return;
-
-}
-
-
-if (!tossDecision) {
-
-    alert(
-
-        "Please select the toss decision."
-
-    );
-
-    return;
-
-}
-
-
-/* ================= GET TEAM NAMES ================= */
-
-
-const teamA =
-
-    AppData.teams.find(
-
-        function (team) {
-
-            return team.id === teamAId;
-
-        }
-
-    );
-
-
-const teamB =
-
-    AppData.teams.find(
-
-        function (team) {
-
-            return team.id === teamBId;
-
-        }
-
-    );
-
-
-const tournament =
-
-    AppData.tournaments.find(
-
-        function (item) {
-
-            return (
-
-                item.id ===
-
-                tournamentId
-
-            );
-
-        }
-
-    );
-
-
-if (
-
-    !teamA ||
-
-    !teamB ||
-
-    !tournament
-
-) {
-
-    alert(
-
-        "Could not find the selected data."
-
-    );
-
-    return;
-
-}
-
-
-/* ================= CALCULATE INNINGS ORDER ================= */
-
-
-let battingFirstId;
-
-let bowlingFirstId;
-
-
-if (
-
-    tossWinner === "teamA"
-
-) {
+        return;
+    }
 
     if (
-
-        tossDecision === "bat"
-
+        !Number.isInteger(overs) ||
+        overs < 1 ||
+        overs > 50
     ) {
 
-        battingFirstId = teamAId;
+        alert("Overs must be between 1 and 50.");
 
-        bowlingFirstId = teamBId;
+        return;
+    }
+
+    if (!date) {
+
+        alert("Please select match date.");
+
+        return;
+    }
+
+    if (!tossWinner || !tossDecision) {
+
+        alert("Please complete the toss information.");
+
+        return;
+    }
+
+
+    let battingFirstId;
+
+    let bowlingFirstId;
+
+
+    if (tossWinner === "teamA") {
+
+        if (tossDecision === "bat") {
+
+            battingFirstId = teamAId;
+            bowlingFirstId = teamBId;
+
+        } else {
+
+            battingFirstId = teamBId;
+            bowlingFirstId = teamAId;
+        }
 
     } else {
 
-        battingFirstId = teamBId;
+        if (tossDecision === "bat") {
 
-        bowlingFirstId = teamAId;
+            battingFirstId = teamBId;
+            bowlingFirstId = teamAId;
 
+        } else {
+
+            battingFirstId = teamAId;
+            bowlingFirstId = teamBId;
+        }
     }
 
-}
+
+    const match = {
+
+        id: createId("match"),
+
+        tournamentId: tournamentId,
+
+        teamAId: teamAId,
+
+        teamBId: teamBId,
+
+        overs: overs,
+
+        date: date,
+
+        tossWinner: tossWinner,
+
+        tossDecision: tossDecision,
+
+        battingFirstId: battingFirstId,
+
+        bowlingFirstId: bowlingFirstId,
+
+        status: "Not Started",
+
+        createdAt: new Date().toISOString(),
+
+        innings: []
+
+    };
 
 
-if (
+    AppData.matches.push(match);
 
-    tossWinner === "teamB"
+    saveData();
 
-) {
+    renderMatches();
 
-    if (
-
-        tossDecision === "bat"
-
-    ) {
-
-        battingFirstId = teamBId;
-
-        bowlingFirstId = teamAId;
-
-    } else {
-
-        battingFirstId = teamAId;
-
-        bowlingFirstId = teamBId;
-
-    }
-
-}
-
-
-/* ================= CREATE MATCH ================= */
-
-
-const match = {
-
-    id: createId("match"),
-
-    tournamentId: tournamentId,
-
-    teamAId: teamAId,
-
-    teamBId: teamBId,
-
-    overs: overs,
-
-    date: matchDate,
-
-    tossWinner: tossWinner,
-
-    tossDecision: tossDecision,
-
-    battingFirstId: battingFirstId,
-
-    bowlingFirstId: bowlingFirstId,
-
-    status: "Not Started",
-
-    createdAt: new Date().toISOString()
-
-};
-
-
-AppData.matches.push(match);
-
-
-saveData();
-
-
-/* ================= RESET FORM ================= */
-
-
-tournamentSelect.value = "";
-
-teamASelect.value = "";
-
-teamBSelect.value = "";
-
-oversInput.value = "10";
-
-dateInput.value = "";
-
-tossWinnerSelect.value = "";
-
-tossDecisionSelect.value = "";
-
-
-renderMatches();
-
-
-alert(
-
-    "Match created successfully! 🏏"
-
-);
+    alert("Match created successfully.");
 
 }
+
 
 /* =========================================================
-RENDER MATCHES
-========================================================= */
+   MATCH LIST
+   ========================================================= */
 
 function renderMatches() {
 
-const list = document.getElementById(
+    const container =
+        document.getElementById("matchList");
 
-    "matchList"
+    if (!container) {
+        return;
+    }
 
-);
+    if (AppData.matches.length === 0) {
 
+        container.innerHTML =
+            `<div class="empty-message">
+                No matches yet.
+            </div>`;
 
-if (!list) {
+        return;
+    }
 
-    return;
 
-}
+    container.innerHTML =
+        AppData.matches.map(function (match) {
 
+            const teamA =
+                getTeamName(match.teamAId);
 
-if (AppData.matches.length === 0) {
+            const teamB =
+                getTeamName(match.teamBId);
 
-    list.innerHTML =
+            const tournament =
+                getTournamentName(match.tournamentId);
 
-        '<p class="empty-message">' +
+            const battingFirst =
+                getTeamName(match.battingFirstId);
 
-        'No matches yet.' +
+            const canStart =
+                hasEnoughPlayersForMatch(match);
 
-        '</p>';
 
-    return;
+            let scoringButton = "";
 
-}
+            if (
+                match.status === "Completed"
+            ) {
 
+                scoringButton = `
+                    <button
+                        class="small-btn manage-btn"
+                        onclick="openLiveScoring('${match.id}')">
+                        View Score
+                    </button>
+                `;
 
-list.innerHTML = "";
+            } else if (canStart) {
 
+                scoringButton = `
+                    <button
+                        class="small-btn manage-btn"
+                        onclick="openLiveScoring('${match.id}')">
+                        ${match.status === "Live"
+                            ? "Continue Scoring"
+                            : "Start Scoring"}
+                    </button>
+                `;
 
-AppData.matches.forEach(
+            } else {
 
-    function (match) {
+                scoringButton = `
+                    <button
+                        class="small-btn manage-btn"
+                        onclick="showPlayerRequirement()">
+                        Add Players
+                    </button>
+                `;
+            }
 
 
-        const tournament =
+            return `
+                <div class="list-item">
 
-            AppData.tournaments.find(
-
-                function (item) {
-
-                    return (
-
-                        item.id ===
-
-                        match.tournamentId
-
-                    );
-
-                }
-
-            );
-
-
-        const teamA =
-
-            AppData.teams.find(
-
-                function (team) {
-
-                    return (
-
-                        team.id ===
-
-                        match.teamAId
-
-                    );
-
-                }
-
-            );
-
-
-        const teamB =
-
-            AppData.teams.find(
-
-                function (team) {
-
-                    return (
-
-                        team.id ===
-
-                        match.teamBId
-
-                    );
-
-                }
-
-            );
-
-
-        if (
-
-            !tournament ||
-
-            !teamA ||
-
-            !teamB
-
-        ) {
-
-            return;
-
-        }
-
-
-        const battingTeam =
-
-            AppData.teams.find(
-
-                function (team) {
-
-                    return (
-
-                        team.id ===
-
-                        match.battingFirstId
-
-                    );
-
-                }
-
-            );
-
-
-        const item =
-
-            document.createElement("div");
-
-
-        item.className = "list-item";
-
-
-        item.innerHTML = `
-
-            <div class="list-item-header">
-
-                <div>
-
-                    <div class="list-item-title">
-
-                        🏏
-
-                        ${escapeHTML(
-
-                            teamA.name
-
-                        )}
-
+                    <h3>
+                        🏏 ${escapeHTML(teamA)}
                         vs
+                        ${escapeHTML(teamB)}
+                    </h3>
 
-                        ${escapeHTML(
+                    <p>
+                        Tournament:
+                        ${escapeHTML(tournament)}
+                    </p>
 
-                            teamB.name
+                    <p>
+                        Date:
+                        ${escapeHTML(match.date)}
+                    </p>
 
-                        )}
-
-                    </div>
-
-
-                    <div class="list-item-info">
-
-                        🏆
-
-                        ${escapeHTML(
-
-                            tournament.name
-
-                        )}
-
-                        <br>
-
-                        📅
-
-                        ${escapeHTML(
-
-                            match.date
-
-                        )}
-
-                        <br>
-
-                        🔢
-
+                    <p>
+                        Overs:
                         ${match.overs}
+                    </p>
 
-                        overs
-
-                        <br>
-
-                        🪙 Toss:
-
-                        ${escapeHTML(
-
-                            getTossTeamName(
-
-                                match
-
-                            )
-
-                        )}
-
+                    <p>
+                        Toss:
+                        ${escapeHTML(getTossTeamName(match))}
                         —
+                        ${match.tossDecision === "bat"
+                            ? "Bat First"
+                            : "Bowl First"}
+                    </p>
 
-                        ${
+                    <p>
+                        Batting First:
+                        <strong>
+                            ${escapeHTML(battingFirst)}
+                        </strong>
+                    </p>
 
-                            match.tossDecision ===
+                    <p>
+                        Status:
+                        <strong>
+                            ${escapeHTML(match.status || "Not Started")}
+                        </strong>
+                    </p>
 
-                            "bat"
+                    <div class="list-actions">
 
-                                ? "Bat First"
+                        ${scoringButton}
 
-                                : "Bowl First"
-
-                        }
-
-                        <br>
-
-                        🏏 Batting First:
-
-                        ${
-
-                            battingTeam
-
-                                ? escapeHTML(
-
-                                    battingTeam.name
-
-                                )
-
-                                : "Unknown"
-
-                        }
+                        <button
+                            class="small-btn delete-btn"
+                            onclick="deleteMatch('${match.id}')">
+                            Delete
+                        </button>
 
                     </div>
 
                 </div>
+            `;
 
-            </div>
-
-
-            <div class="list-actions">
-
-                <button
-
-                    class="small-btn delete-btn"
-
-                    onclick="deleteMatch(
-
-                        '${match.id}'
-
-                    )">
-
-                    Delete
-
-                </button>
-
-            </div>
-
-        `;
-
-
-        list.appendChild(item);
-
-    }
-
-);
-
-
-if (list.innerHTML === "") {
-
-    list.innerHTML =
-
-        '<p class="empty-message">' +
-
-        'No valid matches found.' +
-
-        '</p>';
-
+        }).join("");
 }
 
+
+function hasEnoughPlayersForMatch(match) {
+
+    const battingPlayers =
+        AppData.players.filter(
+            function (player) {
+                return player.teamId === match.battingFirstId;
+            }
+        );
+
+    const bowlingPlayers =
+        AppData.players.filter(
+            function (player) {
+                return player.teamId === match.bowlingFirstId;
+            }
+        );
+
+    return (
+        battingPlayers.length >= 2 &&
+        bowlingPlayers.length >= 1
+    );
 }
 
-/* =========================================================
-GET TOSS TEAM NAME
-========================================================= */
 
-function getTossTeamName(match) {
+function showPlayerRequirement() {
 
-const teamId =
-
-    match.tossWinner === "teamA"
-
-        ? match.teamAId
-
-        : match.teamBId;
-
-
-const team = AppData.teams.find(
-
-    function (item) {
-
-        return item.id === teamId;
-
-    }
-
-);
-
-
-return team
-
-    ? team.name
-
-    : "Unknown";
-
+    alert(
+        "Before starting the match, add at least 2 players to the batting team and at least 1 player to the bowling team."
+    );
 }
 
-/* =========================================================
-DELETE MATCH
-========================================================= */
 
 function deleteMatch(matchId) {
 
-const match = AppData.matches.find(
+    const match =
+        AppData.matches.find(
+            function (item) {
+                return item.id === matchId;
+            }
+        );
 
-    function (item) {
-
-        return item.id === matchId;
-
+    if (!match) {
+        return;
     }
 
-);
+    const confirmed =
+        confirm("Delete this match?");
 
+    if (!confirmed) {
+        return;
+    }
 
-if (!match) {
+    AppData.matches =
+        AppData.matches.filter(
+            function (item) {
+                return item.id !== matchId;
+            }
+        );
 
-    return;
+    saveData();
 
+    renderMatches();
 }
 
 
-const teamA = AppData.teams.find(
+function getTossTeamName(match) {
 
-    function (team) {
-
-        return (
-
-            team.id ===
-
-            match.teamAId
-
-        );
-
+    if (match.tossWinner === "teamA") {
+        return getTeamName(match.teamAId);
     }
 
-);
-
-
-const teamB = AppData.teams.find(
-
-    function (team) {
-
-        return (
-
-            team.id ===
-
-            match.teamBId
-
-        );
-
+    if (match.tossWinner === "teamB") {
+        return getTeamName(match.teamBId);
     }
 
-);
-
-
-const teamAName = teamA
-
-    ? teamA.name
-
-    : "Team A";
-
-
-const teamBName = teamB
-
-    ? teamB.name
-
-    : "Team B";
-
-
-const confirmed = confirm(
-
-    `Delete match ${teamAName} vs ${teamBName}?`
-
-);
-
-
-if (!confirmed) {
-
-    return;
-
+    return "Unknown";
 }
 
 
-AppData.matches =
+/* =========================================================
+   OPEN LIVE SCORING
+   ========================================================= */
 
-    AppData.matches.filter(
+function openLiveScoring(matchId) {
 
-        function (item) {
+    const match =
+        AppData.matches.find(
+            function (item) {
+                return item.id === matchId;
+            }
+        );
 
-            return (
+    if (!match) {
 
-                item.id !== matchId
+        alert("Match not found.");
 
-            );
+        return;
+    }
 
+
+    CurrentState.currentMatchId = matchId;
+
+
+    if (
+        !match.liveState ||
+        !match.liveState.initialized
+    ) {
+
+        const started =
+            initializeLiveMatch(match);
+
+        if (!started) {
+            return;
         }
 
+    } else {
+
+        restoreLiveState(match);
+    }
+
+
+    match.status = "Live";
+
+    saveData();
+
+    renderMatches();
+
+    showScreen("liveScoringScreen");
+
+    renderLiveScoring();
+}
+
+
+/* =========================================================
+   INITIALIZE LIVE MATCH
+   ========================================================= */
+
+function initializeLiveMatch(match) {
+
+    const battingPlayers =
+        AppData.players.filter(
+            function (player) {
+                return player.teamId === match.battingFirstId;
+            }
+        );
+
+    const bowlingPlayers =
+        AppData.players.filter(
+            function (player) {
+                return player.teamId === match.bowlingFirstId;
+            }
+        );
+
+
+    if (battingPlayers.length < 2) {
+
+        alert(
+            "The batting team needs at least 2 players."
+        );
+
+        return false;
+    }
+
+    if (bowlingPlayers.length < 1) {
+
+        alert(
+            "The bowling team needs at least 1 player."
+        );
+
+        return false;
+    }
+
+
+    resetLiveState();
+
+
+    LiveState.strikerId =
+        battingPlayers[0].id;
+
+    LiveState.nonStrikerId =
+        battingPlayers[1].id;
+
+    LiveState.bowlerId =
+        bowlingPlayers[0].id;
+
+
+    LiveState.batsmen[
+        battingPlayers[0].id
+    ] = {
+        runs: 0,
+        balls: 0,
+        out: false
+    };
+
+
+    LiveState.batsmen[
+        battingPlayers[1].id
+    ] = {
+        runs: 0,
+        balls: 0,
+        out: false
+    };
+
+
+    LiveState.bowlers[
+        bowlingPlayers[0].id
+    ] = {
+        runs: 0,
+        wickets: 0,
+        legalBalls: 0
+    };
+
+
+    LiveState.innings = [
+        createNewInnings(
+            match.battingFirstId,
+            match.bowlingFirstId
+        )
+    ];
+
+
+    saveLiveStateToMatch(match);
+
+    return true;
+}
+
+
+function createNewInnings(
+    battingTeamId,
+    bowlingTeamId
+) {
+
+    return {
+
+        battingTeamId: battingTeamId,
+
+        bowlingTeamId: bowlingTeamId,
+
+        runs: 0,
+
+        wickets: 0,
+
+        legalBalls: 0,
+
+        balls: []
+
+    };
+}
+
+
+function resetLiveState() {
+
+    LiveState.inningsIndex = 0;
+
+    LiveState.strikerId = null;
+
+    LiveState.nonStrikerId = null;
+
+    LiveState.bowlerId = null;
+
+    LiveState.runs = 0;
+
+    LiveState.wickets = 0;
+
+    LiveState.legalBalls = 0;
+
+    LiveState.currentOverBalls = [];
+
+    LiveState.ballHistory = [];
+
+    LiveState.batsmen = {};
+
+    LiveState.bowlers = {};
+
+    LiveState.innings = [];
+}
+
+
+/* =========================================================
+   RESTORE LIVE STATE
+   ========================================================= */
+
+function restoreLiveState(match) {
+
+    const saved =
+        match.liveState;
+
+    if (!saved) {
+        return;
+    }
+
+
+    LiveState.inningsIndex =
+        saved.inningsIndex || 0;
+
+    LiveState.strikerId =
+        saved.strikerId || null;
+
+    LiveState.nonStrikerId =
+        saved.nonStrikerId || null;
+
+    LiveState.bowlerId =
+        saved.bowlerId || null;
+
+    LiveState.runs =
+        saved.runs || 0;
+
+    LiveState.wickets =
+        saved.wickets || 0;
+
+    LiveState.legalBalls =
+        saved.legalBalls || 0;
+
+    LiveState.currentOverBalls =
+        Array.isArray(saved.currentOverBalls)
+            ? saved.currentOverBalls
+            : [];
+
+    LiveState.ballHistory =
+        Array.isArray(saved.ballHistory)
+            ? saved.ballHistory
+            : [];
+
+    LiveState.batsmen =
+        saved.batsmen || {};
+
+    LiveState.bowlers =
+        saved.bowlers || {};
+
+    LiveState.innings =
+        Array.isArray(saved.innings)
+            ? saved.innings
+            : [];
+}
+
+
+/* =========================================================
+   SAVE LIVE STATE
+   ========================================================= */
+
+function saveLiveStateToMatch(match) {
+
+    match.liveState = {
+
+        initialized: true,
+
+        inningsIndex:
+            LiveState.inningsIndex,
+
+        strikerId:
+            LiveState.strikerId,
+
+        nonStrikerId:
+            LiveState.nonStrikerId,
+
+        bowlerId:
+            LiveState.bowlerId,
+
+        runs:
+            LiveState.runs,
+
+        wickets:
+            LiveState.wickets,
+
+        legalBalls:
+            LiveState.legalBalls,
+
+        currentOverBalls:
+            LiveState.currentOverBalls,
+
+        ballHistory:
+            LiveState.ballHistory,
+
+        batsmen:
+            LiveState.batsmen,
+
+        bowlers:
+            LiveState.bowlers,
+
+        innings:
+            LiveState.innings
+    };
+}
+
+
+/* =========================================================
+   RECORD LIVE BALL
+   ========================================================= */
+
+function recordLiveBall(type, value) {
+
+    const match =
+        getCurrentMatch();
+
+    if (!match) {
+
+        alert("No active match.");
+
+        return;
+    }
+
+
+    if (
+        match.status === "Completed"
+    ) {
+
+        alert("This match is already completed.");
+
+        return;
+    }
+
+
+    const striker =
+        getPlayerById(
+            LiveState.strikerId
+        );
+
+    const nonStriker =
+        getPlayerById(
+            LiveState.nonStrikerId
+        );
+
+    const bowler =
+        getPlayerById(
+            LiveState.bowlerId
+        );
+
+
+    if (!striker || !nonStriker || !bowler) {
+
+        alert(
+            "Player information is missing."
+        );
+
+        return;
+    }
+
+
+    const snapshot =
+        createLiveSnapshot();
+
+
+    let totalRuns = 0;
+
+    let legalBall = true;
+
+    let batsmanRuns = 0;
+
+    let wicket = false;
+
+
+    /* ================= NORMAL RUN ================= */
+
+    if (type === "run") {
+
+        totalRuns = Number(value);
+
+        batsmanRuns = Number(value);
+
+        legalBall = true;
+    }
+
+
+    /* ================= WIDE ================= */
+
+    else if (type === "wide") {
+
+        totalRuns = Number(value);
+
+        batsmanRuns = 0;
+
+        legalBall = false;
+    }
+
+
+    /* ================= NO BALL ================= */
+
+    else if (type === "noball") {
+
+        totalRuns = Number(value);
+
+        batsmanRuns = 0;
+
+        legalBall = false;
+    }
+
+
+    /* ================= BYE ================= */
+
+    else if (type === "bye") {
+
+        totalRuns = Number(value);
+
+        batsmanRuns = 0;
+
+        legalBall = true;
+    }
+
+
+    /* ================= LEG BYE ================= */
+
+    else if (type === "legbye") {
+
+        totalRuns = Number(value);
+
+        batsmanRuns = 0;
+
+        legalBall = true;
+    }
+
+
+    /* ================= WICKET ================= */
+
+    else if (type === "wicket") {
+
+        totalRuns = 0;
+
+        batsmanRuns = 0;
+
+        legalBall = true;
+
+        wicket = true;
+    }
+
+
+    else {
+
+        return;
+    }
+
+
+    /* =====================================================
+       BATSMAN
+       ===================================================== */
+
+    ensureBatsmanRecord(striker.id);
+
+    LiveState.batsmen[striker.id].balls +=
+        legalBall ? 1 : 0;
+
+    LiveState.batsmen[striker.id].runs +=
+        batsmanRuns;
+
+
+    /* =====================================================
+       TOTAL SCORE
+       ===================================================== */
+
+    LiveState.runs += totalRuns;
+
+
+    /* =====================================================
+       WICKET
+       ===================================================== */
+
+    if (wicket) {
+
+        LiveState.wickets++;
+
+        LiveState.batsmen[striker.id].out = true;
+    }
+
+
+    /* =====================================================
+       BOWLER
+       ===================================================== */
+
+    ensureBowlerRecord(bowler.id);
+
+    LiveState.bowlers[bowler.id].runs +=
+        totalRuns;
+
+
+    if (wicket) {
+
+        LiveState.bowlers[bowler.id].wickets++;
+    }
+
+
+    /* =====================================================
+       LEGAL BALL
+       ===================================================== */
+
+    if (legalBall) {
+
+        LiveState.legalBalls++;
+
+        LiveState.bowlers[
+            bowler.id
+        ].legalBalls++;
+    }
+
+
+    /* =====================================================
+       BALL OBJECT
+       ===================================================== */
+
+    const ball = {
+
+        id: createId("ball"),
+
+        type: type,
+
+        value: Number(value),
+
+        totalRuns: totalRuns,
+
+        batsmanRuns: batsmanRuns,
+
+        legalBall: legalBall,
+
+        wicket: wicket,
+
+        strikerId: striker.id,
+
+        nonStrikerId: nonStriker.id,
+
+        bowlerId: bowler.id,
+
+        overNumber:
+            Math.floor(
+                LiveState.legalBalls / 6
+            ),
+
+        createdAt:
+            new Date().toISOString()
+    };
+
+
+    LiveState.currentOverBalls.push(ball);
+
+    LiveState.ballHistory.push({
+        ball: ball,
+        snapshot: snapshot
+    });
+
+
+    /* =====================================================
+       CURRENT INNINGS
+       ===================================================== */
+
+    const innings =
+        getCurrentInnings();
+
+    if (innings) {
+
+        innings.runs =
+            LiveState.runs;
+
+        innings.wickets =
+            LiveState.wickets;
+
+        innings.legalBalls =
+            LiveState.legalBalls;
+
+        innings.balls.push(ball);
+    }
+
+
+    /* =====================================================
+       STRIKE ROTATION
+       ===================================================== */
+
+    if (
+        legalBall &&
+        !wicket &&
+        (batsmanRuns % 2 === 1)
+    ) {
+
+        swapStrikers();
+    }
+
+
+    /* =====================================================
+       WICKET NEW BATTER
+       ===================================================== */
+
+    if (wicket) {
+
+        replaceStriker();
+
+    }
+
+
+    /* =====================================================
+       OVER COMPLETE
+       ===================================================== */
+
+    if (
+        legalBall &&
+        LiveState.legalBalls % 6 === 0
+    ) {
+
+        completeOver();
+
+    }
+
+
+    /* =====================================================
+       MATCH COMPLETION
+       ===================================================== */
+
+    if (
+        checkInningsCompletion(match)
+    ) {
+
+        match.status = "Completed";
+
+    }
+
+
+    saveLiveStateToMatch(match);
+
+    saveData();
+
+    renderLiveScoring();
+
+    renderMatches();
+}
+
+
+/* =========================================================
+   SNAPSHOT FOR UNDO
+   ========================================================= */
+
+function createLiveSnapshot() {
+
+    return JSON.parse(
+        JSON.stringify({
+            inningsIndex:
+                LiveState.inningsIndex,
+
+            strikerId:
+                LiveState.strikerId,
+
+            nonStrikerId:
+                LiveState.nonStrikerId,
+
+            bowlerId:
+                LiveState.bowlerId,
+
+            runs:
+                LiveState.runs,
+
+            wickets:
+                LiveState.wickets,
+
+            legalBalls:
+                LiveState.legalBalls,
+
+            currentOverBalls:
+                LiveState.currentOverBalls,
+
+            batsmen:
+                LiveState.batsmen,
+
+            bowlers:
+                LiveState.bowlers,
+
+            innings:
+                LiveState.innings
+        })
+    );
+}
+
+
+/* =========================================================
+   UNDO LAST BALL
+   ========================================================= */
+
+function undoLastLiveBall() {
+
+    if (
+        LiveState.ballHistory.length === 0
+    ) {
+
+        alert("There is no ball to undo.");
+
+        return;
+    }
+
+
+    const last =
+        LiveState.ballHistory[
+            LiveState.ballHistory.length - 1
+        ];
+
+
+    const confirmed =
+        confirm("Undo the last ball?");
+
+
+    if (!confirmed) {
+        return;
+    }
+
+
+    const snapshot =
+        last.snapshot;
+
+
+    LiveState.inningsIndex =
+        snapshot.inningsIndex;
+
+    LiveState.strikerId =
+        snapshot.strikerId;
+
+    LiveState.nonStrikerId =
+        snapshot.nonStrikerId;
+
+    LiveState.bowlerId =
+        snapshot.bowlerId;
+
+    LiveState.runs =
+        snapshot.runs;
+
+    LiveState.wickets =
+        snapshot.wickets;
+
+    LiveState.legalBalls =
+        snapshot.legalBalls;
+
+    LiveState.currentOverBalls =
+        snapshot.currentOverBalls;
+
+    LiveState.batsmen =
+        snapshot.batsmen;
+
+    LiveState.bowlers =
+        snapshot.bowlers;
+
+    LiveState.innings =
+        snapshot.innings;
+
+
+    LiveState.ballHistory.pop();
+
+
+    const match =
+        getCurrentMatch();
+
+    if (match) {
+
+        match.status = "Live";
+
+        saveLiveStateToMatch(match);
+
+        saveData();
+    }
+
+
+    renderLiveScoring();
+
+    renderMatches();
+}
+
+
+/* =========================================================
+   BATSMAN HELPERS
+   ========================================================= */
+
+function ensureBatsmanRecord(playerId) {
+
+    if (!LiveState.batsmen[playerId]) {
+
+        LiveState.batsmen[playerId] = {
+
+            runs: 0,
+
+            balls: 0,
+
+            out: false
+        };
+    }
+}
+
+
+function replaceStriker() {
+
+    const match =
+        getCurrentMatch();
+
+    if (!match) {
+        return;
+    }
+
+
+    const battingPlayers =
+        AppData.players.filter(
+            function (player) {
+                return player.teamId ===
+                    match.battingFirstId;
+            }
+        );
+
+
+    const usedIds =
+        Object.keys(LiveState.batsmen);
+
+
+    const nextPlayer =
+        battingPlayers.find(
+            function (player) {
+
+                return (
+                    !usedIds.includes(player.id) &&
+                    player.id !== LiveState.nonStrikerId
+                );
+
+            }
+        );
+
+
+    if (nextPlayer) {
+
+        LiveState.strikerId =
+            nextPlayer.id;
+
+        ensureBatsmanRecord(
+            nextPlayer.id
+        );
+
+        return;
+    }
+
+
+    /*
+       If there are no more players,
+       the innings ends.
+    */
+
+    LiveState.strikerId = null;
+}
+
+
+/* =========================================================
+   STRIKE
+   ========================================================= */
+
+function swapStrikers() {
+
+    const temporary =
+        LiveState.strikerId;
+
+    LiveState.strikerId =
+        LiveState.nonStrikerId;
+
+    LiveState.nonStrikerId =
+        temporary;
+}
+
+
+/* =========================================================
+   OVER COMPLETION
+   ========================================================= */
+
+function completeOver() {
+
+    /*
+       At the end of an over, the batsmen
+       change ends.
+    */
+
+    swapStrikers();
+
+
+    /*
+       Start displaying a fresh over.
+    */
+
+    LiveState.currentOverBalls = [];
+
+
+    /*
+       Keep the same bowler for V1.3.
+       Bowler selection can be expanded
+       in a later version.
+    */
+}
+
+
+/* =========================================================
+   BOWLER HELPERS
+   ========================================================= */
+
+function ensureBowlerRecord(playerId) {
+
+    if (!LiveState.bowlers[playerId]) {
+
+        LiveState.bowlers[playerId] = {
+
+            runs: 0,
+
+            wickets: 0,
+
+            legalBalls: 0
+        };
+    }
+}
+
+
+/* =========================================================
+   INNINGS COMPLETION
+   ========================================================= */
+
+function checkInningsCompletion(match) {
+
+    if (!match) {
+        return false;
+    }
+
+
+    const maximumBalls =
+        Number(match.overs) * 6;
+
+
+    if (
+        LiveState.legalBalls >=
+        maximumBalls
+    ) {
+
+        return true;
+    }
+
+
+    if (
+        LiveState.wickets >=
+        getBattingPlayerCount(match) - 1
+    ) {
+
+        return true;
+    }
+
+
+    if (!LiveState.strikerId) {
+
+        return true;
+    }
+
+
+    return false;
+}
+
+
+function getBattingPlayerCount(match) {
+
+    return AppData.players.filter(
+        function (player) {
+
+            return player.teamId ===
+                match.battingFirstId;
+
+        }
+    ).length;
+}
+
+
+/* =========================================================
+   RENDER LIVE SCORING
+   ========================================================= */
+
+function renderLiveScoring() {
+
+    const match =
+        getCurrentMatch();
+
+    if (!match) {
+        return;
+    }
+
+
+    const battingTeam =
+        getTeamName(match.battingFirstId);
+
+    const bowlingTeam =
+        getTeamName(match.bowlingFirstId);
+
+
+    setText(
+        "liveMatchTitle",
+        `${battingTeam} vs ${bowlingTeam}`
     );
 
 
-saveData();
+    setText(
+        "liveBattingTeam",
+        battingTeam
+    );
 
 
-renderMatches();
+    setText(
+        "liveBowlingTeam",
+        bowlingTeam
+    );
 
+
+    setText(
+        "liveRuns",
+        LiveState.runs
+    );
+
+
+    setText(
+        "liveWickets",
+        LiveState.wickets
+    );
+
+
+    setText(
+        "liveOvers",
+        formatOvers(
+            LiveState.legalBalls
+        )
+    );
+
+
+    setText(
+        "liveRunRate",
+        calculateRunRate()
+    );
+
+
+    setText(
+        "liveTarget",
+        "—"
+    );
+
+
+    renderCurrentOver();
+
+    renderBatsmen();
+
+    renderBowler();
 }
 
+
 /* =========================================================
-HTML ESCAPING
-========================================================= */
+   CURRENT OVER
+   ========================================================= */
+
+function renderCurrentOver() {
+
+    const container =
+        document.getElementById(
+            "currentOverBalls"
+        );
+
+    if (!container) {
+        return;
+    }
+
+
+    if (
+        LiveState.currentOverBalls.length === 0
+    ) {
+
+        container.innerHTML =
+            `<span class="ball-placeholder">
+                No balls yet
+            </span>`;
+
+        return;
+    }
+
+
+    container.innerHTML =
+        LiveState.currentOverBalls.map(
+            function (ball) {
+
+                let text = "";
+
+                let className = "ball";
+
+
+                if (ball.wicket) {
+
+                    text = "W";
+
+                    className +=
+                        " wicket-ball";
+
+                }
+
+                else if (ball.type === "wide") {
+
+                    text = "Wd";
+
+                    className +=
+                        " extra-ball";
+
+                }
+
+                else if (ball.type === "noball") {
+
+                    text = "Nb";
+
+                    className +=
+                        " extra-ball";
+
+                }
+
+                else if (ball.type === "bye") {
+
+                    text =
+                        "B" + ball.totalRuns;
+
+                    className +=
+                        " extra-ball";
+
+                }
+
+                else if (ball.type === "legbye") {
+
+                    text =
+                        "Lb" + ball.totalRuns;
+
+                    className +=
+                        " extra-ball";
+
+                }
+
+                else {
+
+                    text =
+                        String(ball.batsmanRuns);
+                }
+
+
+                return `
+                    <span class="${className}">
+                        ${text}
+                    </span>
+                `;
+
+            }
+        ).join("");
+}
+
+
+/* =========================================================
+   BATSMEN DISPLAY
+   ========================================================= */
+
+function renderBatsmen() {
+
+    const striker =
+        getPlayerById(
+            LiveState.strikerId
+        );
+
+    const nonStriker =
+        getPlayerById(
+            LiveState.nonStrikerId
+        );
+
+
+    if (striker) {
+
+        const stats =
+            LiveState.batsmen[
+                striker.id
+            ] || {
+                runs: 0,
+                balls: 0
+            };
+
+
+        setText(
+            "strikerName",
+            striker.name
+        );
+
+        setText(
+            "strikerRuns",
+            stats.runs
+        );
+
+        setText(
+            "strikerBalls",
+            stats.balls
+        );
+
+    } else {
+
+        setText(
+            "strikerName",
+            "No Batter"
+        );
+
+        setText(
+            "strikerRuns",
+            "0"
+        );
+
+        setText(
+            "strikerBalls",
+            "0"
+        );
+    }
+
+
+    if (nonStriker) {
+
+        const stats =
+            LiveState.batsmen[
+                nonStriker.id
+            ] || {
+                runs: 0,
+                balls: 0
+            };
+
+
+        setText(
+            "nonStrikerName",
+            nonStriker.name
+        );
+
+        setText(
+            "nonStrikerRuns",
+            stats.runs
+        );
+
+        setText(
+            "nonStrikerBalls",
+            stats.balls
+        );
+
+    } else {
+
+        setText(
+            "nonStrikerName",
+            "No Batter"
+        );
+
+        setText(
+            "nonStrikerRuns",
+            "0"
+        );
+
+        setText(
+            "nonStrikerBalls",
+            "0"
+        );
+    }
+}
+
+
+/* =========================================================
+   BOWLER DISPLAY
+   ========================================================= */
+
+function renderBowler() {
+
+    const bowler =
+        getPlayerById(
+            LiveState.bowlerId
+        );
+
+
+    if (!bowler) {
+
+        setText(
+            "currentBowlerName",
+            "No Bowler"
+        );
+
+        setText(
+            "bowlerOvers",
+            "0.0"
+        );
+
+        setText(
+            "bowlerRuns",
+            "0"
+        );
+
+        setText(
+            "bowlerWickets",
+            "0"
+        );
+
+        return;
+    }
+
+
+    const stats =
+        LiveState.bowlers[
+            bowler.id
+        ] || {
+            runs: 0,
+            wickets: 0,
+            legalBalls: 0
+        };
+
+
+    setText(
+        "currentBowlerName",
+        bowler.name
+    );
+
+
+    setText(
+        "bowlerOvers",
+        formatOvers(
+            stats.legalBalls
+        )
+    );
+
+
+    setText(
+        "bowlerRuns",
+        stats.runs
+    );
+
+
+    setText(
+        "bowlerWickets",
+        stats.wickets
+    );
+}
+
+
+/* =========================================================
+   RUN RATE
+   ========================================================= */
+
+function calculateRunRate() {
+
+    if (LiveState.legalBalls === 0) {
+        return "0.00";
+    }
+
+    const overs =
+        LiveState.legalBalls / 6;
+
+    const rate =
+        LiveState.runs / overs;
+
+    return rate.toFixed(2);
+}
+
+
+/* =========================================================
+   OVERS FORMAT
+   ========================================================= */
+
+function formatOvers(legalBalls) {
+
+    const overs =
+        Math.floor(legalBalls / 6);
+
+    const balls =
+        legalBalls % 6;
+
+    return `${overs}.${balls}`;
+}
+
+
+/* =========================================================
+   CURRENT MATCH / INNINGS
+   ========================================================= */
+
+function getCurrentMatch() {
+
+    if (!CurrentState.currentMatchId) {
+        return null;
+    }
+
+    return AppData.matches.find(
+        function (match) {
+
+            return match.id ===
+                CurrentState.currentMatchId;
+
+        }
+    ) || null;
+}
+
+
+function getCurrentInnings() {
+
+    return LiveState.innings[
+        LiveState.inningsIndex
+    ] || null;
+}
+
+
+/* =========================================================
+   LOOKUP HELPERS
+   ========================================================= */
+
+function getTeamName(teamId) {
+
+    const team =
+        AppData.teams.find(
+            function (item) {
+                return item.id === teamId;
+            }
+        );
+
+    return team
+        ? team.name
+        : "Unknown Team";
+}
+
+
+function getTournamentName(tournamentId) {
+
+    const tournament =
+        AppData.tournaments.find(
+            function (item) {
+                return item.id === tournamentId;
+            }
+        );
+
+    return tournament
+        ? tournament.name
+        : "Unknown Tournament";
+}
+
+
+function getPlayerById(playerId) {
+
+    if (!playerId) {
+        return null;
+    }
+
+    return AppData.players.find(
+        function (player) {
+
+            return player.id === playerId;
+
+        }
+    ) || null;
+}
+
+
+/* =========================================================
+   TEXT HELPER
+   ========================================================= */
+
+function setText(elementId, value) {
+
+    const element =
+        document.getElementById(elementId);
+
+    if (element) {
+
+        element.textContent =
+            String(value);
+    }
+}
+
+
+/* =========================================================
+   HTML SECURITY
+   ========================================================= */
 
 function escapeHTML(value) {
 
-const div =
-
-    document.createElement("div");
-
-
-div.textContent = value;
-
-
-return div.innerHTML;
-
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
 
+
 /* =========================================================
-KEYBOARD SUPPORT
-========================================================= */
+   ENTER KEY SUPPORT
+   ========================================================= */
 
-document.addEventListener(
+function setupEnterKeys() {
 
-"keydown",
+    const tournamentInput =
+        document.getElementById(
+            "tournamentName"
+        );
 
-function (event) {
+    if (tournamentInput) {
 
+        tournamentInput.addEventListener(
+            "keydown",
+            function (event) {
 
-    if (event.key !== "Enter") {
+                if (event.key === "Enter") {
 
-        return;
+                    addTournament();
+                }
 
+            }
+        );
     }
 
 
-    const activeElement =
+    const teamInput =
+        document.getElementById(
+            "teamName"
+        );
 
-        document.activeElement;
+    if (teamInput) {
 
+        teamInput.addEventListener(
+            "keydown",
+            function (event) {
 
-    if (!activeElement) {
+                if (event.key === "Enter") {
 
-        return;
+                    addTeam();
+                }
 
+            }
+        );
     }
 
 
-    if (
+    const playerInput =
+        document.getElementById(
+            "playerName"
+        );
 
-        activeElement.id ===
+    if (playerInput) {
 
-        "tournamentName"
+        playerInput.addEventListener(
+            "keydown",
+            function (event) {
 
-    ) {
+                if (event.key === "Enter") {
 
-        addTournament();
+                    addPlayer();
+                }
 
+            }
+        );
     }
-
-
-    if (
-
-        activeElement.id ===
-
-        "teamName"
-
-    ) {
-
-        addTeam();
-
-    }
-
-
-    if (
-
-        activeElement.id ===
-
-        "playerName"
-
-    ) {
-
-        addPlayer();
-
-    }
-
 }
-
-);
-
-/* =========================================================
-END OF VERSION 1.2
-========================================================= */
