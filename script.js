@@ -3717,3 +3717,1193 @@ document.addEventListener(
     'DOMContentLoaded',
     initializeApp
 );
+
+/* =========================================================
+   LOCAL CRICKET SCORER - VERSION 1.4.1
+   BATSMAN STATISTICS UPGRADE
+
+   Adds:
+   - Batsman runs
+   - Balls faced
+   - Fours
+   - Sixes
+   - OUT status
+   - Batsman statistics display
+   - Undo support
+   - Old match compatibility
+   ========================================================= */
+
+
+/* ================= BATSMAN STATS ================= */
+
+function ensureBatsmanStats(innings, playerId) {
+
+    if (!innings.batsmanStats) {
+        innings.batsmanStats = {};
+    }
+
+    if (!playerId) {
+        return null;
+    }
+
+    if (!innings.batsmanStats[playerId]) {
+
+        innings.batsmanStats[playerId] = {
+
+            runs: 0,
+
+            balls: 0,
+
+            fours: 0,
+
+            sixes: 0,
+
+            out: false
+        };
+    }
+
+    return innings.batsmanStats[playerId];
+}
+
+
+function initializeBatsmanStats(match, innings) {
+
+    if (!innings.batsmanStats) {
+        innings.batsmanStats = {};
+    }
+
+    const battingXI =
+        innings.battingTeamId === match.team1Id
+            ? match.team1PlayingXI
+            : match.team2PlayingXI;
+
+    if (!Array.isArray(battingXI)) {
+        return;
+    }
+
+    battingXI.forEach(playerId => {
+        ensureBatsmanStats(
+            innings,
+            playerId
+        );
+    });
+}
+
+
+/* ================= SAVE ORIGINAL FUNCTIONS ================= */
+
+const originalInitializeLiveScoring_V141 =
+    initializeLiveScoring;
+
+const originalRecordLiveBall_V141 =
+    recordLiveBall;
+
+const originalUndoLastLiveBall_V141 =
+    undoLastLiveBall;
+
+const originalRenderLiveScoring_V141 =
+    renderLiveScoring;
+
+
+/* ================= INITIALIZE STATS ================= */
+
+initializeLiveScoring = function(match) {
+
+    originalInitializeLiveScoring_V141(match);
+
+    const innings =
+        getCurrentInnings(match);
+
+    if (!innings) {
+        return;
+    }
+
+    initializeBatsmanStats(
+        match,
+        innings
+    );
+
+    saveToLocalStorage();
+};
+
+
+/* ================= UPDATED BALL RECORDING ================= */
+
+recordLiveBall = function(runs, type) {
+
+    const match =
+        getMatch(
+            CurrentState.currentMatchId
+        );
+
+    if (!match) {
+        showAlert('Match not found.');
+        return;
+    }
+
+    const innings =
+        getCurrentInnings(match);
+
+    if (!innings) {
+        showAlert('Innings not found.');
+        return;
+    }
+
+    if (innings.completed) {
+        showAlert(
+            'This innings is already complete.'
+        );
+        return;
+    }
+
+    if (innings.waitingForNewBatsman) {
+
+        showAlert(
+            'Please select a new batsman first.'
+        );
+
+        return;
+    }
+
+    initializeBatsmanStats(
+        match,
+        innings
+    );
+
+
+    const strikerId =
+        LiveState.strikerId;
+
+
+    const strikerStats =
+        ensureBatsmanStats(
+            innings,
+            strikerId
+        );
+
+
+    /*
+       Save the complete batsman statistics
+       before changing anything.
+
+       This makes Undo safe.
+    */
+
+    const previousBatsmanStats =
+        JSON.parse(
+            JSON.stringify(
+                innings.batsmanStats
+            )
+        );
+
+
+    /*
+       Call the existing V1.4 scoring system.
+
+       It already handles:
+       - Runs
+       - Wickets
+       - Overs
+       - Striker rotation
+       - New batsman
+       - Ball history
+       - Innings completion
+    */
+
+    const oldBalls =
+        innings.balls;
+
+    const oldWickets =
+        innings.wickets;
+
+    originalRecordLiveBall_V141(
+        runs,
+        type
+    );
+
+
+    /*
+       The original function may have completed
+       the innings or changed the batsman.
+    */
+
+    const updatedInnings =
+        getCurrentInnings(match);
+
+    if (!updatedInnings) {
+        return;
+    }
+
+
+    initializeBatsmanStats(
+        match,
+        updatedInnings
+    );
+
+
+    /*
+       Update batsman statistics.
+
+       NORMAL BALL:
+       - Ball faced +1
+       - Runs added
+       - 4s/6s counted
+
+       WICKET:
+       - Ball faced +1
+       - OUT = true
+
+       WIDE:
+       - No ball faced
+       - No batsman run
+
+       NO BALL:
+       - No ball faced
+       - Current app records the
+         no-ball as 1 team run only.
+    */
+
+    if (
+        strikerStats &&
+        (
+            type === 'normal' ||
+            type === 'wicket'
+        )
+    ) {
+
+        strikerStats.balls += 1;
+
+
+        if (type === 'normal') {
+
+            strikerStats.runs +=
+                Number(runs) || 0;
+
+
+            if (runs === 4) {
+
+                strikerStats.fours += 1;
+            }
+
+
+            if (runs === 6) {
+
+                strikerStats.sixes += 1;
+            }
+        }
+
+
+        if (type === 'wicket') {
+
+            strikerStats.out = true;
+        }
+    }
+
+
+    /*
+       Find the ball that was just created
+       and save the previous batsman stats
+       inside it for Undo.
+    */
+
+    if (
+        updatedInnings.ballsHistory &&
+        updatedInnings.ballsHistory.length > 0
+    ) {
+
+        const lastBall =
+            updatedInnings.ballsHistory[
+                updatedInnings.ballsHistory.length - 1
+            ];
+
+        lastBall.previousBatsmanStats =
+            previousBatsmanStats;
+    }
+
+
+    saveToLocalStorage();
+
+    renderLiveScoring();
+};
+
+
+/* ================= BATSMAN STATS HTML ================= */
+
+function renderBatsmanStats(
+    match,
+    innings
+) {
+
+    initializeBatsmanStats(
+        match,
+        innings
+    );
+
+
+    const battingXI =
+        innings.battingTeamId === match.team1Id
+            ? match.team1PlayingXI
+            : match.team2PlayingXI;
+
+
+    if (
+        !Array.isArray(battingXI) ||
+        battingXI.length === 0
+    ) {
+
+        return `
+            <div class="empty-state">
+                <p>No batsman statistics available.</p>
+            </div>
+        `;
+    }
+
+
+    return `
+
+        <div class="score-card">
+
+            <div
+                style="
+                    overflow-x:auto;
+                    width:100%;
+                "
+            >
+
+                <table
+                    style="
+                        width:100%;
+                        border-collapse:collapse;
+                        text-align:center;
+                    "
+                >
+
+                    <thead>
+
+                        <tr>
+
+                            <th
+                                style="
+                                    text-align:left;
+                                    padding:8px;
+                                "
+                            >
+                                Batsman
+                            </th>
+
+                            <th>R</th>
+
+                            <th>B</th>
+
+                            <th>4s</th>
+
+                            <th>6s</th>
+
+                            <th>Status</th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        ${
+                            battingXI.map(
+                                playerId => {
+
+                                    const player =
+                                        getPlayer(
+                                            playerId
+                                        );
+
+                                    if (!player) {
+                                        return '';
+                                    }
+
+
+                                    const stats =
+                                        ensureBatsmanStats(
+                                            innings,
+                                            playerId
+                                        );
+
+
+                                    const isStriker =
+                                        LiveState.strikerId ===
+                                        playerId;
+
+
+                                    const isNonStriker =
+                                        LiveState.nonStrikerId ===
+                                        playerId;
+
+
+                                    let status =
+                                        'Not Out';
+
+
+                                    if (stats.out) {
+
+                                        status =
+                                            'OUT';
+
+                                    } else if (
+                                        isStriker
+                                    ) {
+
+                                        status =
+                                            'STRIKER';
+
+                                    } else if (
+                                        isNonStriker
+                                    ) {
+
+                                        status =
+                                            'NON-STRIKER';
+                                    }
+
+
+                                    return `
+
+                                        <tr>
+
+                                            <td
+                                                style="
+                                                    text-align:left;
+                                                    padding:8px;
+                                                "
+                                            >
+
+                                                <strong>
+                                                    ${
+                                                        escapeHtml(
+                                                            player.name
+                                                        )
+                                                    }
+                                                </strong>
+
+                                                ${
+                                                    player.number
+                                                        ? `
+                                                            <small>
+                                                                #${player.number}
+                                                            </small>
+                                                        `
+                                                        : ''
+                                                }
+
+                                            </td>
+
+
+                                            <td>
+                                                ${stats.runs}
+                                            </td>
+
+
+                                            <td>
+                                                ${stats.balls}
+                                            </td>
+
+
+                                            <td>
+                                                ${stats.fours}
+                                            </td>
+
+
+                                            <td>
+                                                ${stats.sixes}
+                                            </td>
+
+
+                                            <td>
+
+                                                ${
+                                                    status
+                                                }
+
+                                            </td>
+
+                                        </tr>
+
+                                    `;
+                                }
+                            ).join('')
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    `;
+}
+
+
+/* ================= UPDATED LIVE SCREEN ================= */
+
+renderLiveScoring = function() {
+
+    const match =
+        getMatch(
+            CurrentState.currentMatchId
+        );
+
+    if (!match) {
+
+        showAlert(
+            'Match not found.'
+        );
+
+        showTournamentDashboard(
+            CurrentState.currentTournamentId
+        );
+
+        return;
+    }
+
+
+    /*
+       Use the original initialization.
+    */
+
+    originalInitializeLiveScoring_V141(
+        match
+    );
+
+
+    const innings =
+        getCurrentInnings(match);
+
+
+    if (!innings) {
+        return;
+    }
+
+
+    initializeBatsmanStats(
+        match,
+        innings
+    );
+
+
+    const battingTeam =
+        getTeam(
+            innings.battingTeamId
+        );
+
+
+    const bowlingTeam =
+        getTeam(
+            innings.bowlingTeamId
+        );
+
+
+    if (!battingTeam || !bowlingTeam) {
+
+        showAlert(
+            'Team information not found.'
+        );
+
+        return;
+    }
+
+
+    const screen =
+        document.getElementById(
+            'live-scoring-screen'
+        );
+
+
+    screen.innerHTML = `
+
+        <header class="app-header">
+
+            <button
+                id="btn-back-from-live-scoring"
+                class="btn-back"
+            >
+                ← Back
+            </button>
+
+            <h2>Live Scoring</h2>
+
+        </header>
+
+
+        <div class="content">
+
+
+            <div class="section-title">
+
+                ${escapeHtml(
+                    battingTeam.name
+                )}
+
+            </div>
+
+
+            <div class="score-card">
+
+                <h1 id="live-score">
+
+                    ${innings.runs}/${innings.wickets}
+
+                </h1>
+
+
+                <p>
+
+                    Overs:
+
+                    <strong id="live-overs">
+
+                        ${formatOvers(
+                            innings
+                        )}
+
+                    </strong>
+
+                    /
+
+                    ${match.overs}
+
+                </p>
+
+
+                <p>
+
+                    Batting:
+
+                    <strong>
+
+                        ${escapeHtml(
+                            battingTeam.name
+                        )}
+
+                    </strong>
+
+                </p>
+
+
+                <p>
+
+                    Bowling:
+
+                    <strong>
+
+                        ${escapeHtml(
+                            bowlingTeam.name
+                        )}
+
+                    </strong>
+
+                </p>
+
+            </div>
+
+
+            <!-- ================= CURRENT PLAYERS ================= -->
+
+            <div class="section-title">
+
+                Current Players
+
+            </div>
+
+
+            <div class="score-card">
+
+                <p>
+
+                    🏏 Striker:
+
+                    <strong id="live-striker">
+
+                        ${escapeHtml(
+                            getLivePlayerName(
+                                LiveState.strikerId
+                            )
+                        )}
+
+                        ${
+                            innings.waitingForNewBatsman
+                                ? ' — OUT'
+                                : ''
+                        }
+
+                    </strong>
+
+                </p>
+
+
+                <p>
+
+                    🏏 Non-Striker:
+
+                    <strong id="live-non-striker">
+
+                        ${escapeHtml(
+                            getLivePlayerName(
+                                LiveState.nonStrikerId
+                            )
+                        )}
+
+                    </strong>
+
+                </p>
+
+
+                <p>
+
+                    🎯 Bowler:
+
+                    <strong id="live-bowler">
+
+                        ${escapeHtml(
+                            getLivePlayerName(
+                                LiveState.bowlerId
+                            )
+                        )}
+
+                    </strong>
+
+                </p>
+
+            </div>
+
+
+            <!-- ================= BATSMAN STATISTICS ================= -->
+
+            <div class="section-title">
+
+                🏏 Batsman Statistics
+
+            </div>
+
+
+            ${renderBatsmanStats(
+                match,
+                innings
+            )}
+
+
+            ${
+                innings.waitingForNewBatsman
+
+                    ? renderNewBatsmanSelector(
+                        match,
+                        innings
+                    )
+
+                    : `
+
+                        <div class="section-title">
+
+                            Add Runs
+
+                        </div>
+
+
+                        <div class="button-group">
+
+                            <button
+                                class="btn btn-secondary live-run-btn"
+                                data-runs="0"
+                            >
+                                0
+                            </button>
+
+
+                            <button
+                                class="btn btn-secondary live-run-btn"
+                                data-runs="1"
+                            >
+                                1
+                            </button>
+
+
+                            <button
+                                class="btn btn-secondary live-run-btn"
+                                data-runs="2"
+                            >
+                                2
+                            </button>
+
+
+                            <button
+                                class="btn btn-secondary live-run-btn"
+                                data-runs="3"
+                            >
+                                3
+                            </button>
+
+
+                            <button
+                                class="btn btn-primary live-run-btn"
+                                data-runs="4"
+                            >
+                                4
+                            </button>
+
+
+                            <button
+                                class="btn btn-primary live-run-btn"
+                                data-runs="6"
+                            >
+                                6
+                            </button>
+
+                        </div>
+
+
+                        <div class="section-title">
+
+                            Other
+
+                        </div>
+
+
+                        <div class="button-group">
+
+                            <button
+                                id="btn-live-wicket"
+                                class="btn btn-danger"
+                            >
+                                Wicket
+                            </button>
+
+
+                            <button
+                                id="btn-live-wide"
+                                class="btn btn-secondary"
+                            >
+                                Wide
+                            </button>
+
+
+                            <button
+                                id="btn-live-noball"
+                                class="btn btn-secondary"
+                            >
+                                No Ball
+                            </button>
+
+                        </div>
+
+                    `
+            }
+
+
+            <!-- ================= BALL HISTORY ================= -->
+
+            <div class="section-title">
+
+                Ball History
+
+            </div>
+
+
+            <div
+                id="live-ball-history"
+                class="matches-list"
+            >
+
+                ${renderBallHistory(
+                    innings
+                )}
+
+            </div>
+
+
+            <div class="button-group">
+
+                <button
+                    id="btn-live-undo"
+                    class="btn btn-secondary"
+                >
+                    ↩ Undo Last Ball
+                </button>
+
+            </div>
+
+
+        </div>
+
+    `;
+
+
+    /* ===== NEW BATSMAN ===== */
+
+    document
+        .querySelectorAll(
+            '.new-batsman-btn'
+        )
+        .forEach(button => {
+
+            button.addEventListener(
+                'click',
+                () => {
+
+                    selectNewBatsman(
+                        button.dataset.playerId
+                    );
+
+                }
+            );
+
+        });
+
+
+    /* ===== RUN BUTTONS ===== */
+
+    document
+        .querySelectorAll(
+            '.live-run-btn'
+        )
+        .forEach(button => {
+
+            button.addEventListener(
+                'click',
+                () => {
+
+                    recordLiveBall(
+                        parseInt(
+                            button.dataset.runs
+                        ),
+                        'normal'
+                    );
+
+                }
+            );
+
+        });
+
+
+    /* ===== WICKET ===== */
+
+    const wicketButton =
+        document.getElementById(
+            'btn-live-wicket'
+        );
+
+
+    if (wicketButton) {
+
+        wicketButton.addEventListener(
+            'click',
+            () => {
+
+                recordLiveBall(
+                    0,
+                    'wicket'
+                );
+
+            }
+        );
+
+    }
+
+
+    /* ===== WIDE ===== */
+
+    const wideButton =
+        document.getElementById(
+            'btn-live-wide'
+        );
+
+
+    if (wideButton) {
+
+        wideButton.addEventListener(
+            'click',
+            () => {
+
+                recordLiveBall(
+                    1,
+                    'wide'
+                );
+
+            }
+        );
+
+    }
+
+
+    /* ===== NO BALL ===== */
+
+    const noBallButton =
+        document.getElementById(
+            'btn-live-noball'
+        );
+
+
+    if (noBallButton) {
+
+        noBallButton.addEventListener(
+            'click',
+            () => {
+
+                recordLiveBall(
+                    1,
+                    'noball'
+                );
+
+            }
+        );
+
+    }
+
+
+    /* ===== UNDO ===== */
+
+    const undoButton =
+        document.getElementById(
+            'btn-live-undo'
+        );
+
+
+    if (undoButton) {
+
+        undoButton.addEventListener(
+            'click',
+            undoLastLiveBall
+        );
+
+    }
+
+
+    /* ===== BACK ===== */
+
+    const backButton =
+        document.getElementById(
+            'btn-back-from-live-scoring'
+        );
+
+
+    if (backButton) {
+
+        backButton.addEventListener(
+            'click',
+            () => {
+
+                showTournamentDashboard(
+                    CurrentState.currentTournamentId
+                );
+
+            }
+        );
+
+    }
+
+};
+
+
+/* ================= UPDATED UNDO ================= */
+
+undoLastLiveBall = function() {
+
+    const match =
+        getMatch(
+            CurrentState.currentMatchId
+        );
+
+    if (!match) {
+        return;
+    }
+
+
+    const innings =
+        getCurrentInnings(match);
+
+
+    if (
+        !innings ||
+        !innings.ballsHistory ||
+        innings.ballsHistory.length === 0
+    ) {
+
+        showAlert(
+            'There is no ball to undo.'
+        );
+
+        return;
+    }
+
+
+    /*
+       Get the last ball WITHOUT removing it
+       yet so we can restore statistics.
+    */
+
+    const lastBall =
+        innings.ballsHistory[
+            innings.ballsHistory.length - 1
+        ];
+
+
+    /*
+       Restore batsman statistics first.
+    */
+
+    if (
+        lastBall.previousBatsmanStats
+    ) {
+
+        innings.batsmanStats =
+            JSON.parse(
+                JSON.stringify(
+                    lastBall.previousBatsmanStats
+                )
+            );
+
+    }
+
+
+    /*
+       Now run the original V1.4 Undo.
+       It restores:
+       - score
+       - wickets
+       - balls
+       - players
+       - wicket state
+       - striker
+       - non-striker
+       - bowler
+    */
+
+    originalUndoLastLiveBall_V141();
+
+
+    /*
+       Make sure stats still exist after undo.
+    */
+
+    const restoredInnings =
+        getCurrentInnings(match);
+
+
+    if (restoredInnings) {
+
+        initializeBatsmanStats(
+            match,
+            restoredInnings
+        );
+
+        saveToLocalStorage();
+
+    }
+
+
+    renderLiveScoring();
+
+};
+
+
+/* =========================================================
+   END VERSION 1.4.1 BATSMAN STATISTICS
+   ========================================================= */
