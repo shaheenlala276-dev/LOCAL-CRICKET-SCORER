@@ -1566,7 +1566,7 @@ function setupEventListeners() {
 
     const createTournamentButton =
         document.getElementById(
-            "btn-create-tournament"
+           "btn-new-tournament" 
         );
 
     if (createTournamentButton) {
@@ -1701,6 +1701,26 @@ function setupEventListeners() {
     /*
        Back buttons
     */
+       /*
+       View saved tournaments
+    */
+
+    const viewTournamentsButton =
+        document.getElementById(
+            "btn-view-tournaments"
+        );
+
+    if (viewTournamentsButton) {
+
+        viewTournamentsButton.addEventListener(
+            "click",
+            () => {
+                renderTournamentList();
+                showScreen("tournaments-screen");
+            }
+        );
+
+    }
 
     const backHome =
         document.getElementById(
