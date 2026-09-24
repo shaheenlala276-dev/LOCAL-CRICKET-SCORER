@@ -2079,7 +2079,74 @@ function ensureBowlerRecord(playerId) {
 /* =========================================================
    INNINGS COMPLETION
    ========================================================= */
+// ========== VERSION 1.4 - INNINGS & TARGET HELPERS ==========
 
+function getCurrentInnings(match) {
+    if (!Array.isArray(LiveState.innings)) {
+        LiveState.innings = [];
+    }
+
+    if (!LiveState.innings[LiveState.inningsIndex]) {
+        LiveState.innings[LiveState.inningsIndex] = {
+            battingTeamId:
+                LiveState.inningsIndex === 0
+                    ? match.battingFirstId
+                    : match.bowlingFirstId,
+
+            bowlingTeamId:
+                LiveState.inningsIndex === 0
+                    ? match.bowlingFirstId
+                    : match.battingFirstId,
+
+            runs: LiveState.runs,
+            wickets: LiveState.wickets,
+            legalBalls: LiveState.legalBalls,
+            completed: false
+        };
+    }
+
+    return LiveState.innings[LiveState.inningsIndex];
+}
+
+
+function updateCurrentInnings(match) {
+    const innings = getCurrentInnings(match);
+
+    innings.runs = LiveState.runs;
+    innings.wickets = LiveState.wickets;
+    innings.legalBalls = LiveState.legalBalls;
+
+    return innings;
+}
+
+
+function getFirstInningsRuns(match) {
+    if (
+        Array.isArray(LiveState.innings) &&
+        LiveState.innings[0] &&
+        typeof LiveState.innings[0].runs === "number"
+    ) {
+        return LiveState.innings[0].runs;
+    }
+
+    return 0;
+}
+
+
+function getChaseTarget(match) {
+    return getFirstInningsRuns(match) + 1;
+}
+
+
+function getRunsRemaining(match) {
+    const target = getChaseTarget(match);
+
+    if (LiveState.inningsIndex !== 1) {
+        return null;
+    }
+
+    return Math.max(0, target - LiveState.runs);
+}
 function checkInningsCompletion(match) {
 
     if (!match) {
