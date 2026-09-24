@@ -1,7 +1,6 @@
 /* =========================================================
-   LOCAL CRICKET SCORER
-   VERSION 1.3
-   LIVE BALL-BY-BALL SCORING
+   LOCAL CRICKET SCORER - VERSION 1.4
+   Includes V1.0 + V1.1 + V1.2 + V1.3 + V1.4
    ========================================================= */
 
 
@@ -1297,7 +1296,9 @@ function createMatch() {
         createdAt:
             new Date().toISOString(),
 
-        innings: []
+        innings: [],
+
+        result: null
 
     };
 
@@ -2011,7 +2012,476 @@ function saveLiveStateToMatch(match) {
 
 
 /* =========================================================
-   RECORD LIVE BALL
+   V1.4 HELPER FUNCTIONS
+   ========================================================= */
+
+function getCurrentInnings(match) {
+
+    if (!match || !match.innings) {
+
+        return null;
+
+    }
+
+
+    return match.innings[
+        LiveState.inningsIndex
+    ] || null;
+}
+
+
+function updateCurrentInnings(match) {
+
+    if (!match) {
+
+        return;
+
+    }
+
+
+    const innings =
+        getCurrentInnings(match);
+
+
+    if (!innings) {
+
+        return;
+
+    }
+
+
+    innings.runs =
+        LiveState.runs;
+
+    innings.wickets =
+        LiveState.wickets;
+
+    innings.legalBalls =
+        LiveState.legalBalls;
+}
+
+
+function getFirstInningsRuns(match) {
+
+    if (!match || !match.innings) {
+
+        return 0;
+
+    }
+
+
+    const firstInnings =
+        match.innings[0];
+
+
+    if (!firstInnings) {
+
+        return 0;
+
+    }
+
+
+    return firstInnings.runs || 0;
+}
+
+
+function getChaseTarget(match) {
+
+    return getFirstInningsRuns(match) + 1;
+}
+
+
+function getRunsRemaining(match) {
+
+    const target =
+        getChaseTarget(match);
+
+
+    if (LiveState.inningsIndex !== 1) {
+
+        return null;
+
+    }
+
+
+    return Math.max(
+        0,
+        target - LiveState.runs
+    );
+}
+
+
+/* =========================================================
+   INNINGS TRANSITION (V1.4)
+   ========================================================= */
+
+function startSecondInnings(match) {
+
+    if (!match) {
+
+        return false;
+
+    }
+
+
+    const firstInningsRuns =
+        getFirstInningsRuns(match);
+
+
+    match.innings[0].completed =
+        true;
+
+
+    const secondInningsTeamA =
+        match.battingFirstId;
+
+    const secondInningsTeamB =
+        match.bowlingFirstId;
+
+
+    const secondBattingPlayers =
+        AppData.players.filter(
+            function (player) {
+
+                return player.teamId ===
+                    secondInningsTeamB;
+
+            }
+        );
+
+
+    const secondBowlingPlayers =
+        AppData.players.filter(
+            function (player) {
+
+                return player.teamId ===
+                    secondInningsTeamA;
+
+            }
+        );
+
+
+    if (
+        secondBattingPlayers.length < 2 ||
+        secondBowlingPlayers.length < 1
+    ) {
+
+        alert(
+            "Second innings cannot start: insufficient players."
+        );
+
+        return false;
+
+    }
+
+
+    LiveState.inningsIndex =
+        1;
+
+
+    LiveState.strikerId =
+        secondBattingPlayers[0].id;
+
+
+    LiveState.nonStrikerId =
+        secondBattingPlayers[1].id;
+
+
+    LiveState.bowlerId =
+        secondBowlingPlayers[0].id;
+
+
+    LiveState.runs =
+        0;
+
+
+    LiveState.wickets =
+        0;
+
+
+    LiveState.legalBalls =
+        0;
+
+
+    LiveState.currentOverBalls =
+        [];
+
+
+    LiveState.batsmen =
+        {};
+
+
+    LiveState.bowlers =
+        {};
+
+
+    LiveState.batsmen[
+        secondBattingPlayers[0].id
+    ] = {
+
+        runs: 0,
+
+        balls: 0,
+
+        out: false
+
+    };
+
+
+    LiveState.batsmen[
+        secondBattingPlayers[1].id
+    ] = {
+
+        runs: 0,
+
+        balls: 0,
+
+        out: false
+
+    };
+
+
+    LiveState.bowlers[
+        secondBowlingPlayers[0].id
+    ] = {
+
+        runs: 0,
+
+        wickets: 0,
+
+        legalBalls: 0
+
+    };
+
+
+    match.innings[1] =
+        createNewInnings(
+            secondInningsTeamB,
+            secondInningsTeamA
+        );
+
+
+    const tempTeamId =
+        match.battingFirstId;
+
+
+    match.battingFirstId =
+        match.bowlingFirstId;
+
+
+    match.bowlingFirstId =
+        tempTeamId;
+
+
+    saveLiveStateToMatch(match);
+
+    saveData();
+
+    return true;
+}
+
+
+/* =========================================================
+   CHECK INNINGS COMPLETION (V1.4 ENHANCED)
+   ========================================================= */
+
+function checkInningsCompletion(match) {
+
+    if (!match) {
+
+        return false;
+
+    }
+
+
+    const maximumBalls =
+        Number(match.overs) * 6;
+
+
+    /* =========================
+       OVER LIMIT
+       ========================= */
+
+    if (
+        LiveState.legalBalls >=
+        maximumBalls
+    ) {
+
+        if (LiveState.inningsIndex === 0) {
+
+            return true;
+
+        } else if (LiveState.inningsIndex === 1) {
+
+            return true;
+
+        }
+
+    }
+
+
+    /* =========================
+       ALL OUT
+       ========================= */
+
+    const battingCount =
+        LiveState.inningsIndex === 0
+            ? getBattingPlayerCount(match)
+            : AppData.players.filter(
+                function (player) {
+
+                    return player.teamId ===
+                        match.battingFirstId;
+
+                }
+            ).length;
+
+
+    if (
+        LiveState.wickets >=
+        battingCount - 1
+    ) {
+
+        return true;
+
+    }
+
+
+    /* =========================
+       NO BATTER LEFT
+       ========================= */
+
+    if (
+        !LiveState.strikerId
+    ) {
+
+        return true;
+
+    }
+
+
+    /* =========================
+       SECOND INNINGS TARGET REACHED
+       ========================= */
+
+    if (LiveState.inningsIndex === 1) {
+
+        const target =
+            getChaseTarget(match);
+
+
+        if (LiveState.runs >= target) {
+
+            return true;
+
+        }
+
+    }
+
+
+    return false;
+}
+
+
+function getBattingPlayerCount(match) {
+
+    return AppData.players.filter(
+        function (player) {
+
+            return player.teamId ===
+                match.battingFirstId;
+
+        }
+    ).length;
+}
+
+
+/* =========================================================
+   DETERMINE MATCH RESULT (V1.4)
+   ========================================================= */
+
+function determineMatchResult(match) {
+
+    if (!match) {
+
+        return;
+
+    }
+
+
+    if (LiveState.inningsIndex === 0) {
+
+        return;
+
+    }
+
+
+    const firstInningsRuns =
+        getFirstInningsRuns(match);
+
+    const secondInningsRuns =
+        LiveState.runs;
+
+    const target =
+        getChaseTarget(match);
+
+
+    const firstInningsTeam =
+        getTeamName(
+            match.battingFirstId
+        );
+
+    const secondInningsTeam =
+        getTeamName(
+            match.bowlingFirstId
+        );
+
+
+    if (secondInningsRuns >= target) {
+
+        const runsMargin =
+            secondInningsRuns -
+            firstInningsRuns;
+
+        match.result =
+            secondInningsTeam +
+            " won by " +
+            runsMargin +
+            " run" +
+            (runsMargin !== 1 ? "s" : "") +
+            ".";
+
+        return;
+
+    }
+
+
+    if (secondInningsRuns === firstInningsRuns) {
+
+        match.result =
+            "Match tied.";
+
+        return;
+
+    }
+
+
+    const runsMargin =
+        firstInningsRuns -
+        secondInningsRuns;
+
+    match.result =
+        firstInningsTeam +
+        " won by " +
+        runsMargin +
+        " run" +
+        (runsMargin !== 1 ? "s" : "") +
+        ".";
+}
+
+
+/* =========================================================
+   RECORD LIVE BALL (V1.3 + V1.4)
    ========================================================= */
 
 function recordLiveBall(
@@ -2375,11 +2845,11 @@ function recordLiveBall(
 
 
     /* =====================================================
-       CURRENT INNINGS
+       CURRENT INNINGS (V1.3)
        ===================================================== */
 
     const innings =
-        getCurrentInnings();
+        getCurrentInnings(match);
 
 
     if (innings) {
@@ -2441,7 +2911,7 @@ function recordLiveBall(
 
 
     /* =====================================================
-       MATCH COMPLETION
+       INNINGS COMPLETION CHECK
        ===================================================== */
 
     if (
@@ -2450,8 +2920,35 @@ function recordLiveBall(
         )
     ) {
 
-        match.status =
-            "Completed";
+        if (LiveState.inningsIndex === 0) {
+
+            const inningsStarted =
+                startSecondInnings(
+                    match
+                );
+
+
+            if (!inningsStarted) {
+
+                match.status =
+                    "Completed";
+
+                determineMatchResult(
+                    match
+                );
+
+            }
+
+        } else if (LiveState.inningsIndex === 1) {
+
+            match.status =
+                "Completed";
+
+            determineMatchResult(
+                match
+            );
+
+        }
 
     }
 
@@ -2668,12 +3165,27 @@ function replaceStriker() {
     }
 
 
+    let battingTeamId;
+
+    if (LiveState.inningsIndex === 0) {
+
+        battingTeamId =
+            match.battingFirstId;
+
+    } else {
+
+        battingTeamId =
+            match.bowlingFirstId;
+
+    }
+
+
     const battingPlayers =
         AppData.players.filter(
             function (player) {
 
                 return player.teamId ===
-                    match.battingFirstId;
+                    battingTeamId;
 
             }
         );
@@ -2717,11 +3229,6 @@ function replaceStriker() {
     }
 
 
-    /*
-       No more players.
-       The innings will end.
-    */
-
     LiveState.strikerId =
         null;
 }
@@ -2752,26 +3259,10 @@ function swapStrikers() {
 
 function completeOver() {
 
-    /*
-       At the end of an over,
-       batsmen change ends.
-    */
-
     swapStrikers();
-
-
-    /*
-       Start a fresh over display.
-    */
 
     LiveState.currentOverBalls =
         [];
-
-
-    /*
-       Version 1.3 keeps the
-       same bowler for now.
-    */
 }
 
 
@@ -2802,86 +3293,7 @@ function ensureBowlerRecord(
 
 
 /* =========================================================
-   INNINGS COMPLETION
-   ========================================================= */
-
-function checkInningsCompletion(
-    match
-) {
-
-    if (!match) {
-
-        return false;
-
-    }
-
-
-    const maximumBalls =
-        Number(match.overs) * 6;
-
-
-    /* =========================
-       OVER LIMIT
-       ========================= */
-
-    if (
-        LiveState.legalBalls >=
-        maximumBalls
-    ) {
-
-        return true;
-
-    }
-
-
-    /* =========================
-       ALL OUT
-       ========================= */
-
-    if (
-        LiveState.wickets >=
-        getBattingPlayerCount(match) - 1
-    ) {
-
-        return true;
-
-    }
-
-
-    /* =========================
-       NO BATTER LEFT
-       ========================= */
-
-    if (
-        !LiveState.strikerId
-    ) {
-
-        return true;
-
-    }
-
-
-    return false;
-}
-
-
-function getBattingPlayerCount(
-    match
-) {
-
-    return AppData.players.filter(
-        function (player) {
-
-            return player.teamId ===
-                match.battingFirstId;
-
-        }
-    ).length;
-}
-
-
-/* =========================================================
-   RENDER LIVE SCORING
+   RENDER LIVE SCORING (V1.3 + V1.4)
    ========================================================= */
 
 function renderLiveScoring() {
@@ -2897,16 +3309,34 @@ function renderLiveScoring() {
     }
 
 
-    const battingTeam =
-        getTeamName(
-            match.battingFirstId
-        );
+    let battingTeam;
+    let bowlingTeam;
 
+    if (LiveState.inningsIndex === 0) {
 
-    const bowlingTeam =
-        getTeamName(
-            match.bowlingFirstId
-        );
+        battingTeam =
+            getTeamName(
+                match.battingFirstId
+            );
+
+        bowlingTeam =
+            getTeamName(
+                match.bowlingFirstId
+            );
+
+    } else {
+
+        battingTeam =
+            getTeamName(
+                match.bowlingFirstId
+            );
+
+        bowlingTeam =
+            getTeamName(
+                match.battingFirstId
+            );
+
+    }
 
 
     setText(
@@ -2953,9 +3383,28 @@ function renderLiveScoring() {
     );
 
 
+    let targetDisplay = "—";
+
+    if (LiveState.inningsIndex === 1) {
+
+        const target =
+            getChaseTarget(match);
+
+        const runsRemaining =
+            getRunsRemaining(match);
+
+        targetDisplay =
+            target +
+            " (Remaining: " +
+            runsRemaining +
+            ")";
+
+    }
+
+
     setText(
         "liveTarget",
-        "—"
+        targetDisplay
     );
 
 
@@ -3396,16 +3845,6 @@ function getCurrentMatch() {
 
         }
     ) || null;
-}
-
-
-function getCurrentInnings() {
-
-    return (
-        LiveState.innings[
-            LiveState.inningsIndex
-        ] || null
-    );
 }
 
 
