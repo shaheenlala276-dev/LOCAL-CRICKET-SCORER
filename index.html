@@ -1,1 +1,158 @@
 
+<!DOCTYPE html><html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0f766e">
+    <title>Local Cricket Scorer</title>
+    <link rel="stylesheet" href="style.css">
+</head><body><header class="app-header">
+    <div>
+        <h1>🏏 Local Cricket Scorer</h1>
+        <p>Simple • Fast • Offline</p>
+    </div>
+</header>
+
+<main class="container">
+
+    <!-- HOME SCREEN -->
+    <section id="homeScreen" class="screen active">
+
+        <div class="welcome-card">
+            <h2>Welcome! 🏏</h2>
+            <p>Create a tournament and start managing your cricket teams.</p>
+        </div>
+
+        <div class="action-grid">
+
+            <button class="action-card" onclick="showScreen('tournamentScreen')">
+                <span class="action-icon">🏆</span>
+                <strong>Tournaments</strong>
+                <small>Create & manage tournaments</small>
+            </button>
+
+            <button class="action-card" onclick="showScreen('teamScreen')">
+                <span class="action-icon">👥</span>
+                <strong>Teams</strong>
+                <small>Manage your cricket teams</small>
+            </button>
+
+        </div>
+
+        <div class="info-card">
+            <h3>Version 1.1</h3>
+            <p>Tournament, team and player management.</p>
+        </div>
+
+    </section>
+
+
+    <!-- TOURNAMENT SCREEN -->
+    <section id="tournamentScreen" class="screen">
+
+        <div class="screen-header">
+            <button class="back-btn" onclick="showScreen('homeScreen')">← Back</button>
+            <h2>🏆 Tournaments</h2>
+        </div>
+
+        <div class="form-card">
+
+            <label for="tournamentName">Tournament Name</label>
+
+            <input
+                type="text"
+                id="tournamentName"
+                placeholder="Enter tournament name"
+                maxlength="50"
+            >
+
+            <button class="primary-btn" onclick="addTournament()">
+                + Create Tournament
+            </button>
+
+        </div>
+
+        <div id="tournamentList" class="list-container">
+            <p class="empty-message">No tournaments yet.</p>
+        </div>
+
+    </section>
+
+
+    <!-- TEAM SCREEN -->
+    <section id="teamScreen" class="screen">
+
+        <div class="screen-header">
+            <button class="back-btn" onclick="showScreen('homeScreen')">← Back</button>
+            <h2>👥 Teams</h2>
+        </div>
+
+        <div class="form-card">
+
+            <label for="teamName">Team Name</label>
+
+            <input
+                type="text"
+                id="teamName"
+                placeholder="Enter team name"
+                maxlength="50"
+            >
+
+            <button class="primary-btn" onclick="addTeam()">
+                + Create Team
+            </button>
+
+        </div>
+
+        <div id="teamList" class="list-container">
+            <p class="empty-message">No teams yet.</p>
+        </div>
+
+    </section>
+
+
+    <!-- PLAYERS SCREEN -->
+    <section id="playerScreen" class="screen">
+
+        <div class="screen-header">
+            <button class="back-btn" onclick="showScreen('teamScreen')">← Back</button>
+            <h2>🏏 Players</h2>
+        </div>
+
+        <div id="selectedTeamInfo" class="selected-info"></div>
+
+        <div class="form-card">
+
+            <label for="playerName">Player Name</label>
+
+            <input
+                type="text"
+                id="playerName"
+                placeholder="Enter player name"
+                maxlength="50"
+            >
+
+            <button class="primary-btn" onclick="addPlayer()">
+                + Add Player
+            </button>
+
+        </div>
+
+        <div id="playerList" class="list-container">
+            <p class="empty-message">No players yet.</p>
+        </div>
+
+    </section>
+
+</main>
+
+
+<footer class="app-footer">
+    <p>Local Cricket Scorer • Version 1.1</p>
+</footer>
+
+
+<script src="script.js"></script>
+
+</body>
+</html>
