@@ -1,1803 +1,982 @@
-/* =========================================================
-   LOCAL CRICKET SCORER APP - VERSION 1.4
-   REBUILT WORKING VERSION
-
-   Features:
-   - Tournament management
-   - Team management
-   - Player management
-   - Match setup
-   - Playing XI
-   - Toss
-   - Live ball-by-ball scoring
-   - Wicket
-   - New batsman after wicket
-   - Strike rotation
-   - Overs
-   - Undo
-   - LocalStorage
-   ========================================================= */
-
-
-/* =========================================================
-   DATA
-   ========================================================= */
-
-const AppData = {
-    tournaments: [],
-    teams: [],
-    players: [],
-    matches: []
-};
-
 const STORAGE_KEY = "cricket_scorer_v1";
 
-const TOURNAMENT_PREFIX = "tourn_";
-const TEAM_PREFIX = "team_";
-const PLAYER_PREFIX = "player_";
-const MATCH_PREFIX = "match_";
-
-
-/* =========================================================
-   CURRENT STATE
-   ========================================================= */
+const AppData = {
+  tournaments: [],
+  teams: [],
+  players: [],
+  matches: []
+};
 
 const CurrentState = {
-    currentTournamentId: null,
-    currentTeamId: null,
-    currentMatchId: null,
-    editingTeamId: null,
-    editingPlayerId: null
+  currentTournamentId: null,
+  currentTeamId: null,
+  currentMatchId: null,
+  editingTeamId: null,
+  editingPlayerId: null
 };
-
-
-/* =========================================================
-   LIVE STATE
-   ========================================================= */
 
 const LiveState = {
-    inningsIndex: 0,
-    strikerId: null,
-    nonStrikerId: null,
-    bowlerId: null,
-    pendingNewBatsman: false
+  inningsIndex: 0,
+  strikerId: null,
+  nonStrikerId: null,
+  bowlerId: null,
+  pendingNewBatsman: false
 };
 
-
-/* =========================================================
-   HELPERS
-   ========================================================= */
-
-function generateId(prefix) {
-    return prefix + Date.now() + "_" + Math.random().toString(36).substring(2, 8);
+function generateId() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
 
 function saveData() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(AppData));
+  const data = {
+    appData: AppData,
+    currentState: CurrentState,
+    liveState: LiveState
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
 function loadData() {
-    const saved = localStorage.getItem(STORAGE_KEY);
-
-    if (!saved) return;
-
+  const data = localStorage.getItem(STORAGE_KEY);
+  if (data) {
     try {
-        const data = JSON.parse(saved);
-
-        AppData.tournaments = data.tournaments || [];
-        AppData.teams = data.teams || [];
-        AppData.players = data.players || [];
-        AppData.matches = data.matches || [];
-    } catch (error) {
-        console.error("Could not load saved data:", error);
+      const parsed = JSON.parse(data);
+      Object.assign(AppData, parsed.appData);
+      Object.assign(CurrentState, parsed.currentState);
+      Object.assign(LiveState, parsed.liveState);
+    } catch (e) {
+      console.error("Error loading data", e);
     }
+  }
+}
+
+function escapeHTML(text) {
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return text.replace(/[&<>"']/g, m => map[m]);
 }
 
 function getTournamentById(id) {
-    return AppData.tournaments.find(t => t.id === id);
+  return AppData.tournaments.find(t => t.id === id);
 }
 
 function getTeamById(id) {
-    return AppData.teams.find(t => t.id === id);
+  return AppData.teams.find(t => t.id === id);
 }
 
 function getPlayerById(id) {
-    return AppData.players.find(p => p.id === id);
+  return AppData.players.find(p => p.id === id);
 }
 
 function getMatchById(id) {
-    return AppData.matches.find(m => m.id === id);
+  return AppData.matches.find(m => m.id === id);
 }
 
 function showScreen(screenId) {
-    document.querySelectorAll(".screen").forEach(screen => {
-        screen.classList.remove("active");
-    });
-
-    const screen = document.getElementById(screenId);
-
-    if (screen) {
-        screen.classList.add("active");
-    }
+  document.querySelectorAll('[data-screen]').forEach(screen => {
+    screen.style.display = 'none';
+  });
+  const screen = document.getElementById(screenId);
+  if (screen) {
+    screen.style.display = 'block';
+  }
 }
 
-function escapeHTML(value) {
-    return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-
-/* =========================================================
-   TOURNAMENTS
-   ========================================================= */
-
-function createTournament(name) {
-    if (!name || !name.trim()) {
-        alert("Please enter tournament name.");
-        return;
-    }
-
-    const tournament = {
-        id: generateId(TOURNAMENT_PREFIX),
-        name: name.trim(),
-        createdAt: new Date().toISOString()
-    };
-
-    AppData.tournaments.push(tournament);
-    saveData();
-
-    renderTournamentList();
-
-    const input = document.getElementById("tournament-name");
-
-    if (input) {
-        input.value = "";
-    }
+function createTournament() {
+  const name = document.getElementById('tournament-name').value.trim();
+  if (!name) {
+    alert('Please enter tournament name');
+    return;
+  }
+  AppData.tournaments.push({
+    id: generateId(),
+    name: name,
+    createdAt: new Date().toISOString()
+  });
+  saveData();
+  document.getElementById('tournament-name').value = '';
+  showScreen('tournaments-screen');
+  renderTournamentList();
 }
 
 function deleteTournament(id) {
-    const tournament = getTournamentById(id);
-
-    if (!tournament) return;
-
-    if (!confirm(`Delete tournament "${tournament.name}"?`)) return;
-
+  if (confirm('Delete this tournament?')) {
     AppData.tournaments = AppData.tournaments.filter(t => t.id !== id);
-
-    AppData.teams = AppData.teams.filter(
-        team => team.tournamentId !== id
-    );
-
-    AppData.matches = AppData.matches.filter(
-        match => match.tournamentId !== id
-    );
-
+    AppData.matches = AppData.matches.filter(m => m.tournamentId !== id);
     saveData();
     renderTournamentList();
+  }
 }
 
 function renderTournamentList() {
-    const container =
-        document.getElementById("tournament-list") ||
-        document.getElementById("tournaments-list");
+  const list = document.getElementById('tournaments-list');
+  if (!list) return;
 
-    if (!container) return;
-
-    if (AppData.tournaments.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <p>No tournaments yet.</p>
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = AppData.tournaments.map(tournament => `
-        <div class="card tournament-card">
-            <h3>${escapeHTML(tournament.name)}</h3>
-
-            <button
-                class="btn-primary tournament-open-btn"
-                data-id="${tournament.id}">
-                Open
-            </button>
-
-            <button
-                class="btn-danger tournament-delete-btn"
-                data-id="${tournament.id}">
-                Delete
-            </button>
-        </div>
-    `).join("");
-
-    container.querySelectorAll(".tournament-open-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-            openTournament(btn.dataset.id);
-        });
-    });
-
-    container.querySelectorAll(".tournament-delete-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-            deleteTournament(btn.dataset.id);
-        });
-    });
+  list.innerHTML = '';
+  AppData.tournaments.forEach(tournament => {
+    const div = document.createElement('div');
+    div.className = 'tournament-card';
+    div.innerHTML = `
+      <div class="tournament-info">
+        <h3>${escapeHTML(tournament.name)}</h3>
+      </div>
+      <div class="tournament-actions">
+        <button onclick="openTournament('${tournament.id}')" class="btn btn-primary">Open</button>
+        <button onclick="deleteTournament('${tournament.id}')" class="btn btn-danger">Delete</button>
+      </div>
+    `;
+    list.appendChild(div);
+  });
 }
 
 function openTournament(id) {
-    const tournament = getTournamentById(id);
-
-    if (!tournament) return;
-
-    CurrentState.currentTournamentId = id;
-
-    renderTournamentDashboard();
-
-    showScreen("tournament-dashboard-screen");
+  CurrentState.currentTournamentId = id;
+  CurrentState.currentTeamId = null;
+  saveData();
+  renderTournamentDashboard();
+  showScreen('tournament-screen');
 }
 
+function renderTournamentDashboard() {
+  const tournament = getTournamentById(CurrentState.currentTournamentId);
+  if (!tournament) return;
 
-/* =========================================================
-   TEAMS
-   ========================================================= */
+  const screen = document.getElementById('tournament-screen');
+  if (!screen) return;
 
-function createTeam(tournamentId, name) {
-    if (!tournamentId) {
-        alert("Tournament not selected.");
-        return;
-    }
+  screen.innerHTML = `
+    <div class="screen-header">
+      <h2>${escapeHTML(tournament.name)}</h2>
+      <button id="btn-back-to-tournament" class="btn btn-secondary">Back</button>
+    </div>
+    <div class="screen-content">
+      <div class="nav-tabs">
+        <button onclick="showTournamentTab('teams')" class="tab-btn active">Teams</button>
+        <button onclick="showTournamentTab('matches')" class="tab-btn">Matches</button>
+      </div>
+      <div id="teams-tab" class="tab-content">
+        <button onclick="showScreen('create-team-screen')" class="btn btn-primary">+ Add Team</button>
+        <div id="teams-list"></div>
+      </div>
+      <div id="matches-tab" class="tab-content" style="display:none;">
+        <button onclick="showScreen('create-match-screen')" class="btn btn-primary">+ Create Match</button>
+        <div id="matches-list"></div>
+      </div>
+    </div>
+  `;
 
-    if (!name || !name.trim()) {
-        alert("Please enter team name.");
-        return;
-    }
+  document.getElementById('btn-back-to-tournament').addEventListener('click', () => {
+    showScreen('tournaments-screen');
+  });
 
-    const team = {
-        id: generateId(TEAM_PREFIX),
-        tournamentId,
-        name: name.trim(),
-        playerIds: [],
-        createdAt: new Date().toISOString()
-    };
+  renderTeams();
+  renderTournamentMatches();
+}
 
-    AppData.teams.push(team);
+function showTournamentTab(tabName) {
+  document.querySelectorAll('.tab-content').forEach(tab => {
+    tab.style.display = 'none';
+  });
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
 
-    saveData();
-    renderTournamentDashboard();
+  if (tabName === 'teams') {
+    document.getElementById('teams-tab').style.display = 'block';
+    document.querySelectorAll('.tab-btn')[0].classList.add('active');
+  } else if (tabName === 'matches') {
+    document.getElementById('matches-tab').style.display = 'block';
+    document.querySelectorAll('.tab-btn')[1].classList.add('active');
+  }
+}
+
+function createTeam() {
+  const name = document.getElementById('team-name').value.trim();
+  if (!name) {
+    alert('Please enter team name');
+    return;
+  }
+  AppData.teams.push({
+    id: generateId(),
+    name: name,
+    tournamentId: CurrentState.currentTournamentId
+  });
+  saveData();
+  document.getElementById('team-name').value = '';
+  renderTeams();
+  showScreen('tournament-screen');
 }
 
 function deleteTeam(id) {
-    const team = getTeamById(id);
-
-    if (!team) return;
-
-    if (!confirm(`Delete team "${team.name}"?`)) return;
-
+  if (confirm('Delete this team?')) {
     AppData.teams = AppData.teams.filter(t => t.id !== id);
-
-    AppData.players = AppData.players.filter(
-        player => player.teamId !== id
-    );
-
+    AppData.players = AppData.players.filter(p => p.teamId !== id);
     saveData();
-
-    renderTournamentDashboard();
+    renderTeams();
+  }
 }
 
-function renderTeams(tournamentId) {
-    const container =
-        document.getElementById("team-list") ||
-        document.getElementById("teams-list");
+function renderTeams() {
+  const list = document.getElementById('teams-list');
+  if (!list) return;
 
-    if (!container) return;
-
-    const teams = AppData.teams.filter(
-        team => team.tournamentId === tournamentId
-    );
-
-    if (teams.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <p>No teams yet.</p>
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = teams.map(team => `
-        <div class="card team-card">
-            <h3>${escapeHTML(team.name)}</h3>
-
-            <button
-                class="btn-primary team-open-btn"
-                data-id="${team.id}">
-                Players
-            </button>
-
-            <button
-                class="btn-danger team-delete-btn"
-                data-id="${team.id}">
-                Delete
-            </button>
-        </div>
-    `).join("");
-
-    container.querySelectorAll(".team-open-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-            openTeam(btn.dataset.id);
-        });
-    });
-
-    container.querySelectorAll(".team-delete-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-            deleteTeam(btn.dataset.id);
-        });
-    });
+  const teams = AppData.teams.filter(t => t.tournamentId === CurrentState.currentTournamentId);
+  list.innerHTML = '';
+  teams.forEach(team => {
+    const div = document.createElement('div');
+    div.className = 'team-card';
+    div.innerHTML = `
+      <div class="team-info">
+        <h4>${escapeHTML(team.name)}</h4>
+      </div>
+      <div class="team-actions">
+        <button onclick="openTeam('${team.id}')" class="btn btn-primary">View</button>
+        <button onclick="deleteTeam('${team.id}')" class="btn btn-danger">Delete</button>
+      </div>
+    `;
+    list.appendChild(div);
+  });
 }
 
 function openTeam(id) {
-    const team = getTeamById(id);
-
-    if (!team) return;
-
-    CurrentState.currentTeamId = id;
-
-    renderTeamDetails();
-
-    showScreen("team-details-screen");
-}
-
-
-/* =========================================================
-   PLAYERS
-   ========================================================= */
-
-function createPlayer(teamId, name) {
-    if (!teamId) {
-        alert("Team not selected.");
-        return;
-    }
-
-    if (!name || !name.trim()) {
-        alert("Please enter player name.");
-        return;
-    }
-
-    const player = {
-        id: generateId(PLAYER_PREFIX),
-        teamId,
-        name: name.trim(),
-        createdAt: new Date().toISOString()
-    };
-
-    AppData.players.push(player);
-
-    const team = getTeamById(teamId);
-
-    if (team) {
-        if (!Array.isArray(team.playerIds)) {
-            team.playerIds = [];
-        }
-
-        team.playerIds.push(player.id);
-    }
-
-    saveData();
-
-    renderTeamDetails();
-}
-
-function deletePlayer(id) {
-    const player = getPlayerById(id);
-
-    if (!player) return;
-
-    if (!confirm(`Delete player "${player.name}"?`)) return;
-
-    AppData.players = AppData.players.filter(
-        p => p.id !== id
-    );
-
-    AppData.teams.forEach(team => {
-        team.playerIds = (team.playerIds || []).filter(
-            playerId => playerId !== id
-        );
-    });
-
-    saveData();
-
-    renderTeamDetails();
+  CurrentState.currentTeamId = id;
+  saveData();
+  renderTeamDetails();
+  showScreen('team-screen');
 }
 
 function renderTeamDetails() {
-    const team = getTeamById(CurrentState.currentTeamId);
+  const team = getTeamById(CurrentState.currentTeamId);
+  if (!team) return;
 
-    if (!team) return;
+  const screen = document.getElementById('team-screen');
+  if (!screen) return;
 
-    const title = document.getElementById("team-details-title");
+  screen.innerHTML = `
+    <div class="screen-header">
+      <h2>${escapeHTML(team.name)}</h2>
+      <button id="btn-back-to-team" class="btn btn-secondary">Back</button>
+    </div>
+    <div class="screen-content">
+      <button onclick="showScreen('add-player-screen')" class="btn btn-primary">+ Add Player</button>
+      <div id="players-list"></div>
+    </div>
+  `;
 
-    if (title) {
-        title.textContent = team.name;
-    }
-
-    const container =
-        document.getElementById("player-list") ||
-        document.getElementById("players-list");
-
-    if (!container) return;
-
-    const players = AppData.players.filter(
-        player => player.teamId === team.id
-    );
-
-    if (players.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <p>No players yet.</p>
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = players.map((player, index) => `
-        <div class="card player-card">
-            <strong>${index + 1}. ${escapeHTML(player.name)}</strong>
-
-            <button
-                class="btn-danger player-delete-btn"
-                data-id="${player.id}">
-                Delete
-            </button>
-        </div>
-    `).join("");
-
-    container.querySelectorAll(".player-delete-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-            deletePlayer(btn.dataset.id);
-        });
-    });
-}
-
-
-/* =========================================================
-   TOURNAMENT DASHBOARD
-   ========================================================= */
-
-function renderTournamentDashboard() {
-    const tournament =
-        getTournamentById(CurrentState.currentTournamentId);
-
-    if (!tournament) return;
-
-    const title =
-        document.getElementById("tournament-dashboard-title");
-
-    if (title) {
-        title.textContent = tournament.name;
-    }
-
-    renderTeams(tournament.id);
-    renderTournamentMatches(tournament.id);
-}
-
-
-/* =========================================================
-   MATCHES
-   ========================================================= */
-
-function createMatch(matchData) {
-    const {
-        tournamentId,
-        team1Id,
-        team2Id,
-        overs,
-        matchDate,
-        matchTime,
-        venue,
-        tossWinnerId,
-        tossDecision,
-        team1PlayingXI,
-        team2PlayingXI
-    } = matchData;
-
-    if (!tournamentId) {
-        alert("Tournament not selected.");
-        return;
-    }
-
-    if (!team1Id || !team2Id || team1Id === team2Id) {
-        alert("Please select two different teams.");
-        return;
-    }
-
-    if (!overs || Number(overs) <= 0) {
-        alert("Please enter valid overs.");
-        return;
-    }
-
-    if (!tossWinnerId) {
-        alert("Please select toss winner.");
-        return;
-    }
-
-    if (!tossDecision) {
-        alert("Please select toss decision.");
-        return;
-    }
-
-    if (
-        !Array.isArray(team1PlayingXI) ||
-        team1PlayingXI.length < 2 ||
-        team1PlayingXI.length > 11
-    ) {
-        alert("Team 1 Playing XI must contain 2 to 11 players.");
-        return;
-    }
-
-    if (
-        !Array.isArray(team2PlayingXI) ||
-        team2PlayingXI.length < 2 ||
-        team2PlayingXI.length > 11
-    ) {
-        alert("Team 2 Playing XI must contain 2 to 11 players.");
-        return;
-    }
-
-    const match = {
-        id: generateId(MATCH_PREFIX),
-        tournamentId,
-        team1Id,
-        team2Id,
-        overs: parseInt(overs, 10),
-        matchDate: matchDate || "",
-        matchTime: matchTime || "",
-        venue: venue || "",
-        tossWinnerId,
-        tossDecision,
-        team1PlayingXI,
-        team2PlayingXI,
-        status: "Not Started",
-        innings: [],
-        createdAt: new Date().toISOString()
-    };
-
-    AppData.matches.push(match);
-
-    saveData();
-
-    CurrentState.currentMatchId = match.id;
-
-    alert("Match created successfully.");
-
+  document.getElementById('btn-back-to-team').addEventListener('click', () => {
     renderTournamentDashboard();
+    showScreen('tournament-screen');
+  });
+
+  renderPlayers();
 }
 
-function renderTournamentMatches(tournamentId) {
-    const container =
-        document.getElementById("match-list") ||
-        document.getElementById("matches-list");
+function createPlayer() {
+  const name = document.getElementById('player-name').value.trim();
+  if (!name) {
+    alert('Please enter player name');
+    return;
+  }
+  AppData.players.push({
+    id: generateId(),
+    name: name,
+    teamId: CurrentState.currentTeamId
+  });
+  saveData();
+  document.getElementById('player-name').value = '';
+  renderPlayers();
+  showScreen('team-screen');
+}
 
-    if (!container) return;
+function deletePlayer(id) {
+  if (confirm('Delete this player?')) {
+    AppData.players = AppData.players.filter(p => p.id !== id);
+    saveData();
+    renderPlayers();
+  }
+}
 
-    const matches = AppData.matches.filter(
-        match => match.tournamentId === tournamentId
-    );
+function renderPlayers() {
+  const list = document.getElementById('players-list');
+  if (!list) return;
 
-    if (matches.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <p>No matches yet.</p>
-            </div>
-        `;
-        return;
-    }
+  const players = AppData.players.filter(p => p.teamId === CurrentState.currentTeamId);
+  list.innerHTML = '';
+  players.forEach(player => {
+    const div = document.createElement('div');
+    div.className = 'player-card';
+    div.innerHTML = `
+      <div class="player-info">
+        <p>${escapeHTML(player.name)}</p>
+      </div>
+      <div class="player-actions">
+        <button onclick="deletePlayer('${player.id}')" class="btn btn-danger">Delete</button>
+      </div>
+    `;
+    list.appendChild(div);
+  });
+}
 
-    container.innerHTML = matches.map(match => {
-        const team1 = getTeamById(match.team1Id);
-        const team2 = getTeamById(match.team2Id);
+function createMatch() {
+  const team1Id = document.getElementById('match-team1').value;
+  const team2Id = document.getElementById('match-team2').value;
+  const overs = parseInt(document.getElementById('match-overs').value);
+  const venue = document.getElementById('match-venue').value.trim();
+  const matchDate = document.getElementById('match-date').value;
+  const tossWinner = document.getElementById('match-toss-winner').value;
+  const tossDecision = document.getElementById('match-toss-decision').value;
 
-        return `
-            <div class="card match-card">
-                <h3>
-                    ${escapeHTML(team1 ? team1.name : "Team 1")}
-                    vs
-                    ${escapeHTML(team2 ? team2.name : "Team 2")}
-                </h3>
+  if (!team1Id || !team2Id || team1Id === team2Id) {
+    alert('Select two different teams');
+    return;
+  }
 
-                <p>Status: ${escapeHTML(match.status)}</p>
+  if (!overs || overs < 1) {
+    alert('Enter valid number of overs');
+    return;
+  }
 
-                <button
-                    class="btn-primary match-open-btn"
-                    data-id="${match.id}">
-                    ${match.status === "Not Started"
-                        ? "Start Match"
-                        : "Open Match"}
-                </button>
-            </div>
-        `;
-    }).join("");
+  AppData.matches.push({
+    id: generateId(),
+    tournamentId: CurrentState.currentTournamentId,
+    team1Id: team1Id,
+    team2Id: team2Id,
+    overs: overs,
+    venue: venue,
+    matchDate: matchDate,
+    tossWinner: tossWinner,
+    tossDecision: tossDecision,
+    innings: [
+      {
+        battingTeamId: tossDecision === 'bat' ? tossWinner : (tossWinner === team1Id ? team2Id : team1Id),
+        bowlingTeamId: tossDecision === 'bat' ? (tossWinner === team1Id ? team2Id : team1Id) : tossWinner,
+        runs: 0,
+        wickets: 0,
+        balls: [],
+        dismissed: []
+      },
+      {
+        battingTeamId: tossDecision === 'bat' ? (tossWinner === team1Id ? team2Id : team1Id) : tossWinner,
+        bowlingTeamId: tossDecision === 'bat' ? tossWinner : (tossWinner === team1Id ? team2Id : team1Id),
+        runs: 0,
+        wickets: 0,
+        balls: [],
+        dismissed: []
+      }
+    ],
+    status: 'created'
+  });
 
-    container.querySelectorAll(".match-open-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-            openMatch(btn.dataset.id);
-        });
-    });
+  saveData();
+  document.getElementById('match-team1').value = '';
+  document.getElementById('match-team2').value = '';
+  document.getElementById('match-overs').value = '';
+  document.getElementById('match-venue').value = '';
+  document.getElementById('match-date').value = '';
+  document.getElementById('match-toss-winner').value = '';
+  document.getElementById('match-toss-decision').value = '';
+
+  renderTournamentMatches();
+  showScreen('tournament-screen');
+  showTournamentTab('matches');
+}
+
+function renderTournamentMatches() {
+  const list = document.getElementById('matches-list');
+  if (!list) return;
+
+  const matches = AppData.matches.filter(m => m.tournamentId === CurrentState.currentTournamentId);
+  list.innerHTML = '';
+  matches.forEach(match => {
+    const team1 = getTeamById(match.team1Id);
+    const team2 = getTeamById(match.team2Id);
+    const team1Name = team1 ? team1.name : 'Unknown';
+    const team2Name = team2 ? team2.name : 'Unknown';
+
+    const div = document.createElement('div');
+    div.className = 'match-card';
+    div.innerHTML = `
+      <div class="match-info">
+        <h4>${escapeHTML(team1Name)} vs ${escapeHTML(team2Name)}</h4>
+        <p>${match.overs} Overs | ${escapeHTML(match.venue)}</p>
+      </div>
+      <div class="match-actions">
+        ${match.status === 'created' ? `<button onclick="openMatch('${match.id}')" class="btn btn-primary">Start</button>` : `<button onclick="openMatch('${match.id}')" class="btn btn-primary">View</button>`}
+      </div>
+    `;
+    list.appendChild(div);
+  });
 }
 
 function openMatch(id) {
-    const match = getMatchById(id);
-
-    if (!match) return;
-
-    CurrentState.currentMatchId = id;
-
-    if (match.status === "Not Started") {
-        startMatch(id);
-    } else {
-        initializeLiveScoring(match);
-        renderLiveScoring();
-        showScreen("live-scoring-screen");
-    }
+  CurrentState.currentMatchId = id;
+  saveData();
+  const match = getMatchById(id);
+  if (match.status === 'created') {
+    startMatch();
+  } else {
+    renderMatchScreen();
+  }
 }
 
+function startMatch() {
+  const match = getMatchById(CurrentState.currentMatchId);
+  if (!match) return;
 
-/* =========================================================
-   START MATCH
-   ========================================================= */
-
-function startMatch(matchId) {
-    const match = getMatchById(matchId);
-
-    if (!match) return;
-
-    initializeLiveScoring(match);
-
-    match.status = "Live";
-
-    saveData();
-
-    renderLiveScoring();
-
-    showScreen("live-scoring-screen");
+  LiveState.inningsIndex = 0;
+  LiveState.pendingNewBatsman = false;
+  match.status = 'live';
+  saveData();
+  initializeLiveScoring();
+  renderLiveScoring();
+  attachLiveScoringListeners();
+  showScreen('live-scoring-screen');
 }
 
+function initializeLiveScoring() {
+  const match = getMatchById(CurrentState.currentMatchId);
+  if (!match) return;
 
-/* =========================================================
-   LIVE SCORING INITIALIZATION
-   ========================================================= */
+  const innings = match.innings[LiveState.inningsIndex];
+  const battingTeam = getTeamById(innings.battingTeamId);
+  const battingPlayers = AppData.players.filter(p => p.teamId === innings.battingTeamId);
 
-function initializeLiveScoring(match) {
-    if (!match) return;
+  if (battingPlayers.length < 2) {
+    alert('Not enough players in batting team');
+    return;
+  }
 
-    if (!Array.isArray(match.innings)) {
-        match.innings = [];
-    }
-
-    if (match.innings.length === 0) {
-        let battingTeamId;
-        let bowlingTeamId;
-
-        if (match.tossDecision === "bat") {
-            battingTeamId = match.tossWinnerId;
-        } else {
-            battingTeamId =
-                match.tossWinnerId === match.team1Id
-                    ? match.team2Id
-                    : match.team1Id;
-        }
-
-        bowlingTeamId =
-            battingTeamId === match.team1Id
-                ? match.team2Id
-                : match.team1Id;
-
-        const innings = {
-            inningsNumber: 1,
-            battingTeamId,
-            bowlingTeamId,
-            runs: 0,
-            wickets: 0,
-            balls: 0,
-            totalBalls: 0,
-            ballsHistory: [],
-            outPlayerIds: [],
-            waitingForNewBatsman: false,
-            pendingEndOfOverSwap: false,
-            completed: false
-        };
-
-        match.innings.push(innings);
-    }
-
-    const innings = match.innings[LiveState.inningsIndex];
-
-    if (!innings) return;
-
-    if (!Array.isArray(innings.outPlayerIds)) {
-        innings.outPlayerIds = [];
-    }
-
-    if (typeof innings.waitingForNewBatsman !== "boolean") {
-        innings.waitingForNewBatsman = false;
-    }
-
-    if (typeof innings.pendingEndOfOverSwap !== "boolean") {
-        innings.pendingEndOfOverSwap = false;
-    }
-
-    const battingXI =
-        innings.battingTeamId === match.team1Id
-            ? match.team1PlayingXI
-            : match.team2PlayingXI;
-
-    if (
-        !innings.waitingForNewBatsman &&
-        (!LiveState.strikerId || !LiveState.nonStrikerId)
-    ) {
-        const available = battingXI.filter(
-            id => !innings.outPlayerIds.includes(id)
-        );
-
-        if (available.length >= 2) {
-            LiveState.strikerId = available[0];
-            LiveState.nonStrikerId = available[1];
-        }
-    }
-
-    const bowlingXI =
-        innings.bowlingTeamId === match.team1Id
-            ? match.team1PlayingXI
-            : match.team2PlayingXI;
-
-    if (!LiveState.bowlerId && bowlingXI.length > 0) {
-        LiveState.bowlerId = bowlingXI[0];
-    }
-
-    LiveState.pendingNewBatsman =
-        innings.waitingForNewBatsman;
+  LiveState.strikerId = battingPlayers[0].id;
+  LiveState.nonStrikerId = battingPlayers[1].id;
+  LiveState.bowlerId = AppData.players.find(p => p.teamId === innings.bowlingTeamId)?.id || null;
 }
 
-
-/* =========================================================
-   NEW BATSMAN
-   ========================================================= */
-
-function getEligibleNewBatsmen(match, innings) {
-    const battingXI =
-        innings.battingTeamId === match.team1Id
-            ? match.team1PlayingXI
-            : match.team2PlayingXI;
-
-    return battingXI.filter(playerId => {
-        return (
-            !innings.outPlayerIds.includes(playerId) &&
-            playerId !== LiveState.strikerId &&
-            playerId !== LiveState.nonStrikerId
-        );
-    });
+function getCurrentInnings() {
+  const match = getMatchById(CurrentState.currentMatchId);
+  if (!match) return null;
+  return match.innings[LiveState.inningsIndex];
 }
 
-function renderNewBatsmanSelector(match, innings) {
-    const eligible =
-        getEligibleNewBatsmen(match, innings);
+function getBallsInCurrentOver() {
+  const innings = getCurrentInnings();
+  if (!innings || !innings.balls.length) return 0;
+  const lastBall = innings.balls[innings.balls.length - 1];
+  return lastBall.ballInOver || 1;
+}
 
-    if (eligible.length === 0) {
-        return `
-            <div class="new-batsman-box">
-                <h3>No batsman remaining</h3>
-                <p>Innings completed!</p>
-            </div>
-        `;
-    }
+function getLegalBallsCount() {
+  const innings = getCurrentInnings();
+  if (!innings) return 0;
+  return innings.balls.filter(b => b.isLegal).length;
+}
 
-    return `
-        <div class="new-batsman-box">
-            <h3>New Batsman</h3>
+function getOversCount() {
+  const legalBalls = getLegalBallsCount();
+  return Math.floor(legalBalls / 6);
+}
 
-            <p>Select the new batsman:</p>
+function getBallsInCurrentOverCount() {
+  const legalBalls = getLegalBallsCount();
+  return legalBalls % 6;
+}
 
-            <div class="new-batsman-list">
-                ${eligible.map(playerId => {
-                    const player = getPlayerById(playerId);
+function getEligibleNewBatsmen() {
+  const innings = getCurrentInnings();
+  const team = getTeamById(innings.battingTeamId);
+  const players = AppData.players.filter(p => p.teamId === team.id);
 
-                    return `
-                        <button
-                            class="new-batsman-btn"
-                            data-player-id="${playerId}">
-                            ${escapeHTML(
-                                player ? player.name : "Player"
-                            )}
-                        </button>
-                    `;
-                }).join("")}
-            </div>
-        </div>
-    `;
+  return players.filter(p => 
+    p.id !== LiveState.strikerId && 
+    p.id !== LiveState.nonStrikerId && 
+    !innings.dismissed.includes(p.id)
+  );
+}
+
+function renderNewBatsmanSelector() {
+  const screen = document.getElementById('live-scoring-screen');
+  if (!screen) return;
+
+  const eligible = getEligibleNewBatsmen();
+  if (eligible.length === 0) {
+    getCurrentInnings().dismissed = Array.from(new Set([...getCurrentInnings().dismissed, LiveState.strikerId]));
+    endInnings();
+    return;
+  }
+
+  screen.innerHTML = `
+    <div class="screen-header">
+      <h2>Select New Batsman</h2>
+    </div>
+    <div class="screen-content">
+      <div id="new-batsman-list"></div>
+    </div>
+  `;
+
+  const list = document.getElementById('new-batsman-list');
+  eligible.forEach(player => {
+    const btn = document.createElement('button');
+    btn.className = 'new-batsman-btn';
+    btn.dataset.playerId = player.id;
+    btn.textContent = player.name;
+    btn.addEventListener('click', () => selectNewBatsman(player.id));
+    list.appendChild(btn);
+  });
 }
 
 function selectNewBatsman(playerId) {
-    const match =
-        getMatchById(CurrentState.currentMatchId);
-
-    if (!match) return;
-
-    const innings =
-        match.innings[LiveState.inningsIndex];
-
-    if (!innings) return;
-
-    const eligible =
-        getEligibleNewBatsmen(match, innings);
-
-    if (!eligible.includes(playerId)) {
-        alert("This player cannot be selected.");
-        return;
-    }
-
-    LiveState.strikerId = playerId;
-
-    innings.waitingForNewBatsman = false;
-
-    LiveState.pendingNewBatsman = false;
-
-    if (innings.pendingEndOfOverSwap) {
-        swapLiveStrikers();
-
-        innings.pendingEndOfOverSwap = false;
-    }
-
-    saveData();
-
-    renderLiveScoring();
+  const innings = getCurrentInnings();
+  innings.dismissed.push(LiveState.strikerId);
+  LiveState.strikerId = playerId;
+  LiveState.pendingNewBatsman = false;
+  saveData();
+  renderLiveScoring();
+  attachLiveScoringListeners();
 }
-
-
-/* =========================================================
-   LIVE SCORING UI
-   ========================================================= */
 
 function renderLiveScoring() {
-    const match =
-        getMatchById(CurrentState.currentMatchId);
+  const match = getMatchById(CurrentState.currentMatchId);
+  if (!match) return;
 
-    if (!match) return;
+  const innings = getCurrentInnings();
+  const striker = getPlayerById(LiveState.strikerId);
+  const nonStriker = getPlayerById(LiveState.nonStrikerId);
+  const bowler = getPlayerById(LiveState.bowlerId);
 
-    initializeLiveScoring(match);
+  const overs = getOversCount();
+  const balls = getBallsInCurrentOverCount();
+  const legalBalls = getLegalBallsCount();
 
-    const innings =
-        match.innings[LiveState.inningsIndex];
+  const screen = document.getElementById('live-scoring-screen');
+  if (!screen) return;
 
-    if (!innings) return;
-
-    const battingTeam =
-        getTeamById(innings.battingTeamId);
-
-    const bowlingTeam =
-        getTeamById(innings.bowlingTeamId);
-
-    const striker =
-        getPlayerById(LiveState.strikerId);
-
-    const nonStriker =
-        getPlayerById(LiveState.nonStrikerId);
-
-    const bowler =
-        getPlayerById(LiveState.bowlerId);
-
-    const screen =
-        document.getElementById("live-scoring-screen");
-
-    if (!screen) return;
-
-    const oversCompleted =
-        Math.floor(innings.balls / 6);
-
-    const ballsInOver =
-        innings.balls % 6;
-
-    const oversText =
-        `${oversCompleted}.${ballsInOver}`;
-
-    screen.innerHTML = `
-        <header class="app-header">
-            <button
-                id="btn-back-from-live-scoring"
-                class="btn-back">
-                ← Back
-            </button>
-
-            <h2>Live Scoring</h2>
-        </header>
-
-        <div class="content">
-
-            <div class="live-match-header">
-                <h2>
-                    ${escapeHTML(
-                        battingTeam
-                            ? battingTeam.name
-                            : "Batting Team"
-                    )}
-                </h2>
-
-                <div class="live-score">
-                    ${innings.runs}/${innings.wickets}
-                </div>
-
-                <div class="live-overs">
-                    Overs: ${oversText} / ${match.overs}
-                </div>
-            </div>
-
-            <div class="live-teams">
-                <p>
-                    <strong>Batting:</strong>
-                    ${escapeHTML(
-                        battingTeam
-                            ? battingTeam.name
-                            : ""
-                    )}
-                </p>
-
-                <p>
-                    <strong>Bowling:</strong>
-                    ${escapeHTML(
-                        bowlingTeam
-                            ? bowlingTeam.name
-                            : ""
-                    )}
-                </p>
-            </div>
-
-            <div class="current-players">
-
-                <div class="player-box striker-box">
-                    <strong>Striker</strong>
-
-                    <div>
-                        ${escapeHTML(
-                            striker
-                                ? striker.name
-                                : "Waiting..."
-                        )}
-                    </div>
-                </div>
-
-                <div class="player-box non-striker-box">
-                    <strong>Non-Striker</strong>
-
-                    <div>
-                        ${escapeHTML(
-                            nonStriker
-                                ? nonStriker.name
-                                : "Waiting..."
-                        )}
-                    </div>
-                </div>
-
-                <div class="player-box bowler-box">
-                    <strong>Bowler</strong>
-
-                    <div>
-                        ${escapeHTML(
-                            bowler
-                                ? bowler.name
-                                : "Waiting..."
-                        )}
-                    </div>
-                </div>
-
-            </div>
-
-            ${
-                innings.waitingForNewBatsman
-                    ? renderNewBatsmanSelector(
-                        match,
-                        innings
-                    )
-                    : `
-                        <div class="scoring-controls">
-
-                            <h3>Runs</h3>
-
-                            <div class="run-buttons">
-
-                                <button
-                                    class="run-btn"
-                                    data-runs="0">
-                                    0
-                                </button>
-
-                                <button
-                                    class="run-btn"
-                                    data-runs="1">
-                                    1
-                                </button>
-
-                                <button
-                                    class="run-btn"
-                                    data-runs="2">
-                                    2
-                                </button>
-
-                                <button
-                                    class="run-btn"
-                                    data-runs="3">
-                                    3
-                                </button>
-
-                                <button
-                                    class="run-btn"
-                                    data-runs="4">
-                                    4
-                                </button>
-
-                                <button
-                                    class="run-btn"
-                                    data-runs="6">
-                                    6
-                                </button>
-
-                            </div>
-
-                            <h3>Extras / Wicket</h3>
-
-                            <div class="extra-buttons">
-
-                                <button
-                                    id="btn-wicket"
-                                    class="wicket-btn">
-                                    Wicket
-                                </button>
-
-                                <button
-                                    id="btn-wide"
-                                    class="extra-btn">
-                                    Wide
-                                </button>
-
-                                <button
-                                    id="btn-noball"
-                                    class="extra-btn">
-                                    No Ball
-                                </button>
-
-                            </div>
-
-                        </div>
-                    `
-            }
-
-            <div class="ball-history-section">
-
-                <h3>Ball History</h3>
-
-                <div id="live-ball-history">
-                    ${renderBallHistory(innings)}
-                </div>
-
-                <button
-                    id="btn-undo-live-ball"
-                    class="btn-secondary">
-                    ↩ Undo Last Ball
-                </button>
-
-            </div>
-
+  screen.innerHTML = `
+    <div class="screen-header">
+      <h2>Live Scoring</h2>
+      <button id="btn-back-from-live-scoring" class="btn btn-secondary">Back</button>
+    </div>
+    <div class="screen-content">
+      <div class="scorecard">
+        <div class="score-row">
+          <span>Runs:</span>
+          <span id="current-runs">${innings.runs}</span>
         </div>
-    `;
+        <div class="score-row">
+          <span>Wickets:</span>
+          <span id="current-wickets">${innings.wickets}</span>
+        </div>
+        <div class="score-row">
+          <span>Overs:</span>
+          <span id="current-overs">${overs}.${balls}</span>
+        </div>
+      </div>
 
-    attachLiveScoringListeners();
+      <div class="striker-info">
+        <p><strong>Striker:</strong> ${striker ? escapeHTML(striker.name) : 'None'}</p>
+        <p><strong>Non-Striker:</strong> ${nonStriker ? escapeHTML(nonStriker.name) : 'None'}</p>
+        <p><strong>Bowler:</strong> ${bowler ? escapeHTML(bowler.name) : 'None'}</p>
+      </div>
 
-    const backButton =
-        document.getElementById(
-            "btn-back-from-live-scoring"
-        );
+      <div class="controls">
+        <button class="run-btn" data-runs="0">0</button>
+        <button class="run-btn" data-runs="1">1</button>
+        <button class="run-btn" data-runs="2">2</button>
+        <button class="run-btn" data-runs="3">3</button>
+        <button class="run-btn" data-runs="4">4</button>
+        <button class="run-btn" data-runs="6">6</button>
+        <button id="btn-wide">Wide</button>
+        <button id="btn-noball">No Ball</button>
+        <button id="btn-wicket">Wicket</button>
+        <button id="btn-undo-live-ball">Undo</button>
+      </div>
 
-    if (backButton) {
-        backButton.addEventListener(
-            "click",
-            () => {
-                renderTournamentDashboard();
+      <div class="ball-history">
+        <h3>Ball History</h3>
+        <div id="ball-history-list"></div>
+      </div>
+    </div>
+  `;
 
-                showScreen(
-                    "tournament-dashboard-screen"
-                );
-            }
-        );
-    }
+  renderBallHistory();
 }
 
+function renderBallHistory() {
+  const innings = getCurrentInnings();
+  const list = document.getElementById('ball-history-list');
+  if (!list) return;
 
-/* =========================================================
-   BALL HISTORY
-   ========================================================= */
-
-function renderBallHistory(innings) {
-    if (
-        !innings ||
-        !Array.isArray(innings.ballsHistory) ||
-        innings.ballsHistory.length === 0
-    ) {
-        return `
-            <p class="empty-history">
-                No balls recorded yet.
-            </p>
-        `;
-    }
-
-    return innings.ballsHistory
-        .slice()
-        .reverse()
-        .map((ball, index) => {
-            let result = "";
-
-            if (ball.type === "wicket") {
-                result = "WICKET";
-            } else if (ball.type === "wide") {
-                result = `WD +${ball.runs}`;
-            } else if (ball.type === "noball") {
-                result = `NB +${ball.runs}`;
-            } else {
-                result = String(ball.runs);
-            }
-
-            return `
-                <div class="ball-history-item">
-                    <span>
-                        ${innings.ballsHistory.length - index}.
-                    </span>
-
-                    <strong>${result}</strong>
-                </div>
-            `;
-        })
-        .join("");
+  list.innerHTML = '';
+  innings.balls.forEach((ball, index) => {
+    const div = document.createElement('div');
+    div.className = 'ball-item';
+    let ballType = 'Runs: ' + ball.runs;
+    if (ball.isWicket) ballType = 'WICKET';
+    if (ball.isWide) ballType = 'WIDE';
+    if (ball.isNoBall) ballType = 'NO BALL';
+    div.textContent = `Ball ${index + 1}: ${ballType}`;
+    list.appendChild(div);
+  });
 }
 
+function recordLiveBall(runs, options = {}) {
+  const match = getMatchById(CurrentState.currentMatchId);
+  const innings = getCurrentInnings();
+  if (!match || !innings) return;
 
-/* =========================================================
-   RECORD LIVE BALL
-   ========================================================= */
+  const isWide = options.isWide || false;
+  const isNoBall = options.isNoBall || false;
+  const isWicket = options.isWicket || false;
+  const isLegal = !isWide && !isNoBall;
 
-function recordLiveBall(runs, type = "normal") {
-    const match =
-        getMatchById(CurrentState.currentMatchId);
+  const legalBalls = getLegalBallsCount();
+  const ballInOver = (legalBalls % 6) + 1;
+  const overNumber = Math.floor(legalBalls / 6);
 
-    if (!match) return;
+  innings.balls.push({
+    runs: runs,
+    isWide: isWide,
+    isNoBall: isNoBall,
+    isWicket: isWicket,
+    isLegal: isLegal,
+    striker: LiveState.strikerId,
+    bowler: LiveState.bowlerId,
+    ballInOver: ballInOver,
+    overNumber: overNumber
+  });
 
-    const innings =
-        match.innings[LiveState.inningsIndex];
+  innings.runs += runs;
 
-    if (!innings) return;
+  if (isWicket) {
+    innings.wickets += 1;
+    LiveState.pendingNewBatsman = true;
+  }
 
-    if (innings.completed) {
-        alert("This innings is already completed.");
-        return;
+  if (isLegal && !isWicket) {
+    if (runs % 2 === 1) {
+      swapLiveStrikers();
     }
+  }
 
-    if (innings.waitingForNewBatsman) {
-        alert("Please select the new batsman first.");
-        return;
-    }
+  if (isLegal && getBallsInCurrentOverCount() === 0 && !isWicket) {
+    swapLiveStrikers();
+  }
 
-    if (!LiveState.strikerId) {
-        alert("No striker selected.");
-        return;
-    }
+  const totalOvers = getOversCount();
+  if (totalOvers >= match.overs) {
+    endInnings();
+    return;
+  }
 
-    const numericRuns = Number(runs) || 0;
+  if (innings.wickets >= 10) {
+    endInnings();
+    return;
+  }
 
-    const wasAtEndOfOver =
-        type !== "wide" &&
-        type !== "noball" &&
-        ((innings.balls + 1) % 6 === 0);
+  saveData();
 
-    const ballRecord = {
-        runs: numericRuns,
-        type,
-        strikerId: LiveState.strikerId,
-        nonStrikerId: LiveState.nonStrikerId,
-        bowlerId: LiveState.bowlerId,
-        previousStrikerId: LiveState.strikerId,
-        previousNonStrikerId: LiveState.nonStrikerId,
-        previousBowlerId: LiveState.bowlerId,
-        previousRuns: innings.runs,
-        previousWickets: innings.wickets,
-        previousBalls: innings.balls,
-        previousTotalBalls: innings.totalBalls,
-        previousOutPlayerIds: [
-            ...innings.outPlayerIds
-        ],
-        previousWaitingForNewBatsman:
-            innings.waitingForNewBatsman,
-        previousPendingEndOfOverSwap:
-            innings.pendingEndOfOverSwap
-    };
-
-    innings.runs += numericRuns;
-
-    if (type === "wicket") {
-        innings.wickets++;
-
-        const dismissedPlayer =
-            LiveState.strikerId;
-
-        if (
-            dismissedPlayer &&
-            !innings.outPlayerIds.includes(
-                dismissedPlayer
-            )
-        ) {
-            innings.outPlayerIds.push(
-                dismissedPlayer
-            );
-        }
-
-        innings.waitingForNewBatsman = true;
-
-        LiveState.pendingNewBatsman = true;
-
-        if (wasAtEndOfOver) {
-            innings.pendingEndOfOverSwap = true;
-        }
-    }
-
-    if (
-        type !== "wide" &&
-        type !== "noball"
-    ) {
-        innings.balls++;
-    }
-
-    innings.totalBalls++;
-
-    innings.ballsHistory.push(ballRecord);
-
-    /*
-       Odd runs change striker.
-       Wide also changes striker.
-       No-ball does not count as a legal ball.
-    */
-
-    if (
-        type !== "wicket" &&
-        (
-            numericRuns % 2 === 1 ||
-            type === "wide"
-        )
-    ) {
-        swapLiveStrikers();
-    }
-
-    /*
-       End of over.
-    */
-
-    if (
-        wasAtEndOfOver &&
-        type !== "wicket"
-    ) {
-        swapLiveStrikers();
-    }
-
-    /*
-       Innings ends at maximum overs.
-    */
-
-    const maxBalls =
-        match.overs * 6;
-
-    if (innings.balls >= maxBalls) {
-        innings.completed = true;
-    }
-
-    /*
-       Innings ends at 10 wickets.
-    */
-
-    if (innings.wickets >= 10) {
-        innings.completed = true;
-        innings.waitingForNewBatsman = false;
-        LiveState.pendingNewBatsman = false;
-    }
-
-    /*
-       If wicket occurred and no batsman remains,
-       complete the innings.
-    */
-
-    if (innings.waitingForNewBatsman) {
-        const remaining =
-            getEligibleNewBatsmen(
-                match,
-                innings
-            );
-
-        if (remaining.length === 0) {
-            innings.completed = true;
-            innings.waitingForNewBatsman = false;
-            LiveState.pendingNewBatsman = false;
-        }
-    }
-
-    saveData();
-
+  if (LiveState.pendingNewBatsman) {
+    renderNewBatsmanSelector();
+  } else {
     renderLiveScoring();
+    attachLiveScoringListeners();
+  }
 }
-
-
-/* =========================================================
-   STRIKER SWAP
-   ========================================================= */
 
 function swapLiveStrikers() {
-    const temp =
-        LiveState.strikerId;
-
-    LiveState.strikerId =
-        LiveState.nonStrikerId;
-
-    LiveState.nonStrikerId =
-        temp;
+  const temp = LiveState.strikerId;
+  LiveState.strikerId = LiveState.nonStrikerId;
+  LiveState.nonStrikerId = temp;
 }
-
-
-/* =========================================================
-   UNDO LAST BALL
-   ========================================================= */
 
 function undoLastLiveBall() {
-    const match =
-        getMatchById(CurrentState.currentMatchId);
+  const innings = getCurrentInnings();
+  if (!innings || innings.balls.length === 0) return;
 
-    if (!match) return;
+  const lastBall = innings.balls.pop();
+  innings.runs -= lastBall.runs;
 
-    const innings =
-        match.innings[LiveState.inningsIndex];
-
-    if (!innings) return;
-
-    if (
-        !Array.isArray(innings.ballsHistory) ||
-        innings.ballsHistory.length === 0
-    ) {
-        alert("There is no ball to undo.");
-        return;
+  if (lastBall.isWicket) {
+    innings.wickets -= 1;
+    const dismissed = innings.dismissed;
+    if (dismissed.length > 0) {
+      dismissed.pop();
     }
+  }
 
-    const lastBall =
-        innings.ballsHistory.pop();
+  LiveState.pendingNewBatsman = false;
 
-    innings.runs =
-        lastBall.previousRuns;
+  const legalBalls = getLegalBallsCount();
+  const ballInOver = (legalBalls % 6);
 
-    innings.wickets =
-        lastBall.previousWickets;
+  if (lastBall.isLegal && !lastBall.isWicket) {
+    if (lastBall.runs % 2 === 1) {
+      swapLiveStrikers();
+    }
+  }
 
-    innings.balls =
-        lastBall.previousBalls;
+  if (lastBall.isLegal && ballInOver === 0 && innings.balls.length > 0) {
+    const prevBall = innings.balls[innings.balls.length - 1];
+    if (prevBall.ballInOver === 6) {
+      swapLiveStrikers();
+    }
+  }
 
-    innings.totalBalls =
-        lastBall.previousTotalBalls;
-
-    innings.outPlayerIds =
-        [...lastBall.previousOutPlayerIds];
-
-    innings.waitingForNewBatsman =
-        lastBall.previousWaitingForNewBatsman;
-
-    innings.pendingEndOfOverSwap =
-        lastBall.previousPendingEndOfOverSwap;
-
-    innings.completed = false;
-
-    LiveState.strikerId =
-        lastBall.previousStrikerId;
-
-    LiveState.nonStrikerId =
-        lastBall.previousNonStrikerId;
-
-    LiveState.bowlerId =
-        lastBall.previousBowlerId;
-
-    LiveState.pendingNewBatsman =
-        innings.waitingForNewBatsman;
-
-    saveData();
-
-    renderLiveScoring();
+  saveData();
+  renderLiveScoring();
+  attachLiveScoringListeners();
 }
-
-
-/* =========================================================
-   LIVE SCORING LISTENERS
-   ========================================================= */
 
 function attachLiveScoringListeners() {
+  const screen = document.getElementById('live-scoring-screen');
+  if (!screen) return;
 
-    document.querySelectorAll(".run-btn")
-        .forEach(button => {
-
-            button.addEventListener(
-                "click",
-                () => {
-
-                    const runs =
-                        parseInt(
-                            button.dataset.runs,
-                            10
-                        );
-
-                    recordLiveBall(
-                        runs,
-                        "normal"
-                    );
-                }
-            );
-
-        });
-
-
-    const wicketButton =
-        document.getElementById(
-            "btn-wicket"
-        );
-
-    if (wicketButton) {
-        wicketButton.addEventListener(
-            "click",
-            () => {
-                recordLiveBall(
-                    0,
-                    "wicket"
-                );
-            }
-        );
-    }
-
-
-    const wideButton =
-        document.getElementById(
-            "btn-wide"
-        );
-
-    if (wideButton) {
-        wideButton.addEventListener(
-            "click",
-            () => {
-                recordLiveBall(
-                    1,
-                    "wide"
-                );
-            }
-        );
-    }
-
-
-    const noBallButton =
-        document.getElementById(
-            "btn-noball"
-        );
-
-    if (noBallButton) {
-        noBallButton.addEventListener(
-            "click",
-            () => {
-                recordLiveBall(
-                    1,
-                    "noball"
-                );
-            }
-        );
-    }
-
-
-    const undoButton =
-        document.getElementById(
-            "btn-undo-live-ball"
-        );
-
-    if (undoButton) {
-        undoButton.addEventListener(
-            "click",
-            undoLastLiveBall
-        );
-    }
-
-
-    document.querySelectorAll(
-        ".new-batsman-btn"
-    ).forEach(button => {
-
-        button.addEventListener(
-            "click",
-            () => {
-
-                selectNewBatsman(
-                    button.dataset.playerId
-                );
-
-            }
-        );
-
+  const runButtons = screen.querySelectorAll('.run-btn');
+  runButtons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      if (LiveState.pendingNewBatsman) {
+        alert('Select new batsman first');
+        return;
+      }
+      const runs = parseInt(btn.dataset.runs);
+      recordLiveBall(runs);
     });
+  });
+
+  const wicketBtn = document.getElementById('btn-wicket');
+  if (wicketBtn) {
+    wicketBtn.addEventListener('click', () => {
+      if (LiveState.pendingNewBatsman) {
+        alert('Select new batsman first');
+        return;
+      }
+      recordLiveBall(0, { isWicket: true });
+    });
+  }
+
+  const wideBtn = document.getElementById('btn-wide');
+  if (wideBtn) {
+    wideBtn.addEventListener('click', () => {
+      if (LiveState.pendingNewBatsman) {
+        alert('Select new batsman first');
+        return;
+      }
+      recordLiveBall(1, { isWide: true });
+    });
+  }
+
+  const noballBtn = document.getElementById('btn-noball');
+  if (noballBtn) {
+    noballBtn.addEventListener('click', () => {
+      if (LiveState.pendingNewBatsman) {
+        alert('Select new batsman first');
+        return;
+      }
+      recordLiveBall(1, { isNoBall: true });
+    });
+  }
+
+  const undoBtn = document.getElementById('btn-undo-live-ball');
+  if (undoBtn) {
+    undoBtn.addEventListener('click', () => {
+      undoLastLiveBall();
+    });
+  }
+
+  const backBtn = document.getElementById('btn-back-from-live-scoring');
+  if (backBtn) {
+    backBtn.addEventListener('click', () => {
+      if (confirm('End match?')) {
+        renderTournamentMatches();
+        showScreen('tournament-screen');
+        showTournamentTab('matches');
+      }
+    });
+  }
 }
 
+function endInnings() {
+  const match = getMatchById(CurrentState.currentMatchId);
+  if (!match) return;
 
-/* =========================================================
-   INITIAL APP RENDERING
-   ========================================================= */
+  if (LiveState.inningsIndex === 0) {
+    LiveState.inningsIndex = 1;
+    initializeLiveScoring();
+    renderLiveScoring();
+    attachLiveScoringListeners();
+  } else {
+    match.status = 'completed';
+    saveData();
+    renderTournamentMatches();
+    showScreen('tournament-screen');
+    showTournamentTab('matches');
+  }
+}
+
+function setupCreateTournamentForm() {
+  const screen = document.getElementById('create-tournament-screen');
+  if (!screen) return;
+
+  screen.innerHTML = `
+    <div class="screen-header">
+      <h2>Create Tournament</h2>
+      <button id="btn-back-create-tournament" class="btn btn-secondary">Back</button>
+    </div>
+    <div class="screen-content">
+      <form id="tournament-form">
+        <input type="text" id="tournament-name" placeholder="Tournament Name" />
+        <button type="button" onclick="createTournament()" class="btn btn-primary">Create</button>
+      </form>
+    </div>
+  `;
+
+  document.getElementById('btn-back-create-tournament').addEventListener('click', () => {
+    showScreen('tournaments-screen');
+  });
+}
+
+function setupCreateTeamForm() {
+  const screen = document.getElementById('create-team-screen');
+  if (!screen) return;
+
+  screen.innerHTML = `
+    <div class="screen-header">
+      <h2>Add Team</h2>
+      <button id="btn-back-create-team" class="btn btn-secondary">Back</button>
+    </div>
+    <div class="screen-content">
+      <form>
+        <input type="text" id="team-name" placeholder="Team Name" />
+        <button type="button" onclick="createTeam()" class="btn btn-primary">Add</button>
+      </form>
+    </div>
+  `;
+
+  document.getElementById('btn-back-create-team').addEventListener('click', () => {
+    renderTournamentDashboard();
+    showScreen('tournament-screen');
+  });
+}
+
+function setupAddPlayerForm() {
+  const screen = document.getElementById('add-player-screen');
+  if (!screen) return;
+
+  screen.innerHTML = `
+    <div class="screen-header">
+      <h2>Add Player</h2>
+      <button id="btn-back-add-player" class="btn btn-secondary">Back</button>
+    </div>
+    <div class="screen-content">
+      <form>
+        <input type="text" id="player-name" placeholder="Player Name" />
+        <button type="button" onclick="createPlayer()" class="btn btn-primary">Add</button>
+      </form>
+    </div>
+  `;
+
+  document.getElementById('btn-back-add-player').addEventListener('click', () => {
+    renderTeamDetails();
+    showScreen('team-screen');
+  });
+}
+
+function setupCreateMatchForm() {
+  const screen = document.getElementById('create-match-screen');
+  if (!screen) return;
+
+  const tournament = getTournamentById(CurrentState.currentTournamentId);
+  const teams = AppData.teams.filter(t => t.tournamentId === CurrentState.currentTournamentId);
+
+  let teamOptions = '';
+  teams.forEach(team => {
+    teamOptions += `<option value="${team.id}">${escapeHTML(team.name)}</option>`;
+  });
+
+  screen.innerHTML = `
+    <div class="screen-header">
+      <h2>Create Match</h2>
+      <button id="btn-back-create-match" class="btn btn-secondary">Back</button>
+    </div>
+    <div class="screen-content">
+      <form>
+        <label>Team 1:</label>
+        <select id="match-team1">
+          <option value="">Select Team</option>
+          ${teamOptions}
+        </select>
+
+        <label>Team 2:</label>
+        <select id="match-team2">
+          <option value="">Select Team</option>
+          ${teamOptions}
+        </select>
+
+        <label>Overs:</label>
+        <input type="number" id="match-overs" min="1" value="50" />
+
+        <label>Venue:</label>
+        <input type="text" id="match-venue" placeholder="Venue" />
+
+        <label>Date:</label>
+        <input type="date" id="match-date" />
+
+        <label>Toss Winner:</label>
+        <select id="match-toss-winner">
+          <option value="">Select Team</option>
+          ${teamOptions}
+        </select>
+
+        <label>Toss Decision:</label>
+        <select id="match-toss-decision">
+          <option value="">Select Decision</option>
+          <option value="bat">Bat</option>
+          <option value="field">Field</option>
+        </select>
+
+        <button type="button" onclick="createMatch()" class="btn btn-primary">Create</button>
+      </form>
+    </div>
+  `;
+
+  document.getElementById('btn-back-create-match').addEventListener('click', () => {
+    renderTournamentDashboard();
+    showScreen('tournament-screen');
+    showTournamentTab('matches');
+  });
+}
 
 function initializeApp() {
+  loadData();
 
-    loadData();
+  setupCreateTournamentForm();
+  setupCreateTeamForm();
+  setupAddPlayerForm();
+  setupCreateMatchForm();
 
-    setupEventListeners();
+  const homeScreen = document.getElementById('home-screen');
+  if (homeScreen) {
+    homeScreen.innerHTML = `
+      <div class="screen-header">
+        <h2>Cricket Scorer</h2>
+      </div>
+      <div class="screen-content">
+        <button onclick="showTournamentsScreen()" class="btn btn-primary">Tournaments</button>
+      </div>
+    `;
+  }
 
-    renderTournamentList();
-
-    /*
-       Show home screen if available.
-    */
-
-    if (
-        document.getElementById(
-            "home-screen"
-        )
-    ) {
-        showScreen("home-screen");
-    }
+  showScreen('home-screen');
 }
 
-
-/* =========================================================
-   EVENT LISTENERS
-   ========================================================= */
-
-function setupEventListeners() {
-
-    /*
-       Create tournament
-    */
-
-    const createTournamentButton =
-        document.getElementById(
-           "btn-new-tournament" 
-        );
-
-    if (createTournamentButton) {
-
-        createTournamentButton.addEventListener(
-            "click",
-            () => {
-
-                const input =
-                    document.getElementById(
-                        "tournament-name"
-                    );
-
-                if (input) {
-                    createTournament(
-                        input.value
-                    );
-                }
-
-            }
-        );
-
-    }
-
-
-    /*
-       Tournament name form
-    */
-
-    const tournamentForm =
-        document.getElementById(
-            "tournament-form"
-        );
-
-    if (tournamentForm) {
-
-        tournamentForm.addEventListener(
-            "submit",
-            event => {
-
-                event.preventDefault();
-
-                const input =
-                    document.getElementById(
-                        "tournament-name"
-                    );
-
-                if (input) {
-                    createTournament(
-                        input.value
-                    );
-                }
-
-            }
-        );
-
-    }
-
-
-    /*
-       Add team
-    */
-
-    const addTeamButton =
-        document.getElementById(
-            "btn-add-team"
-        );
-
-    if (addTeamButton) {
-
-        addTeamButton.addEventListener(
-            "click",
-            () => {
-
-                const input =
-                    document.getElementById(
-                        "team-name"
-                    );
-
-                if (input) {
-
-                    createTeam(
-                        CurrentState.currentTournamentId,
-                        input.value
-                    );
-
-                    input.value = "";
-                }
-
-            }
-        );
-
-    }
-
-
-    /*
-       Add player
-    */
-
-    const addPlayerButton =
-        document.getElementById(
-            "btn-add-player"
-        );
-
-    if (addPlayerButton) {
-
-        addPlayerButton.addEventListener(
-            "click",
-            () => {
-
-                const input =
-                    document.getElementById(
-                        "player-name"
-                    );
-
-                if (input) {
-
-                    createPlayer(
-                        CurrentState.currentTeamId,
-                        input.value
-                    );
-
-                    input.value = "";
-                }
-
-            }
-        );
-
-    }
-
-
-    /*
-       Back buttons
-    */
-       /*
-       View saved tournaments
-    */
-
-    const viewTournamentsButton =
-        document.getElementById(
-            "btn-view-tournaments"
-        );
-
-    if (viewTournamentsButton) {
-
-        viewTournamentsButton.addEventListener(
-            "click",
-            () => {
-                renderTournamentList();
-                showScreen("tournaments-screen");
-            }
-        );
-
-    }
-
-    const backHome =
-        document.getElementById(
-            "btn-back-home"
-        );
-
-    if (backHome) {
-
-        backHome.addEventListener(
-            "click",
-            () => {
-                renderTournamentList();
-                showScreen("home-screen");
-            }
-        );
-
-    }
-
-
-    const backTournament =
-        document.getElementById(
-            "btn-back-to-tournament"
-        );
-
-    if (backTournament) {
-
-        backTournament.addEventListener(
-            "click",
-            () => {
-
-                renderTournamentDashboard();
-
-                showScreen(
-                    "tournament-dashboard-screen"
-                );
-
-            }
-        );
-
-    }
-
-
-    const backTeam =
-        document.getElementById(
-            "btn-back-to-team"
-        );
-
-    if (backTeam) {
-
-        backTeam.addEventListener(
-            "click",
-            () => {
-
-                renderTeamDetails();
-
-                showScreen(
-                    "team-details-screen"
-                );
-
-            }
-        );
-
-    }
-
+function showTournamentsScreen() {
+  showScreen('tournaments-screen');
+  renderTournamentList();
 }
 
-
-/* =========================================================
-   DOM READY
-   ========================================================= */
-
-document.addEventListener(
-    "DOMContentLoaded",
-    initializeApp
-);
-
-
-/* =========================================================
-   END VERSION 1.4 REBUILD
-   ========================================================= */
+document.addEventListener('DOMContentLoaded', () => {
+  initializeApp();
+});
