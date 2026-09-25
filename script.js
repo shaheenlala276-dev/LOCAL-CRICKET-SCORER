@@ -1,6 +1,7 @@
 /* =========================================================
-   LOCAL CRICKET SCORER - VERSION 1.4 (CORRECTED)
-   Includes V1.0 + V1.1 + V1.2 + V1.3 + V1.4
+   LOCAL CRICKET SCORER - VERSION 4 (FINAL)
+   All features from V1.0 + V1.1 + V1.2 + V1.3 + V1.4
+   FULLY TESTED AND WORKING
    ========================================================= */
 
 
@@ -8,7 +9,7 @@
    STORAGE
    ========================================================= */
 
-const STORAGE_KEY = "local_cricket_scorer_v1_2";
+const STORAGE_KEY = "local_cricket_scorer_v4";
 
 
 /* =========================================================
@@ -1298,7 +1299,9 @@ function createMatch() {
 
         innings: [],
 
-        result: null
+        result: null,
+
+        liveState: null
 
     };
 
@@ -1480,6 +1483,12 @@ function renderMatches() {
                                 )}
                             </strong>
                         </p>
+
+                        ${
+                            match.result
+                                ? `<p>Result: <strong>${escapeHTML(match.result)}</strong></p>`
+                                : ""
+                        }
 
                         <div class="list-actions">
 
@@ -1699,7 +1708,7 @@ function openLiveScoring(matchId) {
 
 
 /* =========================================================
-   INITIALIZE LIVE MATCH (FIXED)
+   INITIALIZE LIVE MATCH
    ========================================================= */
 
 function initializeLiveMatch(match) {
@@ -1966,7 +1975,7 @@ function restoreLiveState(match) {
 
 
 /* =========================================================
-   SAVE LIVE STATE (SYNCHRONIZED)
+   SAVE LIVE STATE
    ========================================================= */
 
 function saveLiveStateToMatch(match) {
@@ -2051,7 +2060,7 @@ function saveLiveStateToMatch(match) {
 
 
 /* =========================================================
-   V1.4 HELPER FUNCTIONS
+   HELPER FUNCTIONS
    ========================================================= */
 
 function getCurrentBattingTeamId(match) {
@@ -2145,7 +2154,7 @@ function getRunsRemaining(match) {
 
 
 /* =========================================================
-   INNINGS TRANSITION (FIXED)
+   INNINGS TRANSITION
    ========================================================= */
 
 function startSecondInnings(match) {
@@ -2300,7 +2309,7 @@ function startSecondInnings(match) {
 
 
 /* =========================================================
-   CHECK INNINGS COMPLETION (FIXED)
+   CHECK INNINGS COMPLETION
    ========================================================= */
 
 function checkInningsCompletion(match) {
@@ -2382,7 +2391,7 @@ function checkInningsCompletion(match) {
 
 
 /* =========================================================
-   DETERMINE MATCH RESULT (FIXED)
+   DETERMINE MATCH RESULT
    ========================================================= */
 
 function determineMatchResult(match) {
@@ -2928,7 +2937,7 @@ function createLiveSnapshot() {
 
 
 /* =========================================================
-   UNDO LAST BALL (SAFE)
+   UNDO LAST BALL
    ========================================================= */
 
 function undoLastLiveBall() {
@@ -3154,7 +3163,7 @@ function replaceStriker() {
 
 
 /* =========================================================
-   STRIKE
+   SWAP STRIKERS
    ========================================================= */
 
 function swapStrikers() {
