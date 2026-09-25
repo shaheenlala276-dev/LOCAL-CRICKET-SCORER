@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Local Cricket Scorer - V4</title>
+    <title>Local Cricket Scorer - V5</title>
 
     <link rel="stylesheet" href="style.css">
 </head>
@@ -14,7 +14,7 @@
     <!-- ================= HEADER ================= -->
     <header class="app-header">
         <h1>🏏 Local Cricket Scorer</h1>
-        <p>Simple • Fast • Offline • Version 4</p>
+        <p>Simple • Fast • Offline • Version 5</p>
     </header>
 
 
@@ -52,6 +52,33 @@
                 <span class="action-title">Matches</span>
                 <span class="action-description">
                     Create and manage matches
+                </span>
+            </button>
+
+            <button class="action-card"
+                    onclick="showScreen('matchHistoryScreen')">
+                <span class="action-icon">📋</span>
+                <span class="action-title">History</span>
+                <span class="action-description">
+                    View completed matches
+                </span>
+            </button>
+
+            <button class="action-card"
+                    onclick="showScreen('playerRecordsScreen')">
+                <span class="action-icon">👤</span>
+                <span class="action-title">Player Records</span>
+                <span class="action-description">
+                    Player statistics
+                </span>
+            </button>
+
+            <button class="action-card"
+                    onclick="showScreen('statisticsScreen')">
+                <span class="action-icon">📊</span>
+                <span class="action-title">Statistics</span>
+                <span class="action-description">
+                    Overall app stats
                 </span>
             </button>
 
@@ -462,10 +489,82 @@
     </main>
 
 
+    <!-- ================= MATCH HISTORY SCREEN ================= -->
+    <main id="matchHistoryScreen" class="screen">
+
+        <div class="screen-title">
+            <h2>📋 Match History</h2>
+            <p>View all completed matches</p>
+        </div>
+
+        <div id="matchHistoryList" class="list-container"></div>
+
+        <button class="secondary-btn"
+                onclick="showScreen('homeScreen')">
+            ← Back to Home
+        </button>
+
+    </main>
+
+
+    <!-- ================= MATCH DETAILS SCREEN ================= -->
+    <main id="matchDetailsScreen" class="screen">
+
+        <div class="screen-title">
+            <h2>🏏 Match Details</h2>
+            <p id="matchDetailsTitle">Match Information</p>
+        </div>
+
+        <div id="matchDetailsContent" class="match-details-container"></div>
+
+        <button class="secondary-btn"
+                onclick="showScreen('matchHistoryScreen')">
+            ← Back to History
+        </button>
+
+    </main>
+
+
+    <!-- ================= PLAYER RECORDS SCREEN ================= -->
+    <main id="playerRecordsScreen" class="screen">
+
+        <div class="screen-title">
+            <h2>👤 Player Records</h2>
+            <p>Player statistics and performance</p>
+        </div>
+
+        <div id="playerRecordsList" class="list-container"></div>
+
+        <button class="secondary-btn"
+                onclick="showScreen('homeScreen')">
+            ← Back to Home
+        </button>
+
+    </main>
+
+
+    <!-- ================= STATISTICS SCREEN ================= -->
+    <main id="statisticsScreen" class="screen">
+
+        <div class="screen-title">
+            <h2>📊 Statistics</h2>
+            <p>Overall app statistics</p>
+        </div>
+
+        <div id="statisticsContent" class="stats-container"></div>
+
+        <button class="secondary-btn"
+                onclick="showScreen('homeScreen')">
+            ← Back to Home
+        </button>
+
+    </main>
+
+
     <!-- ================= FOOTER ================= -->
     <footer class="app-footer">
-        <p>Local Cricket Scorer • Version 4 (Final)</p>
-        <p>✅ All Features Working • Works Offline</p>
+        <p>Local Cricket Scorer • Version 5 (With History & Records)</p>
+        <p>✅ Match History • Player Records • Works Offline</p>
     </footer>
 
 
@@ -474,3 +573,4 @@
 
 </body>
 </html>
+
