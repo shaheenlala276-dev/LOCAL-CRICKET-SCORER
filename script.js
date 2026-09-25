@@ -1,7 +1,6 @@
 /* =========================================================
-   LOCAL CRICKET SCORER - VERSION 4 (FINAL)
-   All features from V1.0 + V1.1 + V1.2 + V1.3 + V1.4
-   FULLY TESTED AND WORKING
+   LOCAL CRICKET SCORER - VERSION 5
+   Includes V1.0-V4 + Match History & Player Records
    ========================================================= */
 
 
@@ -9,7 +8,7 @@
    STORAGE
    ========================================================= */
 
-const STORAGE_KEY = "local_cricket_scorer_v4";
+const STORAGE_KEY = "local_cricket_scorer_v5";
 
 
 /* =========================================================
@@ -30,7 +29,8 @@ const AppData = {
 
 const CurrentState = {
     currentTeamId: null,
-    currentMatchId: null
+    currentMatchId: null,
+    currentViewMatchId: null
 };
 
 
@@ -130,6 +130,27 @@ function showScreen(screenId) {
     if (screenId === "liveScoringScreen") {
 
         renderLiveScoring();
+
+    }
+
+
+    if (screenId === "matchHistoryScreen") {
+
+        renderMatchHistory();
+
+    }
+
+
+    if (screenId === "playerRecordsScreen") {
+
+        renderPlayerRecords();
+
+    }
+
+
+    if (screenId === "statisticsScreen") {
+
+        renderStatistics();
 
     }
 
@@ -1301,7 +1322,9 @@ function createMatch() {
 
         result: null,
 
-        liveState: null
+        liveState: null,
+
+        playerOfMatch: null
 
     };
 
@@ -1337,12 +1360,23 @@ function renderMatches() {
     }
 
 
-    if (AppData.matches.length === 0) {
+    const activeMatches =
+        AppData.matches.filter(
+            function (match) {
+
+                return match.status !==
+                    "Completed";
+
+            }
+        );
+
+
+    if (activeMatches.length === 0) {
 
         container.innerHTML =
             `
             <div class="empty-message">
-                No matches yet.
+                No active matches yet.
             </div>
             `;
 
@@ -1352,7 +1386,7 @@ function renderMatches() {
 
 
     container.innerHTML =
-        AppData.matches
+        activeMatches
             .map(function (match) {
 
                 const teamA =
@@ -1384,21 +1418,7 @@ function renderMatches() {
                 let scoringButton = "";
 
 
-                if (
-                    match.status ===
-                    "Completed"
-                ) {
-
-                    scoringButton =
-                        `
-                        <button
-                            class="small-btn manage-btn"
-                            onclick="openLiveScoring('${match.id}')">
-                            View Score
-                        </button>
-                        `;
-
-                } else if (canStart) {
+                if (canStart) {
 
                     scoringButton =
                         `
@@ -1453,28 +1473,6 @@ function renderMatches() {
                         </p>
 
                         <p>
-                            Toss:
-                            ${escapeHTML(
-                                getTossTeamName(match)
-                            )}
-                            —
-                            ${
-                                match.tossDecision === "bat"
-                                    ? "Bat First"
-                                    : "Bowl First"
-                            }
-                        </p>
-
-                        <p>
-                            Batting First:
-                            <strong>
-                                ${escapeHTML(
-                                    battingFirst
-                                )}
-                            </strong>
-                        </p>
-
-                        <p>
                             Status:
                             <strong>
                                 ${escapeHTML(
@@ -1483,12 +1481,6 @@ function renderMatches() {
                                 )}
                             </strong>
                         </p>
-
-                        ${
-                            match.result
-                                ? `<p>Result: <strong>${escapeHTML(match.result)}</strong></p>`
-                                : ""
-                        }
 
                         <div class="list-actions">
 
@@ -3743,6 +3735,546 @@ function getCurrentMatch() {
 
         }
     ) || null;
+}
+
+
+/* =========================================================
+   VERSION 5 - MATCH HISTORY
+   ========================================================= */
+
+function renderMatchHistory() {
+
+    const container =
+        document.getElementById(
+            "matchHistoryList"
+        );
+
+
+    if (!container) {
+
+        return;
+
+    }
+
+
+    const completedMatches =
+        AppData.matches.filter(
+            function (match) {
+
+                return match.status ===
+                    "Completed";
+
+            }
+        );
+
+
+    if (completedMatches.length === 0) {
+
+        container.innerHTML =
+            `
+            <div class="empty-message">
+                No completed matches yet.
+            </div>
+            `;
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        completedMatches
+            .map(function (match) {
+
+                const teamA =
+                    getTeamName(
+                        match.teamAId
+                    );
+
+                const teamB =
+                    getTeamName(
+                        match.teamBId
+                    );
+
+                const tournament =
+                    getTournamentName(
+                        match.tournamentId
+                    );
+
+
+                return `
+                    <div class="list-item">
+
+                        <h3>
+                            🏏
+                            ${escapeHTML(teamA)}
+                            vs
+                            ${escapeHTML(teamB)}
+                        </h3>
+
+                        <p>
+                            Tournament:
+                            ${escapeHTML(tournament)}
+                        </p>
+
+                        <p>
+                            Date:
+                            ${escapeHTML(match.date)}
+                        </p>
+
+                        <p>
+                            Result:
+                            <strong>
+                                ${escapeHTML(
+                                    match.result ||
+                                    "Not Determined"
+                                )}
+                            </strong>
+                        </p>
+
+                        <div class="list-actions">
+
+                            <button
+                                class="small-btn manage-btn"
+                                onclick="viewMatchDetails('${match.id}')">
+                                View Details
+                            </button>
+
+                            <button
+                                class="small-btn delete-btn"
+                                onclick="deleteCompletedMatch('${match.id}')">
+                                Delete
+                            </button>
+
+                        </div>
+
+                    </div>
+                `;
+
+            })
+            .join("");
+}
+
+
+function viewMatchDetails(matchId) {
+
+    const match =
+        AppData.matches.find(
+            function (item) {
+
+                return item.id ===
+                    matchId;
+
+            }
+        );
+
+
+    if (!match) {
+
+        alert(
+            "Match not found."
+        );
+
+        return;
+
+    }
+
+
+    CurrentState.currentViewMatchId =
+        matchId;
+
+
+    const container =
+        document.getElementById(
+            "matchDetailsContent"
+        );
+
+
+    if (!container) {
+
+        return;
+
+    }
+
+
+    const teamA =
+        getTeamName(match.teamAId);
+
+    const teamB =
+        getTeamName(match.teamBId);
+
+    const tournament =
+        getTournamentName(match.tournamentId);
+
+
+    let details = `
+
+        <div class="score-card">
+            <h3>Match Information</h3>
+            <p><strong>Teams:</strong> ${escapeHTML(teamA)} vs ${escapeHTML(teamB)}</p>
+            <p><strong>Tournament:</strong> ${escapeHTML(tournament)}</p>
+            <p><strong>Date:</strong> ${escapeHTML(match.date)}</p>
+            <p><strong>Overs:</strong> ${match.overs}</p>
+            <p><strong>Toss Winner:</strong> ${escapeHTML(getTossTeamName(match))}</p>
+            <p><strong>Toss Decision:</strong> ${match.tossDecision === "bat" ? "Bat First" : "Bowl First"}</p>
+        </div>
+
+    `;
+
+
+    if (match.innings && match.innings.length > 0) {
+
+        details += `
+            <div class="score-card">
+                <h3>First Innings</h3>
+                <p><strong>Team:</strong> ${escapeHTML(getTeamName(match.innings[0].battingTeamId))}</p>
+                <p><strong>Runs:</strong> ${match.innings[0].runs}</p>
+                <p><strong>Wickets:</strong> ${match.innings[0].wickets}</p>
+                <p><strong>Overs:</strong> ${formatOvers(match.innings[0].legalBalls)}</p>
+            </div>
+        `;
+
+    }
+
+
+    if (match.innings && match.innings.length > 1) {
+
+        details += `
+            <div class="score-card">
+                <h3>Second Innings</h3>
+                <p><strong>Team:</strong> ${escapeHTML(getTeamName(match.innings[1].battingTeamId))}</p>
+                <p><strong>Runs:</strong> ${match.innings[1].runs}</p>
+                <p><strong>Wickets:</strong> ${match.innings[1].wickets}</p>
+                <p><strong>Overs:</strong> ${formatOvers(match.innings[1].legalBalls)}</p>
+            </div>
+        `;
+
+    }
+
+
+    if (match.result) {
+
+        details += `
+            <div class="score-card">
+                <h3>Match Result</h3>
+                <p><strong>Result:</strong> ${escapeHTML(match.result)}</p>
+            </div>
+        `;
+
+    }
+
+
+    container.innerHTML = details;
+
+    showScreen("matchDetailsScreen");
+}
+
+
+function deleteCompletedMatch(matchId) {
+
+    const match =
+        AppData.matches.find(
+            function (item) {
+
+                return item.id ===
+                    matchId;
+
+            }
+        );
+
+
+    if (!match) {
+
+        return;
+
+    }
+
+
+    const confirmed =
+        confirm(
+            "Delete this completed match from history?"
+        );
+
+
+    if (!confirmed) {
+
+        return;
+
+    }
+
+
+    AppData.matches =
+        AppData.matches.filter(
+            function (item) {
+
+                return item.id !==
+                    matchId;
+
+            }
+        );
+
+
+    saveData();
+
+    renderMatchHistory();
+}
+
+
+/* =========================================================
+   VERSION 5 - PLAYER RECORDS
+   ========================================================= */
+
+function renderPlayerRecords() {
+
+    const container =
+        document.getElementById(
+            "playerRecordsList"
+        );
+
+
+    if (!container) {
+
+        return;
+
+    }
+
+
+    const allPlayers =
+        AppData.players;
+
+
+    if (allPlayers.length === 0) {
+
+        container.innerHTML =
+            `
+            <div class="empty-message">
+                No players yet.
+            </div>
+            `;
+
+        return;
+
+    }
+
+
+    const playerStats = {};
+
+
+    allPlayers.forEach(function (player) {
+
+        playerStats[player.id] = {
+
+            id: player.id,
+
+            name: player.name,
+
+            teamId: player.teamId,
+
+            totalRuns: 0,
+
+            totalWickets: 0,
+
+            matchesPlayed: 0,
+
+            highestScore: 0,
+
+            fours: 0,
+
+            sixes: 0
+
+        };
+
+    });
+
+
+    AppData.matches.forEach(function (match) {
+
+        if (!match.innings) {
+
+            return;
+
+        }
+
+
+        match.innings.forEach(function (innings) {
+
+            if (!innings.balls) {
+
+                return;
+
+            }
+
+
+            innings.balls.forEach(function (ball) {
+
+                if (playerStats[ball.strikerId]) {
+
+                    if (ball.batsmanRuns === 4) {
+
+                        playerStats[ball.strikerId].fours++;
+
+                    }
+
+                    if (ball.batsmanRuns === 6) {
+
+                        playerStats[ball.strikerId].sixes++;
+
+                    }
+
+                }
+
+
+                if (playerStats[ball.bowlerId]) {
+
+                    if (ball.wicket) {
+
+                        playerStats[ball.bowlerId].totalWickets++;
+
+                    }
+
+                }
+
+            });
+
+        });
+
+    });
+
+
+    container.innerHTML =
+        Object.values(playerStats)
+            .map(function (player) {
+
+                const teamName =
+                    getTeamName(player.teamId);
+
+
+                return `
+                    <div class="list-item">
+
+                        <h3>
+                            👤
+                            ${escapeHTML(
+                                player.name
+                            )}
+                        </h3>
+
+                        <p>
+                            Team:
+                            ${escapeHTML(teamName)}
+                        </p>
+
+                        <p>
+                            Runs: <strong>${player.totalRuns}</strong>
+                            | Wickets: <strong>${player.totalWickets}</strong>
+                        </p>
+
+                        <p>
+                            4s: ${player.fours} | 6s: ${player.sixes}
+                        </p>
+
+                    </div>
+                `;
+
+            })
+            .join("");
+}
+
+
+/* =========================================================
+   VERSION 5 - STATISTICS
+   ========================================================= */
+
+function renderStatistics() {
+
+    const container =
+        document.getElementById(
+            "statisticsContent"
+        );
+
+
+    if (!container) {
+
+        return;
+
+    }
+
+
+    const totalMatches =
+        AppData.matches.length;
+
+    const completedMatches =
+        AppData.matches.filter(
+            function (match) {
+
+                return match.status ===
+                    "Completed";
+
+            }
+        ).length;
+
+    const activeMatches =
+        totalMatches - completedMatches;
+
+    const totalTeams =
+        AppData.teams.length;
+
+    const totalPlayers =
+        AppData.players.length;
+
+    const totalTournaments =
+        AppData.tournaments.length;
+
+    let totalRuns = 0;
+
+    let totalWickets = 0;
+
+
+    AppData.matches.forEach(function (match) {
+
+        if (match.innings) {
+
+            match.innings.forEach(function (innings) {
+
+                totalRuns +=
+                    innings.runs || 0;
+
+                totalWickets +=
+                    innings.wickets || 0;
+
+            });
+
+        }
+
+    });
+
+
+    const html = `
+
+        <div class="score-card">
+            <h3>Match Statistics</h3>
+            <p><strong>Total Matches:</strong> ${totalMatches}</p>
+            <p><strong>Completed Matches:</strong> ${completedMatches}</p>
+            <p><strong>Active Matches:</strong> ${activeMatches}</p>
+        </div>
+
+        <div class="score-card">
+            <h3>Team & Player Statistics</h3>
+            <p><strong>Total Teams:</strong> ${totalTeams}</p>
+            <p><strong>Total Players:</strong> ${totalPlayers}</p>
+            <p><strong>Total Tournaments:</strong> ${totalTournaments}</p>
+        </div>
+
+        <div class="score-card">
+            <h3>Overall Scoring</h3>
+            <p><strong>Total Runs Scored:</strong> ${totalRuns}</p>
+            <p><strong>Total Wickets Lost:</strong> ${totalWickets}</p>
+        </div>
+
+    `;
+
+
+    container.innerHTML = html;
 }
 
 
