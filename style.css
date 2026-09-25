@@ -1,6 +1,6 @@
 /* =========================================================
-   LOCAL CRICKET SCORER - VERSION 4
-   STYLE SHEET
+   LOCAL CRICKET SCORER - VERSION 5
+   COMPLETE STYLE SHEET
    ========================================================= */
 
 
@@ -462,6 +462,23 @@ button {
 .wicket-btn {
     background: #b91c1c;
     font-size: 15px;
+}
+
+
+/* =========================================================
+   VERSION 5 - MATCH DETAILS & HISTORY
+   ========================================================= */
+
+.match-details-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.stats-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
 
 
