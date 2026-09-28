@@ -2,18 +2,26 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Local Cricket Scorer - Version 6</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="app" class="app-container">
+        <!-- Loading State -->
+        <div id="loadingOverlay" class="loading-overlay">
+            <div class="loading-content">
+                <div class="spinner"></div>
+                <p>Loading Local Cricket Scorer...</p>
+            </div>
+        </div>
+
         <!-- Header/Navigation -->
         <header class="app-header">
             <div class="header-top">
                 <h1 class="app-title">🏏 Local Cricket Scorer v6</h1>
                 <div class="header-actions">
-                    <button id="backBtn" class="btn-icon" onclick="goBack()" style="display:none;">← Back</button>
+                    <button id="backBtn" class="btn-icon" onclick="goBack()" style="display:none;" title="Go Back">← Back</button>
                 </div>
             </div>
             <nav class="app-nav">
@@ -41,32 +49,32 @@
                         <div class="quick-access-card" onclick="switchScreen('tournaments')">
                             <div class="card-icon">🎯</div>
                             <h3>Tournaments</h3>
-                            <p>Create & manage tournaments</p>
+                            <p>Create & manage</p>
                         </div>
                         <div class="quick-access-card" onclick="switchScreen('teams')">
                             <div class="card-icon">👥</div>
                             <h3>Teams</h3>
-                            <p>Create & manage teams</p>
+                            <p>Create & manage</p>
                         </div>
                         <div class="quick-access-card" onclick="switchScreen('players')">
                             <div class="card-icon">🎮</div>
                             <h3>Players</h3>
-                            <p>Create & manage players</p>
+                            <p>Create & manage</p>
                         </div>
                         <div class="quick-access-card" onclick="switchScreen('matches')">
                             <div class="card-icon">⚾</div>
                             <h3>Matches</h3>
-                            <p>Create & play matches</p>
+                            <p>Create & play</p>
                         </div>
                         <div class="quick-access-card" onclick="switchScreen('history')">
                             <div class="card-icon">📊</div>
                             <h3>History</h3>
-                            <p>View completed matches</p>
+                            <p>View results</p>
                         </div>
                         <div class="quick-access-card" onclick="switchScreen('stats')">
                             <div class="card-icon">📈</div>
                             <h3>Statistics</h3>
-                            <p>Player performance stats</p>
+                            <p>Player stats</p>
                         </div>
                     </div>
                 </div>
@@ -87,7 +95,7 @@
                     <div class="list-box">
                         <h3>Your Tournaments</h3>
                         <div id="tournamentsList" class="items-container">
-                            <p class="empty-message">No tournaments yet</p>
+                            <p class="empty-message">No tournaments yet. Create your first tournament above.</p>
                         </div>
                     </div>
                 </div>
@@ -110,7 +118,7 @@
                     <div class="list-box">
                         <h3>Your Teams</h3>
                         <div id="teamsList" class="items-container">
-                            <p class="empty-message">No teams yet</p>
+                            <p class="empty-message">No teams yet. Create your first team above.</p>
                         </div>
                     </div>
                 </div>
@@ -134,7 +142,7 @@
                     <div class="list-box">
                         <h3>Your Players</h3>
                         <div id="playersList" class="items-container">
-                            <p class="empty-message">No players yet</p>
+                            <p class="empty-message">No players yet. Create your first player above.</p>
                         </div>
                     </div>
                 </div>
@@ -169,7 +177,7 @@
                     <div class="list-box">
                         <h3>Active Matches</h3>
                         <div id="matchesList" class="items-container">
-                            <p class="empty-message">No active matches</p>
+                            <p class="empty-message">No active matches. Create your first match above.</p>
                         </div>
                     </div>
                 </div>
@@ -192,14 +200,29 @@
 
                     <!-- TOSS SECTION -->
                     <div id="tossSection" class="section-box">
-                        <h3>Toss</h3>
+                        <h3>🏆 Toss</h3>
                         <div class="toss-content">
                             <p id="tossStatus">Toss not yet conducted</p>
                             <button class="btn-primary" id="conductTossBtn" onclick="conductToss()">Conduct Toss</button>
+                            
                             <div id="tossDecision" style="display:none;">
-                                <p>Toss winner decides:</p>
-                                <button class="btn-secondary" onclick="setTossDecision('bat')">Bat First</button>
-                                <button class="btn-secondary" onclick="setTossDecision('bowl')">Bowl First</button>
+                                <p style="font-weight: bold; margin-bottom: 12px;">Who won the toss?</p>
+                                <div class="toss-buttons">
+                                    <button class="btn-toss" id="tossWinnerA" onclick="selectTossWinner('teamA')">
+                                        <span id="tossTeamAName">Team A</span>
+                                    </button>
+                                    <button class="btn-toss" id="tossWinnerB" onclick="selectTossWinner('teamB')">
+                                        <span id="tossTeamBName">Team B</span>
+                                    </button>
+                                </div>
+
+                                <div id="tossChoiceSection" style="display:none; margin-top: 16px;">
+                                    <p style="font-weight: bold; margin-bottom: 12px;" id="tossChoiceText">What does Team choose?</p>
+                                    <div class="button-group">
+                                        <button class="btn-primary" onclick="setTossDecision('bat')">🏏 Bat First</button>
+                                        <button class="btn-primary" onclick="setTossDecision('bowl')">🎾 Bowl First</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -213,7 +236,7 @@
 
                     <!-- START MATCH SECTION -->
                     <div id="startMatchSection" class="section-box" style="display:none;">
-                        <button class="btn-success" onclick="startMatch()">Start Match</button>
+                        <button class="btn-success large" onclick="startMatch()">▶ Start Match</button>
                     </div>
 
                     <!-- LIVE SCORING SECTION -->
@@ -256,6 +279,7 @@
 
                         <!-- Scoring Buttons -->
                         <div class="scoring-panel">
+                            <h4 style="margin-bottom: 8px;">Runs</h4>
                             <div class="button-group">
                                 <button class="btn-run" onclick="recordBall(0)">0</button>
                                 <button class="btn-run" onclick="recordBall(1)">1</button>
@@ -266,16 +290,26 @@
                             <div class="button-group">
                                 <button class="btn-run" onclick="recordBall(5)">5</button>
                                 <button class="btn-run" onclick="recordBall(6)">6</button>
+                            </div>
+
+                            <h4 style="margin: 12px 0 8px 0;">Dismissal</h4>
+                            <div class="button-group">
                                 <button class="btn-wicket" onclick="recordWicket()">Wicket</button>
                             </div>
+
+                            <h4 style="margin: 12px 0 8px 0;">Extras</h4>
                             <div class="button-group">
                                 <button class="btn-extra" onclick="recordExtra('wide')">Wide</button>
                                 <button class="btn-extra" onclick="recordExtra('noball')">No Ball</button>
                                 <button class="btn-extra" onclick="recordExtra('bye')">Bye</button>
                                 <button class="btn-extra" onclick="recordExtra('legbye')">Leg Bye</button>
                             </div>
+
+                            <h4 style="margin: 12px 0 8px 0;">Actions</h4>
                             <div class="button-group">
-                                <button class="btn-undo" onclick="undoLastBall()">← Undo</button>
+                                <button class="btn-undo" onclick="undoLastBall()">↶ Undo Last Ball</button>
+                            </div>
+                            <div class="button-group">
                                 <button class="btn-change" onclick="changeBatsman()">Change Batsman</button>
                                 <button class="btn-change" onclick="changeBowler()">Change Bowler</button>
                             </div>
@@ -290,12 +324,12 @@
                         </div>
 
                         <!-- Innings Controls -->
-                        <div id="inningsCompleteBox" style="display:none;">
-                            <button class="btn-primary" onclick="completeInnings()">Complete This Innings</button>
+                        <div id="inningsCompleteBox" style="display:none; margin-top: 16px;">
+                            <button class="btn-primary" onclick="confirmCompleteInnings()">✓ Complete This Innings</button>
                         </div>
 
-                        <div id="matchCompleteBox" style="display:none;">
-                            <button class="btn-success" onclick="completeMatch()">Complete Match</button>
+                        <div id="matchCompleteBox" style="display:none; margin-top: 16px;">
+                            <button class="btn-success" onclick="confirmCompleteMatch()">✓ Complete Match</button>
                         </div>
                     </div>
                 </div>
@@ -316,7 +350,7 @@
                 <div class="screen-content">
                     <h2>Match History</h2>
                     <div id="matchHistoryList" class="items-container">
-                        <p class="empty-message">No completed matches yet</p>
+                        <p class="empty-message">No completed matches yet. Start playing to see history.</p>
                     </div>
                 </div>
             </section>
@@ -326,7 +360,7 @@
                 <div class="screen-content">
                     <h2>Player Statistics</h2>
                     <div id="statisticsList" class="items-container">
-                        <p class="empty-message">No statistics yet</p>
+                        <p class="empty-message">No statistics yet. Complete matches to see player stats.</p>
                     </div>
                 </div>
             </section>
@@ -344,15 +378,32 @@
 
         <div id="wicketTypeModal" class="modal" style="display:none;">
             <div class="modal-content">
-                <h3>Wicket Type</h3>
-                <button class="btn-secondary" onclick="recordWicketType('bowled')">Bowled</button>
-                <button class="btn-secondary" onclick="recordWicketType('lbw')">LBW</button>
-                <button class="btn-secondary" onclick="recordWicketType('caught')">Caught</button>
-                <button class="btn-secondary" onclick="recordWicketType('stumped')">Stumped</button>
-                <button class="btn-secondary" onclick="recordWicketType('runout')">Run Out</button>
+                <h3>How did the batsman get out?</h3>
+                <div class="wicket-options">
+                    <button class="btn-secondary" onclick="recordWicketType('bowled')">Bowled</button>
+                    <button class="btn-secondary" onclick="recordWicketType('lbw')">LBW</button>
+                    <button class="btn-secondary" onclick="recordWicketType('caught')">Caught</button>
+                    <button class="btn-secondary" onclick="recordWicketType('stumped')">Stumped</button>
+                    <button class="btn-secondary" onclick="recordWicketType('runout')">Run Out</button>
+                </div>
                 <button class="btn-secondary" onclick="closeModal('wicketTypeModal')">Cancel</button>
             </div>
         </div>
+
+        <!-- Confirmation Modal -->
+        <div id="confirmationModal" class="modal" style="display:none;">
+            <div class="modal-content">
+                <h3 id="confirmTitle">Confirm Action</h3>
+                <p id="confirmMessage"></p>
+                <div class="confirmation-buttons">
+                    <button class="btn-danger" onclick="executeConfirmedAction()">Yes, Confirm</button>
+                    <button class="btn-secondary" onclick="closeModal('confirmationModal')">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success Toast -->
+        <div id="successToast" class="toast"></div>
 
     </div>
 
