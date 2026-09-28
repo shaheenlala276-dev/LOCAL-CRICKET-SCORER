@@ -1,22 +1,29 @@
 /* ====================================
    LOCAL CRICKET SCORER VERSION 6
-   Complete Mobile-First Responsive CSS
+   Improved & Modern CSS
+   Mobile-First Responsive Design
    ==================================== */
 
 :root {
     --primary: #2196F3;
-    --primary-dark: #1976D2;
+    --primary-dark: #1565C0;
+    --primary-light: #42A5F5;
     --success: #4CAF50;
+    --success-dark: #388E3C;
     --danger: #f44336;
+    --danger-dark: #D32F2F;
     --warning: #ff9800;
+    --warning-dark: #E65100;
     --secondary: #757575;
+    --secondary-dark: #616161;
     --bg-primary: #f5f5f5;
     --bg-card: #ffffff;
     --text-primary: #212121;
     --text-secondary: #757575;
     --border: #e0e0e0;
     --shadow: 0 2px 4px rgba(0,0,0,0.1);
-    --shadow-lg: 0 4px 8px rgba(0,0,0,0.15);
+    --shadow-md: 0 4px 8px rgba(0,0,0,0.12);
+    --shadow-lg: 0 8px 16px rgba(0,0,0,0.15);
 }
 
 * {
@@ -48,7 +55,7 @@ html, body {
 }
 
 .app-header {
-    background-color: var(--primary);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
     color: white;
     padding: 0;
     box-shadow: var(--shadow-lg);
@@ -65,7 +72,8 @@ html, body {
 
 .app-title {
     font-size: 18px;
-    font-weight: bold;
+    font-weight: 700;
+    letter-spacing: 0.3px;
     margin: 0;
 }
 
@@ -80,6 +88,7 @@ html, body {
     padding: 8px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .nav-item {
@@ -88,29 +97,72 @@ html, body {
     background-color: rgba(255,255,255,0.2);
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 20px;
     cursor: pointer;
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 600;
     white-space: nowrap;
     transition: all 0.3s ease;
 }
 
-.nav-item:hover,
+.nav-item:active,
 .nav-item.active {
     background-color: rgba(255,255,255,0.4);
+    box-shadow: 0 0 8px rgba(0,0,0,0.2);
 }
 
 .app-main {
     flex: 1;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    background-color: var(--bg-primary);
 }
 
 .screen-content {
     max-width: 1200px;
     margin: 0 auto;
     padding: 16px;
+}
+
+/* ====================================
+   LOADING STATE
+   ==================================== */
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.loading-content {
+    text-align: center;
+}
+
+.spinner {
+    border: 4px solid var(--bg-primary);
+    border-top: 4px solid var(--primary);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-overlay p {
+    color: var(--text-secondary);
+    font-size: 14px;
 }
 
 /* ====================================
@@ -130,10 +182,10 @@ html, body {
    ==================================== */
 
 .welcome-box {
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
     color: white;
     padding: 24px;
-    border-radius: 8px;
+    border-radius: 12px;
     margin-bottom: 24px;
     text-align: center;
     box-shadow: var(--shadow-lg);
@@ -142,11 +194,12 @@ html, body {
 .welcome-box h2 {
     font-size: 24px;
     margin-bottom: 8px;
+    font-weight: 700;
 }
 
 .welcome-box p {
     font-size: 14px;
-    opacity: 0.9;
+    opacity: 0.95;
 }
 
 .quick-access-grid {
@@ -157,8 +210,8 @@ html, body {
 
 .quick-access-card {
     background: white;
-    padding: 16px;
-    border-radius: 8px;
+    padding: 16px 12px;
+    border-radius: 12px;
     text-align: center;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -167,12 +220,12 @@ html, body {
 }
 
 .quick-access-card:active {
-    transform: scale(0.98);
+    transform: scale(0.95);
 }
 
 .quick-access-card:hover {
     box-shadow: var(--shadow-lg);
-    transform: translateY(-2px);
+    transform: translateY(-4px);
 }
 
 .card-icon {
@@ -184,6 +237,7 @@ html, body {
     font-size: 14px;
     margin-bottom: 4px;
     color: var(--primary);
+    font-weight: 700;
 }
 
 .quick-access-card p {
@@ -198,7 +252,7 @@ html, body {
 .form-box {
     background: white;
     padding: 16px;
-    border-radius: 8px;
+    border-radius: 12px;
     margin-bottom: 16px;
     box-shadow: var(--shadow);
     border-left: 4px solid var(--primary);
@@ -208,6 +262,7 @@ html, body {
     font-size: 16px;
     margin-bottom: 12px;
     color: var(--primary);
+    font-weight: 700;
 }
 
 .form-input {
@@ -215,18 +270,18 @@ html, body {
     padding: 12px;
     margin-bottom: 10px;
     border: 1px solid var(--border);
-    border-radius: 4px;
+    border-radius: 8px;
     font-size: 14px;
     font-family: inherit;
     background-color: white;
     color: var(--text-primary);
-    transition: border-color 0.3s ease;
+    transition: all 0.3s ease;
 }
 
 .form-input:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 4px rgba(33, 150, 243, 0.2);
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
 }
 
 .form-textarea {
@@ -246,57 +301,87 @@ html, body {
 .btn-change,
 .btn-undo,
 .btn-run,
-.btn-wicket {
+.btn-wicket,
+.btn-toss {
     padding: 12px 16px;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
     width: 100%;
     margin-bottom: 8px;
     transition: all 0.2s ease;
-    text-transform: uppercase;
+    text-transform: none;
+    box-shadow: var(--shadow);
 }
 
 .btn-primary {
-    background-color: var(--primary);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
     color: white;
 }
 
 .btn-primary:active {
-    background-color: var(--primary-dark);
     transform: scale(0.98);
+    box-shadow: var(--shadow-lg);
 }
 
 .btn-secondary {
-    background-color: var(--secondary);
+    background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-dark) 100%);
     color: white;
 }
 
 .btn-secondary:active {
-    background-color: #616161;
     transform: scale(0.98);
 }
 
 .btn-success {
-    background-color: var(--success);
+    background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
     color: white;
-    font-size: 16px;
 }
 
 .btn-success:active {
-    background-color: #45a049;
     transform: scale(0.98);
+    box-shadow: var(--shadow-lg);
+}
+
+.btn-success.large {
+    font-size: 16px;
+    padding: 14px 20px;
 }
 
 .btn-danger {
-    background-color: var(--danger);
+    background: linear-gradient(135deg, var(--danger) 0%, var(--danger-dark) 100%);
     color: white;
 }
 
 .btn-danger:active {
-    background-color: #da190b;
+    transform: scale(0.98);
+}
+
+/* Toss Buttons */
+.toss-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.btn-toss {
+    background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+    color: white;
+    padding: 16px 12px;
+    font-size: 14px;
+    width: 100%;
+    margin-bottom: 0;
+}
+
+.btn-toss.selected {
+    background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
+    box-shadow: var(--shadow-lg);
+}
+
+.btn-toss:active {
     transform: scale(0.98);
 }
 
@@ -305,85 +390,88 @@ html, body {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     gap: 6px;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
 }
 
-.button-group:nth-child(2) {
-    grid-template-columns: repeat(3, 1fr);
-}
-
-.button-group:nth-child(3) {
+.button-group:nth-child(n+3) {
     grid-template-columns: repeat(4, 1fr);
 }
 
-.button-group:nth-child(4) {
-    grid-template-columns: repeat(3, 1fr);
+.button-group:has(.btn-change) {
+    grid-template-columns: 1fr 1fr;
+}
+
+.button-group:has(.btn-undo) {
+    grid-template-columns: 1fr;
 }
 
 .btn-run {
-    background-color: #4CAF50;
+    background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
     color: white;
-    padding: 16px 8px;
+    padding: 14px 8px;
     font-size: 18px;
-    font-weight: bold;
+    font-weight: 700;
     width: 100%;
     margin-bottom: 0;
 }
 
 .btn-run:active {
-    background-color: #45a049;
+    transform: scale(0.95);
 }
 
 .btn-wicket {
-    background-color: var(--danger);
+    background: linear-gradient(135deg, var(--danger) 0%, var(--danger-dark) 100%);
     color: white;
-    padding: 16px 8px;
+    padding: 14px 8px;
     font-size: 16px;
     width: 100%;
     margin-bottom: 0;
 }
 
 .btn-wicket:active {
-    background-color: #da190b;
+    transform: scale(0.95);
 }
 
 .btn-extra {
-    background-color: var(--warning);
+    background: linear-gradient(135deg, var(--warning) 0%, var(--warning-dark) 100%);
     color: white;
     padding: 12px 8px;
     font-size: 12px;
+    font-weight: 700;
     width: 100%;
     margin-bottom: 0;
 }
 
 .btn-extra:active {
-    background-color: #e68900;
+    transform: scale(0.95);
 }
 
 .btn-change {
-    background-color: #2196F3;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
     color: white;
     padding: 12px 8px;
     font-size: 12px;
+    font-weight: 700;
     width: 100%;
     margin-bottom: 0;
 }
 
 .btn-change:active {
-    background-color: #1976D2;
+    transform: scale(0.95);
 }
 
 .btn-undo {
-    background-color: var(--secondary);
+    background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-dark) 100%);
     color: white;
     padding: 12px 8px;
     font-size: 12px;
+    font-weight: 700;
     width: 100%;
     margin-bottom: 0;
 }
 
 .btn-undo:active {
-    background-color: #616161;
+    transform: scale(0.95);
 }
 
 .btn-icon {
@@ -393,6 +481,7 @@ html, body {
     cursor: pointer;
     padding: 4px 8px;
     font-size: 14px;
+    font-weight: 600;
 }
 
 /* ====================================
@@ -402,7 +491,7 @@ html, body {
 .list-box {
     background: white;
     padding: 16px;
-    border-radius: 8px;
+    border-radius: 12px;
     margin-bottom: 16px;
     box-shadow: var(--shadow);
 }
@@ -411,24 +500,27 @@ html, body {
     font-size: 16px;
     margin-bottom: 12px;
     color: var(--primary);
+    font-weight: 700;
 }
 
 .items-container {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
 }
 
 .item {
     background: white;
     padding: 12px;
-    border-radius: 4px;
+    border-radius: 8px;
     border-left: 4px solid var(--primary);
     display: flex;
     justify-content: space-between;
     align-items: center;
     border: 1px solid var(--border);
+    border-left: 4px solid var(--primary);
     gap: 8px;
+    box-shadow: var(--shadow);
 }
 
 .item-info {
@@ -437,9 +529,10 @@ html, body {
 }
 
 .item-name {
-    font-weight: 600;
+    font-weight: 700;
     font-size: 14px;
     margin-bottom: 4px;
+    color: var(--text-primary);
 }
 
 .item-detail {
@@ -462,7 +555,7 @@ html, body {
 
 .empty-message {
     text-align: center;
-    padding: 20px;
+    padding: 24px 16px;
     color: var(--text-secondary);
     font-size: 14px;
 }
@@ -474,26 +567,29 @@ html, body {
 .match-header-box {
     background: white;
     padding: 16px;
-    border-radius: 8px;
+    border-radius: 12px;
     margin-bottom: 16px;
     box-shadow: var(--shadow);
+    border-top: 4px solid var(--primary);
 }
 
 .match-header-box h3 {
     font-size: 16px;
     margin-bottom: 8px;
     color: var(--primary);
+    font-weight: 700;
 }
 
 .match-header-box p {
     font-size: 13px;
     color: var(--text-secondary);
+    margin: 0;
 }
 
 .section-box {
     background: white;
     padding: 16px;
-    border-radius: 8px;
+    border-radius: 12px;
     margin-bottom: 12px;
     box-shadow: var(--shadow);
 }
@@ -502,11 +598,14 @@ html, body {
     font-size: 16px;
     margin-bottom: 12px;
     color: var(--primary);
+    font-weight: 700;
 }
 
 .section-box h4 {
     font-size: 14px;
     margin-bottom: 8px;
+    color: var(--text-primary);
+    font-weight: 700;
 }
 
 .toss-content {
@@ -518,6 +617,7 @@ html, body {
 .toss-content p {
     font-size: 13px;
     margin-bottom: 0;
+    font-weight: 500;
 }
 
 /* Scoreboard */
@@ -529,32 +629,34 @@ html, body {
 }
 
 .score-card {
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
     color: white;
-    padding: 16px;
-    border-radius: 8px;
+    padding: 16px 12px;
+    border-radius: 12px;
     text-align: center;
-    box-shadow: var(--shadow);
+    box-shadow: var(--shadow-md);
 }
 
 .score-value {
     font-size: 28px;
-    font-weight: bold;
+    font-weight: 700;
     margin-bottom: 4px;
 }
 
 .score-label {
     font-size: 11px;
-    opacity: 0.9;
+    opacity: 0.95;
     text-transform: uppercase;
+    font-weight: 600;
 }
 
 /* Status Box */
 .status-box {
-    background: #f5f5f5;
+    background: linear-gradient(135deg, #f5f5f5 0%, #eeeeee 100%);
     padding: 12px;
-    border-radius: 4px;
+    border-radius: 8px;
     margin-bottom: 12px;
+    border-left: 4px solid var(--primary);
 }
 
 .status-item {
@@ -570,13 +672,13 @@ html, body {
 }
 
 .status-item label {
-    font-weight: 600;
+    font-weight: 700;
     color: var(--text-primary);
 }
 
 .status-item span {
     color: var(--primary);
-    font-weight: bold;
+    font-weight: 700;
 }
 
 /* Scoring Panel */
@@ -586,20 +688,22 @@ html, body {
 
 /* Ball History */
 .ball-history-box {
-    background: #f9f9f9;
+    background: linear-gradient(135deg, #f9f9f9 0%, #f5f5f5 100%);
     padding: 12px;
-    border-radius: 4px;
+    border-radius: 8px;
     border: 1px solid var(--border);
+    border-left: 4px solid var(--primary);
 }
 
 .ball-history-box h4 {
     margin-bottom: 8px;
+    font-weight: 700;
 }
 
 .ball-history-text {
     font-family: 'Courier New', monospace;
     font-size: 12px;
-    line-height: 1.6;
+    line-height: 1.8;
     background: white;
     padding: 8px;
     border-radius: 4px;
@@ -614,8 +718,9 @@ html, body {
 
 .scorecard-container {
     background: white;
-    border-radius: 8px;
+    border-radius: 12px;
     overflow: hidden;
+    box-shadow: var(--shadow);
 }
 
 .scorecard-section {
@@ -631,8 +736,16 @@ html, body {
     color: var(--primary);
     font-size: 16px;
     margin-bottom: 12px;
-    border-bottom: 2px solid var(--primary);
+    border-bottom: 3px solid var(--primary);
     padding-bottom: 8px;
+    font-weight: 700;
+}
+
+.scorecard-section h4 {
+    font-size: 14px;
+    margin-bottom: 8px;
+    font-weight: 700;
+    color: var(--text-primary);
 }
 
 .scorecard-table {
@@ -649,9 +762,9 @@ html, body {
 }
 
 .scorecard-table th {
-    background-color: var(--primary);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
     color: white;
-    font-weight: bold;
+    font-weight: 700;
 }
 
 .scorecard-table tr:nth-child(even) {
@@ -666,10 +779,10 @@ html, body {
 }
 
 .info-card {
-    background: linear-gradient(135deg, #f5f5f5, #eeeeee);
+    background: linear-gradient(135deg, #f5f5f5 0%, #eeeeee 100%);
     padding: 12px;
-    border-radius: 4px;
-    border-left: 3px solid var(--primary);
+    border-radius: 8px;
+    border-left: 4px solid var(--primary);
 }
 
 .info-label {
@@ -677,12 +790,35 @@ html, body {
     color: var(--text-secondary);
     text-transform: uppercase;
     margin-bottom: 4px;
+    font-weight: 700;
 }
 
 .info-value {
     font-size: 16px;
-    font-weight: bold;
+    font-weight: 700;
     color: var(--primary);
+}
+
+/* Match Result Card */
+.match-result-card {
+    background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
+    color: white;
+    padding: 24px;
+    border-radius: 12px;
+    text-align: center;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-lg);
+}
+
+.match-result-card h2 {
+    font-size: 24px;
+    margin-bottom: 12px;
+    color: white;
+}
+
+.match-result-card p {
+    font-size: 16px;
+    margin-bottom: 8px;
 }
 
 /* ====================================
@@ -706,7 +842,7 @@ html, body {
 .modal-content {
     background: white;
     padding: 20px;
-    border-radius: 8px;
+    border-radius: 12px;
     max-height: 80vh;
     overflow-y: auto;
     box-shadow: var(--shadow-lg);
@@ -718,6 +854,13 @@ html, body {
     font-size: 18px;
     margin-bottom: 16px;
     color: var(--primary);
+    font-weight: 700;
+}
+
+.modal-content p {
+    font-size: 14px;
+    margin-bottom: 16px;
+    color: var(--text-secondary);
 }
 
 .modal-list {
@@ -730,19 +873,79 @@ html, body {
 .modal-item {
     padding: 12px;
     border: 1px solid var(--border);
-    border-radius: 4px;
+    border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
+    font-weight: 500;
 }
 
 .modal-item:hover {
-    background-color: var(--primary);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
     color: white;
     border-color: var(--primary);
+    box-shadow: var(--shadow);
 }
 
 .modal-item:active {
     transform: scale(0.98);
+}
+
+.wicket-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.wicket-options button {
+    margin-bottom: 0;
+}
+
+.confirmation-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.confirmation-buttons button {
+    margin-bottom: 0;
+}
+
+/* ====================================
+   TOAST NOTIFICATIONS
+   ==================================== */
+
+.toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    box-shadow: var(--shadow-lg);
+    display: none;
+    z-index: 1500;
+    max-width: 300px;
+    text-align: center;
+    font-weight: 600;
+}
+
+.toast.show {
+    display: block;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
 }
 
 /* ====================================
@@ -752,6 +955,7 @@ html, body {
 h1, h2 {
     color: var(--primary);
     margin-bottom: 16px;
+    font-weight: 700;
 }
 
 h1 {
@@ -799,16 +1003,12 @@ h4 {
         grid-template-columns: repeat(4, 1fr);
     }
 
-    .button-group:nth-child(2) {
-        grid-template-columns: repeat(3, 1fr);
-    }
-
     .button-group:nth-child(3) {
         grid-template-columns: repeat(2, 1fr);
     }
 
-    .button-group:nth-child(4) {
-        grid-template-columns: repeat(2, 1fr);
+    .button-group:has(.btn-change) {
+        grid-template-columns: 1fr 1fr;
     }
 
     .scorecard-table {
@@ -850,6 +1050,7 @@ h4 {
     .match-header-box {
         padding: 12px;
         margin-bottom: 12px;
+        border-radius: 8px;
     }
 
     .form-input {
@@ -866,10 +1067,12 @@ h4 {
     .btn-change,
     .btn-undo,
     .btn-run,
-    .btn-wicket {
+    .btn-wicket,
+    .btn-toss {
         padding: 10px 12px;
         font-size: 12px;
         margin-bottom: 6px;
+        border-radius: 6px;
     }
 
     .quick-access-grid {
@@ -877,8 +1080,13 @@ h4 {
         gap: 10px;
     }
 
+    .quick-access-card {
+        padding: 14px 10px;
+        border-radius: 8px;
+    }
+
     .card-icon {
-        font-size: 24px;
+        font-size: 28px;
     }
 
     .quick-access-card h3 {
@@ -890,7 +1098,8 @@ h4 {
     }
 
     .score-card {
-        padding: 12px;
+        padding: 12px 10px;
+        border-radius: 8px;
     }
 
     .score-value {
@@ -915,6 +1124,7 @@ h4 {
         padding: 10px;
         flex-direction: column;
         align-items: flex-start;
+        border-radius: 8px;
     }
 
     .item-actions {
@@ -923,6 +1133,7 @@ h4 {
 
     .item-actions button {
         flex: 1;
+        font-size: 10px;
     }
 
     .scorecard-info {
@@ -942,11 +1153,56 @@ h4 {
     .modal-content {
         max-width: 95%;
         padding: 16px;
+        border-radius: 12px;
     }
 
     .modal-content h3 {
         font-size: 16px;
         margin-bottom: 12px;
+    }
+
+    .welcome-box {
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+    }
+
+    .welcome-box h2 {
+        font-size: 20px;
+    }
+
+    .match-result-card {
+        padding: 20px;
+        border-radius: 12px;
+    }
+
+    .match-result-card h2 {
+        font-size: 20px;
+    }
+
+    .button-group {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 4px;
+    }
+
+    .button-group:has(.btn-wicket) {
+        grid-template-columns: 1fr;
+    }
+
+    .button-group:has(.btn-extra) {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .button-group:has(.btn-change) {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .button-group:has(.btn-undo) {
+        grid-template-columns: 1fr;
+    }
+
+    .toss-buttons {
+        grid-template-columns: 1fr 1fr;
     }
 }
 
