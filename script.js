@@ -1,4491 +1,1376 @@
-/* =========================================================
-   LOCAL CRICKET SCORER - VERSION 5
-   Includes V1.0-V4 + Match History & Player Records
-   ========================================================= */
+// ============================================================================
+// LOCAL CRICKET SCORER - VERSION 6
+// Complete JavaScript with Match Data Isolation Fix
+// ============================================================================
 
+// ============================================================================
+// DATABASE & STORAGE INITIALIZATION
+// ============================================================================
 
-/* =========================================================
-   STORAGE
-   ========================================================= */
+const DB_NAME = 'CricketScorerDB';
+const DB_VERSION = 1;
 
-const STORAGE_KEY = "local_cricket_scorer_v5";
+let db;
 
-
-/* =========================================================
-   APP DATA
-   ========================================================= */
-
-const AppData = {
-    tournaments: [],
-    teams: [],
-    players: [],
-    matches: []
+const STORES = {
+    TOURNAMENTS: 'tournaments',
+    TEAMS: 'teams',
+    PLAYERS: 'players',
+    MATCHES: 'matches',
+    COMPLETED_MATCHES: 'completedMatches',
+    PLAYER_STATS: 'playerStats'
 };
 
-
-/* =========================================================
-   CURRENT STATE
-   ========================================================= */
-
-const CurrentState = {
-    currentTeamId: null,
+// Global Application State
+const appState = {
+    currentScreen: 'home',
     currentMatchId: null,
-    currentViewMatchId: null
+    liveMatchState: null,
+    previousScreen: 'home'
 };
 
+// Initialize IndexedDB
+function initDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-/* =========================================================
-   LIVE SCORING STATE
-   ========================================================= */
+        request.onerror = () => {
+            console.error('Database error:', request.error);
+            reject(request.error);
+        };
 
-const LiveState = {
-    inningsIndex: 0,
-    strikerId: null,
-    nonStrikerId: null,
-    bowlerId: null,
+        request.onsuccess = () => {
+            db = request.result;
+            console.log('Database initialized');
+            resolve(db);
+        };
 
-    runs: 0,
-    wickets: 0,
+        request.onupgradeneeded = (event) => {
+            const db = event.target.result;
 
-    legalBalls: 0,
-    currentOverBalls: [],
-
-    ballHistory: [],
-
-    batsmen: {},
-    bowlers: {},
-
-    innings: []
-};
-
-
-/* =========================================================
-   PAGE START
-   ========================================================= */
-
-document.addEventListener("DOMContentLoaded", function () {
-
-    loadData();
-
-    renderTournaments();
-    renderTeams();
-    renderMatches();
-
-    populateMatchSetup();
-
-    setupEnterKeys();
-});
-
-
-/* =========================================================
-   SCREEN MANAGEMENT
-   ========================================================= */
-
-function showScreen(screenId) {
-
-    const screens =
-        document.querySelectorAll(".screen");
-
-    screens.forEach(function (screen) {
-
-        screen.classList.remove("active");
-
-    });
-
-
-    const selectedScreen =
-        document.getElementById(screenId);
-
-
-    if (selectedScreen) {
-
-        selectedScreen.classList.add("active");
-
-    }
-
-
-    if (screenId === "tournamentScreen") {
-
-        renderTournaments();
-
-    }
-
-
-    if (screenId === "teamScreen") {
-
-        renderTeams();
-
-    }
-
-
-    if (screenId === "matchScreen") {
-
-        renderMatches();
-
-        populateMatchSetup();
-
-    }
-
-
-    if (screenId === "liveScoringScreen") {
-
-        renderLiveScoring();
-
-    }
-
-
-    if (screenId === "matchHistoryScreen") {
-
-        renderMatchHistory();
-
-    }
-
-
-    if (screenId === "playerRecordsScreen") {
-
-        renderPlayerRecords();
-
-    }
-
-
-    if (screenId === "statisticsScreen") {
-
-        renderStatistics();
-
-    }
-
-
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
+            if (!db.objectStoreNames.contains(STORES.TOURNAMENTS)) {
+                db.createObjectStore(STORES.TOURNAMENTS, { keyPath: 'id' });
+            }
+            if (!db.objectStoreNames.contains(STORES.TEAMS)) {
+                db.createObjectStore(STORES.TEAMS, { keyPath: 'id' });
+            }
+            if (!db.objectStoreNames.contains(STORES.PLAYERS)) {
+                db.createObjectStore(STORES.PLAYERS, { keyPath: 'id' });
+            }
+            if (!db.objectStoreNames.contains(STORES.MATCHES)) {
+                db.createObjectStore(STORES.MATCHES, { keyPath: 'id' });
+            }
+            if (!db.objectStoreNames.contains(STORES.COMPLETED_MATCHES)) {
+                db.createObjectStore(STORES.COMPLETED_MATCHES, { keyPath: 'id' });
+            }
+            if (!db.objectStoreNames.contains(STORES.PLAYER_STATS)) {
+                db.createObjectStore(STORES.PLAYER_STATS, { keyPath: 'playerId' });
+            }
+        };
     });
 }
 
-
-/* =========================================================
-   STORAGE FUNCTIONS
-   ========================================================= */
-
-function saveData() {
-
-    localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(AppData)
-    );
+// Database utility functions
+function dbAdd(storeName, data) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction([storeName], 'readwrite');
+        const store = tx.objectStore(storeName);
+        const req = store.add(data);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+    });
 }
 
-
-function loadData() {
-
-    const savedData =
-        localStorage.getItem(STORAGE_KEY);
-
-
-    if (!savedData) {
-
-        return;
-
-    }
-
-
-    try {
-
-        const parsedData =
-            JSON.parse(savedData);
-
-
-        AppData.tournaments =
-            Array.isArray(parsedData.tournaments)
-                ? parsedData.tournaments
-                : [];
-
-
-        AppData.teams =
-            Array.isArray(parsedData.teams)
-                ? parsedData.teams
-                : [];
-
-
-        AppData.players =
-            Array.isArray(parsedData.players)
-                ? parsedData.players
-                : [];
-
-
-        AppData.matches =
-            Array.isArray(parsedData.matches)
-                ? parsedData.matches
-                : [];
-
-
-    } catch (error) {
-
-        console.error(
-            "Could not load saved data:",
-            error
-        );
-
-    }
+function dbPut(storeName, data) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction([storeName], 'readwrite');
+        const store = tx.objectStore(storeName);
+        const req = store.put(data);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+    });
 }
 
-
-/* =========================================================
-   ID GENERATOR
-   ========================================================= */
-
-function createId(prefix) {
-
-    return (
-        prefix +
-        "_" +
-        Date.now() +
-        "_" +
-        Math.random()
-            .toString(36)
-            .substring(2, 8)
-    );
+function dbGet(storeName, key) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction([storeName], 'readonly');
+        const store = tx.objectStore(storeName);
+        const req = store.get(key);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+    });
 }
 
+function dbGetAll(storeName) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction([storeName], 'readonly');
+        const store = tx.objectStore(storeName);
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+    });
+}
 
-/* =========================================================
-   TOURNAMENTS
-   ========================================================= */
+function dbDelete(storeName, key) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction([storeName], 'readwrite');
+        const store = tx.objectStore(storeName);
+        const req = store.delete(key);
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+    });
+}
 
-function addTournament() {
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
 
-    const input =
-        document.getElementById(
-            "tournamentName"
-        );
+function generateUniqueId(prefix) {
+    return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
 
+function getTeamName(teamId) {
+    return dbGet(STORES.TEAMS, teamId).then(team => team ? team.name : 'Unknown');
+}
 
-    if (!input) {
+function getPlayerName(playerId) {
+    return dbGet(STORES.PLAYERS, playerId).then(player => player ? player.name : 'Unknown');
+}
 
-        return;
+// ============================================================================
+// TOURNAMENT MANAGEMENT
+// ============================================================================
 
-    }
-
-
-    const name =
-        input.value.trim();
-
+async function createTournament() {
+    const name = document.getElementById('tournamentName').value.trim();
+    const desc = document.getElementById('tournamentDesc').value.trim();
 
     if (!name) {
-
-        alert(
-            "Please enter tournament name."
-        );
-
-        input.focus();
-
+        alert('Please enter tournament name');
         return;
-
     }
-
 
     const tournament = {
-
-        id: createId("tournament"),
-
-        name: name,
-
-        createdAt:
-            new Date().toISOString()
-
+        id: generateUniqueId('tournament'),
+        name,
+        description: desc,
+        createdAt: new Date().toISOString()
     };
 
-
-    AppData.tournaments.push(
-        tournament
-    );
-
-
-    saveData();
-
-    input.value = "";
-
-    renderTournaments();
-
-    populateMatchSetup();
+    try {
+        await dbPut(STORES.TOURNAMENTS, tournament);
+        document.getElementById('tournamentName').value = '';
+        document.getElementById('tournamentDesc').value = '';
+        loadTournaments();
+        updateTournamentSelects();
+        alert('Tournament created!');
+    } catch (error) {
+        console.error('Error creating tournament:', error);
+        alert('Error creating tournament');
+    }
 }
 
+async function loadTournaments() {
+    try {
+        const tournaments = await dbGetAll(STORES.TOURNAMENTS);
+        const list = document.getElementById('tournamentsList');
 
-function renderTournaments() {
+        if (tournaments.length === 0) {
+            list.innerHTML = '<p class="empty-message">No tournaments created yet</p>';
+            return;
+        }
 
-    const container =
-        document.getElementById(
-            "tournamentList"
-        );
-
-
-    if (!container) {
-
-        return;
-
-    }
-
-
-    if (AppData.tournaments.length === 0) {
-
-        container.innerHTML =
-            `
-            <div class="empty-message">
-                No tournaments yet.
+        list.innerHTML = tournaments.map(t => `
+            <div class="item">
+                <div class="item-info">
+                    <div class="item-name">${t.name}</div>
+                    <div class="item-detail">${t.description || 'No description'}</div>
+                    <div class="item-detail">Created: ${new Date(t.createdAt).toLocaleDateString()}</div>
+                </div>
+                <div class="item-actions">
+                    <button class="btn-secondary" onclick="deleteTournament('${t.id}')">Delete</button>
+                </div>
             </div>
-            `;
+        `).join('');
 
-        return;
-
+        updateTournamentSelects();
+    } catch (error) {
+        console.error('Error loading tournaments:', error);
     }
-
-
-    container.innerHTML =
-        AppData.tournaments
-            .map(function (tournament) {
-
-                return `
-                    <div class="list-item">
-
-                        <h3>
-                            🏆
-                            ${escapeHTML(
-                                tournament.name
-                            )}
-                        </h3>
-
-                        <p>
-                            Tournament
-                        </p>
-
-                        <div class="list-actions">
-
-                            <button
-                                class="small-btn delete-btn"
-                                onclick="deleteTournament('${tournament.id}')">
-                                Delete
-                            </button>
-
-                        </div>
-
-                    </div>
-                `;
-
-            })
-            .join("");
 }
 
-
-function deleteTournament(tournamentId) {
-
-    const tournament =
-        AppData.tournaments.find(
-            function (item) {
-
-                return item.id ===
-                    tournamentId;
-
-            }
-        );
-
-
-    if (!tournament) {
-
-        return;
-
+async function deleteTournament(id) {
+    if (confirm('Delete this tournament?')) {
+        try {
+            await dbDelete(STORES.TOURNAMENTS, id);
+            loadTournaments();
+            updateTournamentSelects();
+        } catch (error) {
+            console.error('Error deleting tournament:', error);
+        }
     }
-
-
-    const confirmed =
-        confirm(
-            `Delete tournament "${tournament.name}"?`
-        );
-
-
-    if (!confirmed) {
-
-        return;
-
-    }
-
-
-    AppData.tournaments =
-        AppData.tournaments.filter(
-            function (item) {
-
-                return item.id !==
-                    tournamentId;
-
-            }
-        );
-
-
-    AppData.matches =
-        AppData.matches.filter(
-            function (match) {
-
-                return match.tournamentId !==
-                    tournamentId;
-
-            }
-        );
-
-
-    saveData();
-
-    renderTournaments();
-
-    renderMatches();
-
-    populateMatchSetup();
 }
 
+async function updateTournamentSelects() {
+    const tournaments = await dbGetAll(STORES.TOURNAMENTS);
+    const selects = ['matchTournament', 'teamTournament'];
 
-/* =========================================================
-   TEAMS
-   ========================================================= */
+    selects.forEach(selectId => {
+        const select = document.getElementById(selectId);
+        if (select) {
+            const current = select.value;
+            select.innerHTML = '<option value="">Select Tournament</option>' +
+                tournaments.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+            select.value = current;
+        }
+    });
+}
 
-function addTeam() {
+// ============================================================================
+// TEAM MANAGEMENT
+// ============================================================================
 
-    const input =
-        document.getElementById(
-            "teamName"
-        );
+async function createTeam() {
+    const name = document.getElementById('teamName').value.trim();
+    const tournamentId = document.getElementById('teamTournament').value;
 
-
-    if (!input) {
-
+    if (!name || !tournamentId) {
+        alert('Please enter team name and select tournament');
         return;
-
     }
-
-
-    const name =
-        input.value.trim();
-
-
-    if (!name) {
-
-        alert(
-            "Please enter team name."
-        );
-
-        input.focus();
-
-        return;
-
-    }
-
 
     const team = {
-
-        id: createId("team"),
-
-        name: name,
-
-        createdAt:
-            new Date().toISOString()
-
+        id: generateUniqueId('team'),
+        name,
+        tournamentId,
+        createdAt: new Date().toISOString()
     };
 
-
-    AppData.teams.push(team);
-
-    saveData();
-
-    input.value = "";
-
-    renderTeams();
-
-    populateMatchSetup();
+    try {
+        await dbPut(STORES.TEAMS, team);
+        document.getElementById('teamName').value = '';
+        document.getElementById('teamTournament').value = '';
+        loadTeams();
+        updateTeamSelects();
+        alert('Team created!');
+    } catch (error) {
+        console.error('Error creating team:', error);
+        alert('Error creating team');
+    }
 }
 
+async function loadTeams() {
+    try {
+        const teams = await dbGetAll(STORES.TEAMS);
+        const list = document.getElementById('teamsList');
 
-function renderTeams() {
+        if (teams.length === 0) {
+            list.innerHTML = '<p class="empty-message">No teams created yet</p>';
+            return;
+        }
 
-    const container =
-        document.getElementById(
-            "teamList"
-        );
-
-
-    if (!container) {
-
-        return;
-
-    }
-
-
-    if (AppData.teams.length === 0) {
-
-        container.innerHTML =
-            `
-            <div class="empty-message">
-                No teams yet.
-            </div>
-            `;
-
-        return;
-
-    }
-
-
-    container.innerHTML =
-        AppData.teams
-            .map(function (team) {
-
-                const playerCount =
-                    AppData.players.filter(
-                        function (player) {
-
-                            return player.teamId ===
-                                team.id;
-
-                        }
-                    ).length;
-
-
-                return `
-                    <div class="list-item">
-
-                        <h3>
-                            👥
-                            ${escapeHTML(
-                                team.name
-                            )}
-                        </h3>
-
-                        <p>
-                            ${playerCount} player(s)
-                        </p>
-
-                        <div class="list-actions">
-
-                            <button
-                                class="small-btn manage-btn"
-                                onclick="openPlayers('${team.id}')">
-                                Manage Players
-                            </button>
-
-                            <button
-                                class="small-btn delete-btn"
-                                onclick="deleteTeam('${team.id}')">
-                                Delete
-                            </button>
-
-                        </div>
-
+        list.innerHTML = await Promise.all(teams.map(async (t) => {
+            const tournament = await dbGet(STORES.TOURNAMENTS, t.tournamentId);
+            return `
+                <div class="item">
+                    <div class="item-info">
+                        <div class="item-name">${t.name}</div>
+                        <div class="item-detail">Tournament: ${tournament ? tournament.name : 'Unknown'}</div>
+                        <div class="item-detail">Created: ${new Date(t.createdAt).toLocaleDateString()}</div>
                     </div>
-                `;
-
-            })
-            .join("");
-}
-
-
-function deleteTeam(teamId) {
-
-    const team =
-        AppData.teams.find(
-            function (item) {
-
-                return item.id ===
-                    teamId;
-
-            }
-        );
-
-
-    if (!team) {
-
-        return;
-
-    }
-
-
-    const confirmed =
-        confirm(
-            `Delete team "${team.name}" and its players/matches?`
-        );
-
-
-    if (!confirmed) {
-
-        return;
-
-    }
-
-
-    AppData.teams =
-        AppData.teams.filter(
-            function (item) {
-
-                return item.id !==
-                    teamId;
-
-            }
-        );
-
-
-    AppData.players =
-        AppData.players.filter(
-            function (player) {
-
-                return player.teamId !==
-                    teamId;
-
-            }
-        );
-
-
-    AppData.matches =
-        AppData.matches.filter(
-            function (match) {
-
-                return (
-                    match.teamAId !== teamId &&
-                    match.teamBId !== teamId
-                );
-
-            }
-        );
-
-
-    saveData();
-
-    renderTeams();
-
-    renderMatches();
-
-    populateMatchSetup();
-}
-
-
-/* =========================================================
-   PLAYERS
-   ========================================================= */
-
-function openPlayers(teamId) {
-
-    CurrentState.currentTeamId =
-        teamId;
-
-
-    const team =
-        AppData.teams.find(
-            function (item) {
-
-                return item.id ===
-                    teamId;
-
-            }
-        );
-
-
-    if (!team) {
-
-        return;
-
-    }
-
-
-    const info =
-        document.getElementById(
-            "selectedTeamInfo"
-        );
-
-
-    if (info) {
-
-        info.innerHTML =
-            `
-            Managing players for:
-            <strong>
-                ${escapeHTML(team.name)}
-            </strong>
+                    <div class="item-actions">
+                        <button class="btn-secondary" onclick="deleteTeam('${t.id}')">Delete</button>
+                    </div>
+                </div>
             `;
+        })).then(items => items.join(''));
 
+        updateTeamSelects();
+    } catch (error) {
+        console.error('Error loading teams:', error);
     }
-
-
-    renderPlayers();
-
-    showScreen("playerScreen");
 }
 
-
-function addPlayer() {
-
-    const input =
-        document.getElementById(
-            "playerName"
-        );
-
-
-    if (!input) {
-
-        return;
-
+async function deleteTeam(id) {
+    if (confirm('Delete this team?')) {
+        try {
+            await dbDelete(STORES.TEAMS, id);
+            loadTeams();
+            updateTeamSelects();
+        } catch (error) {
+            console.error('Error deleting team:', error);
+        }
     }
+}
 
+async function updateTeamSelects() {
+    const teams = await dbGetAll(STORES.TEAMS);
+    const selects = ['matchTeamA', 'matchTeamB', 'playerTeam'];
 
-    const name =
-        input.value.trim();
+    selects.forEach(selectId => {
+        const select = document.getElementById(selectId);
+        if (select) {
+            const current = select.value;
+            select.innerHTML = '<option value="">Select Team</option>' +
+                teams.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+            select.value = current;
+        }
+    });
+}
 
+// ============================================================================
+// PLAYER MANAGEMENT
+// ============================================================================
 
-    if (!name) {
+async function createPlayer() {
+    const name = document.getElementById('playerName').value.trim();
+    const jersey = document.getElementById('playerJerseyNo').value.trim();
+    const teamId = document.getElementById('playerTeam').value;
 
-        alert(
-            "Please enter player name."
-        );
-
-        input.focus();
-
+    if (!name || !jersey || !teamId) {
+        alert('Please fill all player details');
         return;
-
     }
-
-
-    if (!CurrentState.currentTeamId) {
-
-        alert(
-            "Please select a team first."
-        );
-
-        return;
-
-    }
-
 
     const player = {
-
-        id: createId("player"),
-
-        teamId:
-            CurrentState.currentTeamId,
-
-        name: name,
-
-        createdAt:
-            new Date().toISOString()
-
+        id: generateUniqueId('player'),
+        name,
+        jerseyNo: parseInt(jersey),
+        teamId,
+        createdAt: new Date().toISOString()
     };
 
-
-    AppData.players.push(player);
-
-    saveData();
-
-    input.value = "";
-
-    renderPlayers();
-
-    renderTeams();
+    try {
+        await dbPut(STORES.PLAYERS, player);
+        document.getElementById('playerName').value = '';
+        document.getElementById('playerJerseyNo').value = '';
+        document.getElementById('playerTeam').value = '';
+        loadPlayers();
+        alert('Player created!');
+    } catch (error) {
+        console.error('Error creating player:', error);
+        alert('Error creating player');
+    }
 }
 
-
-function renderPlayers() {
-
-    const container =
-        document.getElementById(
-            "playerList"
-        );
-
-
-    if (!container) {
-
-        return;
-
-    }
-
-
-    const players =
-        AppData.players.filter(
-            function (player) {
-
-                return player.teamId ===
-                    CurrentState.currentTeamId;
-
-            }
-        );
-
-
-    if (players.length === 0) {
-
-        container.innerHTML =
-            `
-            <div class="empty-message">
-                No players yet.
-            </div>
-            `;
-
-        return;
-
-    }
-
-
-    container.innerHTML =
-        players
-            .map(function (player) {
-
-                return `
-                    <div class="list-item">
-
-                        <h3>
-                            🏏
-                            ${escapeHTML(
-                                player.name
-                            )}
-                        </h3>
-
-                        <p>
-                            Player
-                        </p>
-
-                        <div class="list-actions">
-
-                            <button
-                                class="small-btn delete-btn"
-                                onclick="deletePlayer('${player.id}')">
-                                Delete
-                            </button>
-
-                        </div>
-
-                    </div>
-                `;
-
-            })
-            .join("");
-}
-
-
-function deletePlayer(playerId) {
-
-    const player =
-        AppData.players.find(
-            function (item) {
-
-                return item.id ===
-                    playerId;
-
-            }
-        );
-
-
-    if (!player) {
-
-        return;
-
-    }
-
-
-    const confirmed =
-        confirm(
-            `Delete player "${player.name}"?`
-        );
-
-
-    if (!confirmed) {
-
-        return;
-
-    }
-
-
-    AppData.players =
-        AppData.players.filter(
-            function (item) {
-
-                return item.id !==
-                    playerId;
-
-            }
-        );
-
-
-    saveData();
-
-    renderPlayers();
-
-    renderTeams();
-}
-
-
-/* =========================================================
-   MATCH SETUP
-   ========================================================= */
-
-function populateMatchSetup() {
-
-    populateTournamentSelect();
-
-    populateTeamSelects();
-}
-
-
-function populateTournamentSelect() {
-
-    const select =
-        document.getElementById(
-            "matchTournament"
-        );
-
-
-    if (!select) {
-
-        return;
-
-    }
-
-
-    const currentValue =
-        select.value;
-
-
-    select.innerHTML =
-        `
-        <option value="">
-            Select Tournament
-        </option>
-        `;
-
-
-    AppData.tournaments.forEach(
-        function (tournament) {
-
-            select.innerHTML +=
-                `
-                <option value="${tournament.id}">
-                    ${escapeHTML(
-                        tournament.name
-                    )}
-                </option>
-                `;
-
+async function loadPlayers() {
+    try {
+        const players = await dbGetAll(STORES.PLAYERS);
+        const list = document.getElementById('playersList');
+
+        if (players.length === 0) {
+            list.innerHTML = '<p class="empty-message">No players created yet</p>';
+            return;
         }
-    );
 
-
-    if (
-        AppData.tournaments.some(
-            function (item) {
-
-                return item.id ===
-                    currentValue;
-
-            }
-        )
-    ) {
-
-        select.value =
-            currentValue;
-
+        list.innerHTML = await Promise.all(players.map(async (p) => {
+            const team = await dbGet(STORES.TEAMS, p.teamId);
+            return `
+                <div class="item">
+                    <div class="item-info">
+                        <div class="item-name">#${p.jerseyNo} ${p.name}</div>
+                        <div class="item-detail">Team: ${team ? team.name : 'Unknown'}</div>
+                    </div>
+                    <div class="item-actions">
+                        <button class="btn-secondary" onclick="deletePlayer('${p.id}')">Delete</button>
+                    </div>
+                </div>
+            `;
+        })).then(items => items.join(''));
+    } catch (error) {
+        console.error('Error loading players:', error);
     }
 }
 
-
-function populateTeamSelects() {
-
-    const teamA =
-        document.getElementById(
-            "teamA"
-        );
-
-    const teamB =
-        document.getElementById(
-            "teamB"
-        );
-
-
-    if (!teamA || !teamB) {
-
-        return;
-
-    }
-
-
-    const currentA =
-        teamA.value;
-
-    const currentB =
-        teamB.value;
-
-
-    const options =
-        AppData.teams
-            .map(function (team) {
-
-                return `
-                    <option value="${team.id}">
-                        ${escapeHTML(
-                            team.name
-                        )}
-                    </option>
-                `;
-
-            })
-            .join("");
-
-
-    teamA.innerHTML =
-        `
-        <option value="">
-            Select Team A
-        </option>
-        ` +
-        options;
-
-
-    teamB.innerHTML =
-        `
-        <option value="">
-            Select Team B
-        </option>
-        ` +
-        options;
-
-
-    if (
-        AppData.teams.some(
-            function (item) {
-
-                return item.id ===
-                    currentA;
-
-            }
-        )
-    ) {
-
-        teamA.value =
-            currentA;
-
-    }
-
-
-    if (
-        AppData.teams.some(
-            function (item) {
-
-                return item.id ===
-                    currentB;
-
-            }
-        )
-    ) {
-
-        teamB.value =
-            currentB;
-
+async function deletePlayer(id) {
+    if (confirm('Delete this player?')) {
+        try {
+            await dbDelete(STORES.PLAYERS, id);
+            loadPlayers();
+        } catch (error) {
+            console.error('Error deleting player:', error);
+        }
     }
 }
 
+// ============================================================================
+// MATCH MANAGEMENT
+// ============================================================================
 
-/* =========================================================
-   CREATE MATCH
-   ========================================================= */
+function createNewMatchState(matchId, tournamentId, teamAId, teamBId, format, totalOvers) {
+    return {
+        id: matchId,
+        tournamentId,
+        teamA: teamAId,
+        teamB: teamBId,
+        format,
+        totalOvers,
+        createdAt: new Date().toISOString(),
+        status: 'created',
+        tossWinner: null,
+        tossDecision: null,
+        battingTeam: null,
+        bowlingTeam: null,
+        playingXI: {
+            [teamAId]: [],
+            [teamBId]: []
+        },
+        innings: [
+            {
+                number: 1,
+                battingTeam: null,
+                bowlingTeam: null,
+                runs: 0,
+                wickets: 0,
+                overs: 0,
+                balls: 0,
+                legalBalls: 0,
+                extras: { wides: 0, noBalls: 0, byes: 0, legByes: 0, total: 0 },
+                ballHistory: [],
+                batsmen: {},
+                bowlers: {},
+                fallOfWickets: [],
+                currentOver: [],
+                striker: null,
+                nonStriker: null,
+                bowler: null,
+                isCompleted: false
+            },
+            {
+                number: 2,
+                battingTeam: null,
+                bowlingTeam: null,
+                runs: 0,
+                wickets: 0,
+                overs: 0,
+                balls: 0,
+                legalBalls: 0,
+                extras: { wides: 0, noBalls: 0, byes: 0, legByes: 0, total: 0 },
+                ballHistory: [],
+                batsmen: {},
+                bowlers: {},
+                fallOfWickets: [],
+                currentOver: [],
+                striker: null,
+                nonStriker: null,
+                bowler: null,
+                isCompleted: false,
+                target: null,
+                chaseRuns: 0
+            }
+        ],
+        result: null,
+        completedAt: null
+    };
+}
 
-function createMatch() {
+async function createMatch() {
+    const tournamentId = document.getElementById('matchTournament').value;
+    const teamAId = document.getElementById('matchTeamA').value;
+    const teamBId = document.getElementById('matchTeamB').value;
+    const format = document.getElementById('matchFormat').value;
+    const customOvers = document.getElementById('matchCustomOvers').value;
 
-    const tournamentElement =
-        document.getElementById(
-            "matchTournament"
-        );
-
-    const teamAElement =
-        document.getElementById(
-            "teamA"
-        );
-
-    const teamBElement =
-        document.getElementById(
-            "teamB"
-        );
-
-    const oversElement =
-        document.getElementById(
-            "matchOvers"
-        );
-
-    const dateElement =
-        document.getElementById(
-            "matchDate"
-        );
-
-    const tossWinnerElement =
-        document.getElementById(
-            "tossWinner"
-        );
-
-    const tossDecisionElement =
-        document.getElementById(
-            "tossDecision"
-        );
-
-
-    if (
-        !tournamentElement ||
-        !teamAElement ||
-        !teamBElement ||
-        !oversElement ||
-        !dateElement ||
-        !tossWinnerElement ||
-        !tossDecisionElement
-    ) {
-
-        alert(
-            "Match setup fields are missing."
-        );
-
+    if (!tournamentId || !teamAId || !teamBId) {
+        alert('Please select tournament and both teams');
         return;
-
     }
-
-
-    const tournamentId =
-        tournamentElement.value;
-
-    const teamAId =
-        teamAElement.value;
-
-    const teamBId =
-        teamBElement.value;
-
-    const overs =
-        Number(oversElement.value);
-
-    const date =
-        dateElement.value;
-
-    const tossWinner =
-        tossWinnerElement.value;
-
-    const tossDecision =
-        tossDecisionElement.value;
-
-
-    if (!tournamentId) {
-
-        alert(
-            "Please select a tournament."
-        );
-
-        return;
-
-    }
-
-
-    if (!teamAId || !teamBId) {
-
-        alert(
-            "Please select both teams."
-        );
-
-        return;
-
-    }
-
 
     if (teamAId === teamBId) {
-
-        alert(
-            "Team A and Team B must be different."
-        );
-
+        alert('Please select different teams');
         return;
-
     }
 
+    let totalOvers = 20;
+    if (format === 'odi') totalOvers = 50;
+    else if (format === 'test') totalOvers = 90;
+    else if (format === 'custom' && customOvers) totalOvers = parseInt(customOvers);
 
-    if (
-        !Number.isInteger(overs) ||
-        overs < 1 ||
-        overs > 50
-    ) {
+    const matchId = generateUniqueId('match');
+    const matchState = createNewMatchState(matchId, tournamentId, teamAId, teamBId, format, totalOvers);
 
-        alert(
-            "Overs must be between 1 and 50."
-        );
+    try {
+        await dbPut(STORES.MATCHES, matchState);
+        appState.currentMatchId = matchId;
+        appState.liveMatchState = JSON.parse(JSON.stringify(matchState));
 
-        return;
+        document.getElementById('matchTournament').value = '';
+        document.getElementById('matchTeamA').value = '';
+        document.getElementById('matchTeamB').value = '';
+        document.getElementById('matchCustomOvers').style.display = 'none';
 
+        loadMatches();
+        switchScreen('livescoring');
+        alert('Match created!');
+    } catch (error) {
+        console.error('Error creating match:', error);
+        alert('Error creating match');
     }
-
-
-    if (!date) {
-
-        alert(
-            "Please select match date."
-        );
-
-        return;
-
-    }
-
-
-    if (!tossWinner || !tossDecision) {
-
-        alert(
-            "Please complete the toss information."
-        );
-
-        return;
-
-    }
-
-
-    let battingFirstId;
-
-    let bowlingFirstId;
-
-
-    if (tossWinner === "teamA") {
-
-        if (tossDecision === "bat") {
-
-            battingFirstId =
-                teamAId;
-
-            bowlingFirstId =
-                teamBId;
-
-        } else {
-
-            battingFirstId =
-                teamBId;
-
-            bowlingFirstId =
-                teamAId;
-
-        }
-
-    } else {
-
-        if (tossDecision === "bat") {
-
-            battingFirstId =
-                teamBId;
-
-            bowlingFirstId =
-                teamAId;
-
-        } else {
-
-            battingFirstId =
-                teamAId;
-
-            bowlingFirstId =
-                teamBId;
-
-        }
-
-    }
-
-
-    const match = {
-
-        id: createId("match"),
-
-        tournamentId:
-            tournamentId,
-
-        teamAId:
-            teamAId,
-
-        teamBId:
-            teamBId,
-
-        overs:
-            overs,
-
-        date:
-            date,
-
-        tossWinner:
-            tossWinner,
-
-        tossDecision:
-            tossDecision,
-
-        battingFirstId:
-            battingFirstId,
-
-        bowlingFirstId:
-            bowlingFirstId,
-
-        status:
-            "Not Started",
-
-        createdAt:
-            new Date().toISOString(),
-
-        innings: [],
-
-        result: null,
-
-        liveState: null,
-
-        playerOfMatch: null
-
-    };
-
-
-    AppData.matches.push(match);
-
-    saveData();
-
-    renderMatches();
-
-    alert(
-        "Match created successfully."
-    );
 }
 
-
-/* =========================================================
-   MATCH LIST
-   ========================================================= */
-
-function renderMatches() {
-
-    const container =
-        document.getElementById(
-            "matchList"
-        );
-
-
-    if (!container) {
-
-        return;
-
-    }
-
-
-    const activeMatches =
-        AppData.matches.filter(
-            function (match) {
-
-                return match.status !==
-                    "Completed";
-
-            }
-        );
-
-
-    if (activeMatches.length === 0) {
-
-        container.innerHTML =
-            `
-            <div class="empty-message">
-                No active matches yet.
-            </div>
-            `;
-
-        return;
-
-    }
-
-
-    container.innerHTML =
-        activeMatches
-            .map(function (match) {
-
-                const teamA =
-                    getTeamName(
-                        match.teamAId
-                    );
-
-                const teamB =
-                    getTeamName(
-                        match.teamBId
-                    );
-
-                const tournament =
-                    getTournamentName(
-                        match.tournamentId
-                    );
-
-                const battingFirst =
-                    getTeamName(
-                        match.battingFirstId
-                    );
-
-                const canStart =
-                    hasEnoughPlayersForMatch(
-                        match
-                    );
-
-
-                let scoringButton = "";
-
-
-                if (canStart) {
-
-                    scoringButton =
-                        `
-                        <button
-                            class="small-btn manage-btn"
-                            onclick="openLiveScoring('${match.id}')">
-                            ${
-                                match.status === "Live"
-                                    ? "Continue Scoring"
-                                    : "Start Scoring"
-                            }
-                        </button>
-                        `;
-
-                } else {
-
-                    scoringButton =
-                        `
-                        <button
-                            class="small-btn manage-btn"
-                            onclick="showPlayerRequirement()">
-                            Add Players
-                        </button>
-                        `;
-
-                }
-
-
-                return `
-                    <div class="list-item">
-
-                        <h3>
-                            🏏
-                            ${escapeHTML(teamA)}
-                            vs
-                            ${escapeHTML(teamB)}
-                        </h3>
-
-                        <p>
-                            Tournament:
-                            ${escapeHTML(tournament)}
-                        </p>
-
-                        <p>
-                            Date:
-                            ${escapeHTML(match.date)}
-                        </p>
-
-                        <p>
-                            Overs:
-                            ${match.overs}
-                        </p>
-
-                        <p>
-                            Status:
-                            <strong>
-                                ${escapeHTML(
-                                    match.status ||
-                                    "Not Started"
-                                )}
-                            </strong>
-                        </p>
-
-                        <div class="list-actions">
-
-                            ${scoringButton}
-
-                            <button
-                                class="small-btn delete-btn"
-                                onclick="deleteMatch('${match.id}')">
-                                Delete
-                            </button>
-
-                        </div>
-
-                    </div>
-                `;
-
-            })
-            .join("");
-}
-
-
-function hasEnoughPlayersForMatch(match) {
-
-    const battingPlayers =
-        AppData.players.filter(
-            function (player) {
-
-                return player.teamId ===
-                    match.battingFirstId;
-
-            }
-        );
-
-
-    const bowlingPlayers =
-        AppData.players.filter(
-            function (player) {
-
-                return player.teamId ===
-                    match.bowlingFirstId;
-
-            }
-        );
-
-
-    return (
-        battingPlayers.length >= 2 &&
-        bowlingPlayers.length >= 1
-    );
-}
-
-
-function showPlayerRequirement() {
-
-    alert(
-        "Before starting the match, add at least 2 players to the batting team and at least 1 player to the bowling team."
-    );
-}
-
-
-function deleteMatch(matchId) {
-
-    const match =
-        AppData.matches.find(
-            function (item) {
-
-                return item.id ===
-                    matchId;
-
-            }
-        );
-
-
-    if (!match) {
-
-        return;
-
-    }
-
-
-    const confirmed =
-        confirm(
-            "Delete this match?"
-        );
-
-
-    if (!confirmed) {
-
-        return;
-
-    }
-
-
-    AppData.matches =
-        AppData.matches.filter(
-            function (item) {
-
-                return item.id !==
-                    matchId;
-
-            }
-        );
-
-
-    saveData();
-
-    renderMatches();
-}
-
-
-function getTossTeamName(match) {
-
-    if (
-        match.tossWinner ===
-        "teamA"
-    ) {
-
-        return getTeamName(
-            match.teamAId
-        );
-
-    }
-
-
-    if (
-        match.tossWinner ===
-        "teamB"
-    ) {
-
-        return getTeamName(
-            match.teamBId
-        );
-
-    }
-
-
-    return "Unknown";
-}
-
-
-/* =========================================================
-   OPEN LIVE SCORING
-   ========================================================= */
-
-function openLiveScoring(matchId) {
-
-    const match =
-        AppData.matches.find(
-            function (item) {
-
-                return item.id ===
-                    matchId;
-
-            }
-        );
-
-
-    if (!match) {
-
-        alert(
-            "Match not found."
-        );
-
-        return;
-
-    }
-
-
-    CurrentState.currentMatchId =
-        matchId;
-
-
-    if (
-        !match.liveState ||
-        !match.liveState.initialized
-    ) {
-
-        const started =
-            initializeLiveMatch(
-                match
-            );
-
-
-        if (!started) {
-
+async function loadMatches() {
+    try {
+        const matches = await dbGetAll(STORES.MATCHES);
+        const activeMatches = matches.filter(m => m.status !== 'completed');
+        const list = document.getElementById('matchesList');
+
+        if (activeMatches.length === 0) {
+            list.innerHTML = '<p class="empty-message">No active matches</p>';
             return;
-
         }
 
-    } else {
-
-        restoreLiveState(
-            match
-        );
-
-    }
-
-
-    match.status =
-        "Live";
-
-
-    saveLiveStateToMatch(
-        match
-    );
-
-    saveData();
-
-    renderMatches();
-
-    showScreen(
-        "liveScoringScreen"
-    );
-
-    renderLiveScoring();
-}
-
-
-/* =========================================================
-   INITIALIZE LIVE MATCH
-   ========================================================= */
-
-function initializeLiveMatch(match) {
-
-    const battingPlayers =
-        AppData.players.filter(
-            function (player) {
-
-                return player.teamId ===
-                    match.battingFirstId;
-
-            }
-        );
-
-
-    const bowlingPlayers =
-        AppData.players.filter(
-            function (player) {
-
-                return player.teamId ===
-                    match.bowlingFirstId;
-
-            }
-        );
-
-
-    if (battingPlayers.length < 2) {
-
-        alert(
-            "The batting team needs at least 2 players."
-        );
-
-        return false;
-
-    }
-
-
-    if (bowlingPlayers.length < 1) {
-
-        alert(
-            "The bowling team needs at least 1 player."
-        );
-
-        return false;
-
-    }
-
-
-    resetLiveState();
-
-
-    LiveState.strikerId =
-        battingPlayers[0].id;
-
-
-    LiveState.nonStrikerId =
-        battingPlayers[1].id;
-
-
-    LiveState.bowlerId =
-        bowlingPlayers[0].id;
-
-
-    LiveState.batsmen[
-        battingPlayers[0].id
-    ] = {
-
-        runs: 0,
-
-        balls: 0,
-
-        out: false
-
-    };
-
-
-    LiveState.batsmen[
-        battingPlayers[1].id
-    ] = {
-
-        runs: 0,
-
-        balls: 0,
-
-        out: false
-
-    };
-
-
-    LiveState.bowlers[
-        bowlingPlayers[0].id
-    ] = {
-
-        runs: 0,
-
-        wickets: 0,
-
-        legalBalls: 0
-
-    };
-
-
-    const inningsOne = createNewInnings(
-        match.battingFirstId,
-        match.bowlingFirstId
-    );
-
-    LiveState.innings = [inningsOne];
-
-    match.innings = [inningsOne];
-
-
-    saveLiveStateToMatch(
-        match
-    );
-
-    return true;
-}
-
-
-function createNewInnings(
-    battingTeamId,
-    bowlingTeamId
-) {
-
-    return {
-
-        battingTeamId:
-            battingTeamId,
-
-        bowlingTeamId:
-            bowlingTeamId,
-
-        runs: 0,
-
-        wickets: 0,
-
-        legalBalls: 0,
-
-        balls: [],
-
-        completed: false
-
-    };
-}
-
-
-function resetLiveState() {
-
-    LiveState.inningsIndex =
-        0;
-
-    LiveState.strikerId =
-        null;
-
-    LiveState.nonStrikerId =
-        null;
-
-    LiveState.bowlerId =
-        null;
-
-    LiveState.runs =
-        0;
-
-    LiveState.wickets =
-        0;
-
-    LiveState.legalBalls =
-        0;
-
-    LiveState.currentOverBalls =
-        [];
-
-    LiveState.ballHistory =
-        [];
-
-    LiveState.batsmen =
-        {};
-
-    LiveState.bowlers =
-        {};
-
-    LiveState.innings =
-        [];
-}
-
-
-/* =========================================================
-   RESTORE LIVE STATE
-   ========================================================= */
-
-function restoreLiveState(match) {
-
-    const saved =
-        match.liveState;
-
-
-    if (!saved) {
-
-        return;
-
-    }
-
-
-    LiveState.inningsIndex =
-        saved.inningsIndex || 0;
-
-
-    LiveState.strikerId =
-        saved.strikerId || null;
-
-
-    LiveState.nonStrikerId =
-        saved.nonStrikerId || null;
-
-
-    LiveState.bowlerId =
-        saved.bowlerId || null;
-
-
-    LiveState.runs =
-        saved.runs || 0;
-
-
-    LiveState.wickets =
-        saved.wickets || 0;
-
-
-    LiveState.legalBalls =
-        saved.legalBalls || 0;
-
-
-    LiveState.currentOverBalls =
-        Array.isArray(
-            saved.currentOverBalls
-        )
-            ? saved.currentOverBalls
-            : [];
-
-
-    LiveState.ballHistory =
-        Array.isArray(
-            saved.ballHistory
-        )
-            ? saved.ballHistory
-            : [];
-
-
-    LiveState.batsmen =
-        saved.batsmen || {};
-
-
-    LiveState.bowlers =
-        saved.bowlers || {};
-
-
-    LiveState.innings =
-        Array.isArray(
-            saved.innings
-        )
-            ? saved.innings
-            : [];
-}
-
-
-/* =========================================================
-   SAVE LIVE STATE
-   ========================================================= */
-
-function saveLiveStateToMatch(match) {
-
-    if (
-        !match ||
-        !match.innings ||
-        match.innings.length === 0
-    ) {
-
-        return;
-
-    }
-
-    const inningsIndex =
-        LiveState.inningsIndex;
-
-    if (
-        inningsIndex < 0 ||
-        inningsIndex >= match.innings.length
-    ) {
-
-        return;
-
-    }
-
-    const currentInnings =
-        match.innings[inningsIndex];
-
-    currentInnings.runs =
-        LiveState.runs;
-
-    currentInnings.wickets =
-        LiveState.wickets;
-
-    currentInnings.legalBalls =
-        LiveState.legalBalls;
-
-
-    match.liveState = {
-
-        initialized:
-            true,
-
-        inningsIndex:
-            LiveState.inningsIndex,
-
-        strikerId:
-            LiveState.strikerId,
-
-        nonStrikerId:
-            LiveState.nonStrikerId,
-
-        bowlerId:
-            LiveState.bowlerId,
-
-        runs:
-            LiveState.runs,
-
-        wickets:
-            LiveState.wickets,
-
-        legalBalls:
-            LiveState.legalBalls,
-
-        currentOverBalls:
-            LiveState.currentOverBalls,
-
-        ballHistory:
-            LiveState.ballHistory,
-
-        batsmen:
-            LiveState.batsmen,
-
-        bowlers:
-            LiveState.bowlers,
-
-        innings:
-            LiveState.innings
-    };
-}
-
-
-/* =========================================================
-   HELPER FUNCTIONS
-   ========================================================= */
-
-function getCurrentBattingTeamId(match) {
-
-    if (!match) {
-
-        return null;
-
-    }
-
-    if (LiveState.inningsIndex === 0) {
-
-        return match.battingFirstId;
-
-    } else {
-
-        return match.bowlingFirstId;
-
+        list.innerHTML = await Promise.all(activeMatches.map(async (m) => {
+            const teamA = await dbGet(STORES.TEAMS, m.teamA);
+            const teamB = await dbGet(STORES.TEAMS, m.teamB);
+            return `
+                <div class="item">
+                    <div class="item-info">
+                        <div class="item-name">${teamA?.name || 'Team A'} vs ${teamB?.name || 'Team B'}</div>
+                        <div class="item-detail">${m.format.toUpperCase()} | Status: ${m.status}</div>
+                    </div>
+                    <div class="item-actions">
+                        <button class="btn-primary" onclick="openMatch('${m.id}')">Play</button>
+                        <button class="btn-secondary" onclick="deleteMatch('${m.id}')">Delete</button>
+                    </div>
+                </div>
+            `;
+        })).then(items => items.join(''));
+    } catch (error) {
+        console.error('Error loading matches:', error);
     }
 }
 
-
-function getCurrentBowlingTeamId(match) {
-
-    if (!match) {
-
-        return null;
-
-    }
-
-    if (LiveState.inningsIndex === 0) {
-
-        return match.bowlingFirstId;
-
-    } else {
-
-        return match.battingFirstId;
-
-    }
-}
-
-
-function getFirstInningsRuns(match) {
-
-    if (!match || !match.innings) {
-
-        return 0;
-
-    }
-
-
-    const firstInnings =
-        match.innings[0];
-
-
-    if (!firstInnings) {
-
-        return 0;
-
-    }
-
-
-    return firstInnings.runs || 0;
-}
-
-
-function getChaseTarget(match) {
-
-    return getFirstInningsRuns(match) + 1;
-}
-
-
-function getRunsRemaining(match) {
-
-    const target =
-        getChaseTarget(match);
-
-
-    if (LiveState.inningsIndex !== 1) {
-
-        return null;
-
-    }
-
-
-    return Math.max(
-        0,
-        target - LiveState.runs
-    );
-}
-
-
-/* =========================================================
-   INNINGS TRANSITION
-   ========================================================= */
-
-function startSecondInnings(match) {
-
-    if (!match) {
-
-        return false;
-
-    }
-
-    if (!match.innings || match.innings.length === 0) {
-
-        return false;
-
-    }
-
-    match.innings[0].completed =
-        true;
-
-
-    const secondBattingPlayers =
-        AppData.players.filter(
-            function (player) {
-
-                return player.teamId ===
-                    match.bowlingFirstId;
-
-            }
-        );
-
-
-    const secondBowlingPlayers =
-        AppData.players.filter(
-            function (player) {
-
-                return player.teamId ===
-                    match.battingFirstId;
-
-            }
-        );
-
-
-    if (
-        secondBattingPlayers.length < 2 ||
-        secondBowlingPlayers.length < 1
-    ) {
-
-        alert(
-            "Second innings cannot start: insufficient players."
-        );
-
-        return false;
-
-    }
-
-
-    LiveState.inningsIndex =
-        1;
-
-
-    LiveState.strikerId =
-        secondBattingPlayers[0].id;
-
-
-    LiveState.nonStrikerId =
-        secondBattingPlayers[1].id;
-
-
-    LiveState.bowlerId =
-        secondBowlingPlayers[0].id;
-
-
-    LiveState.runs =
-        0;
-
-
-    LiveState.wickets =
-        0;
-
-
-    LiveState.legalBalls =
-        0;
-
-
-    LiveState.currentOverBalls =
-        [];
-
-
-    LiveState.batsmen =
-        {};
-
-
-    LiveState.bowlers =
-        {};
-
-
-    LiveState.batsmen[
-        secondBattingPlayers[0].id
-    ] = {
-
-        runs: 0,
-
-        balls: 0,
-
-        out: false
-
-    };
-
-
-    LiveState.batsmen[
-        secondBattingPlayers[1].id
-    ] = {
-
-        runs: 0,
-
-        balls: 0,
-
-        out: false
-
-    };
-
-
-    LiveState.bowlers[
-        secondBowlingPlayers[0].id
-    ] = {
-
-        runs: 0,
-
-        wickets: 0,
-
-        legalBalls: 0
-
-    };
-
-
-    const inningsTwo = createNewInnings(
-        match.bowlingFirstId,
-        match.battingFirstId
-    );
-
-    match.innings[1] = inningsTwo;
-
-    LiveState.innings[1] = inningsTwo;
-
-
-    saveLiveStateToMatch(match);
-
-    saveData();
-
-    return true;
-}
-
-
-/* =========================================================
-   CHECK INNINGS COMPLETION
-   ========================================================= */
-
-function checkInningsCompletion(match) {
-
-    if (!match) {
-
-        return false;
-
-    }
-
-
-    const maximumBalls =
-        Number(match.overs) * 6;
-
-
-    if (
-        LiveState.legalBalls >=
-        maximumBalls
-    ) {
-
-        return true;
-
-    }
-
-
-    const currentBattingTeamId =
-        getCurrentBattingTeamId(match);
-
-    const battingPlayers =
-        AppData.players.filter(
-            function (player) {
-
-                return player.teamId ===
-                    currentBattingTeamId;
-
-            }
-        );
-
-    const battingPlayerCount =
-        battingPlayers.length;
-
-
-    if (
-        LiveState.wickets >=
-        battingPlayerCount - 1
-    ) {
-
-        return true;
-
-    }
-
-
-    if (
-        !LiveState.strikerId
-    ) {
-
-        return true;
-
-    }
-
-
-    if (LiveState.inningsIndex === 1) {
-
-        const target =
-            getChaseTarget(match);
-
-
-        if (LiveState.runs >= target) {
-
-            return true;
-
+async function openMatch(matchId) {
+    try {
+        const match = await dbGet(STORES.MATCHES, matchId);
+        if (!match) {
+            alert('Match not found');
+            return;
         }
 
+        appState.currentMatchId = matchId;
+        appState.liveMatchState = JSON.parse(JSON.stringify(match));
+        switchScreen('livescoring');
+        updateScoringDisplay();
+    } catch (error) {
+        console.error('Error opening match:', error);
+        alert('Error opening match');
     }
-
-
-    return false;
 }
 
-
-/* =========================================================
-   DETERMINE MATCH RESULT
-   ========================================================= */
-
-function determineMatchResult(match) {
-
-    if (!match) {
-
-        return;
-
+async function deleteMatch(matchId) {
+    if (confirm('Delete this match?')) {
+        try {
+            await dbDelete(STORES.MATCHES, matchId);
+            loadMatches();
+        } catch (error) {
+            console.error('Error deleting match:', error);
+        }
     }
-
-
-    if (LiveState.inningsIndex === 0) {
-
-        return;
-
-    }
-
-    if (!match.innings || match.innings.length < 2) {
-
-        return;
-
-    }
-
-
-    const firstInningsRuns =
-        getFirstInningsRuns(match);
-
-    const secondInningsRuns =
-        LiveState.runs;
-
-    const target =
-        getChaseTarget(match);
-
-
-    const firstInningsTeam =
-        getTeamName(
-            match.battingFirstId
-        );
-
-    const secondInningsTeam =
-        getTeamName(
-            match.bowlingFirstId
-        );
-
-
-    if (secondInningsRuns >= target) {
-
-        const runsMargin =
-            secondInningsRuns -
-            firstInningsRuns;
-
-        match.result =
-            secondInningsTeam +
-            " won by " +
-            runsMargin +
-            " run" +
-            (runsMargin !== 1 ? "s" : "") +
-            ".";
-
-        return;
-
-    }
-
-
-    if (secondInningsRuns === firstInningsRuns) {
-
-        match.result =
-            "Match tied.";
-
-        return;
-
-    }
-
-
-    const runsMargin =
-        firstInningsRuns -
-        secondInningsRuns;
-
-    match.result =
-        firstInningsTeam +
-        " won by " +
-        runsMargin +
-        " run" +
-        (runsMargin !== 1 ? "s" : "") +
-        ".";
 }
 
+// ============================================================================
+// TOSS & PLAYING XI
+// ============================================================================
 
-/* =========================================================
-   RECORD LIVE BALL
-   ========================================================= */
+async function conductToss() {
+    if (!appState.liveMatchState) return;
 
-function recordLiveBall(
-    type,
-    value
-) {
+    const teams = [appState.liveMatchState.teamA, appState.liveMatchState.teamB];
+    const winner = teams[Math.floor(Math.random() * 2)];
+    const winnerName = await getTeamName(winner);
 
-    const match =
-        getCurrentMatch();
+    appState.liveMatchState.tossWinner = winner;
+    appState.liveMatchState.status = 'toss';
 
+    document.getElementById('tossStatus').textContent = `${winnerName} won the toss!`;
+    document.getElementById('conductTossBtn').style.display = 'none';
+    document.getElementById('tossDecision').style.display = 'block';
+}
 
-    if (!match) {
+async function setTossDecision(decision) {
+    if (!appState.liveMatchState) return;
 
-        alert(
-            "No active match."
-        );
+    appState.liveMatchState.tossDecision = decision;
 
-        return;
-
+    if (decision === 'bat') {
+        appState.liveMatchState.battingTeam = appState.liveMatchState.tossWinner;
+        appState.liveMatchState.bowlingTeam = 
+            appState.liveMatchState.tossWinner === appState.liveMatchState.teamA 
+            ? appState.liveMatchState.teamB 
+            : appState.liveMatchState.teamA;
+    } else {
+        appState.liveMatchState.bowlingTeam = appState.liveMatchState.tossWinner;
+        appState.liveMatchState.battingTeam = 
+            appState.liveMatchState.tossWinner === appState.liveMatchState.teamA 
+            ? appState.liveMatchState.teamB 
+            : appState.liveMatchState.teamA;
     }
 
-
-    if (
-        match.status ===
-        "Completed"
-    ) {
-
-        alert(
-            "This match is already completed."
-        );
-
-        return;
-
-    }
-
-
-    const striker =
-        getPlayerById(
-            LiveState.strikerId
-        );
-
-
-    const nonStriker =
-        getPlayerById(
-            LiveState.nonStrikerId
-        );
-
-
-    const bowler =
-        getPlayerById(
-            LiveState.bowlerId
-        );
-
-
-    if (
-        !striker ||
-        !nonStriker ||
-        !bowler
-    ) {
-
-        alert(
-            "Player information is missing."
-        );
-
-        return;
-
-    }
-
-
-    const snapshot =
-        createLiveSnapshot();
-
-
-    let totalRuns = 0;
-
-    let legalBall = true;
-
-    let batsmanRuns = 0;
-
-    let wicket = false;
-
-
-    if (type === "run") {
-
-        totalRuns =
-            Number(value);
-
-        batsmanRuns =
-            Number(value);
-
-        legalBall =
-            true;
-
-    }
-
-    else if (type === "wide") {
-
-        totalRuns =
-            Number(value);
-
-        batsmanRuns =
-            0;
-
-        legalBall =
-            false;
-
-    }
-
-    else if (type === "noball") {
-
-        totalRuns =
-            Number(value);
-
-        batsmanRuns =
-            0;
-
-        legalBall =
-            false;
-
-    }
-
-    else if (type === "bye") {
-
-        totalRuns =
-            Number(value);
-
-        batsmanRuns =
-            0;
-
-        legalBall =
-            true;
-
-    }
-
-    else if (type === "legbye") {
-
-        totalRuns =
-            Number(value);
-
-        batsmanRuns =
-            0;
-
-        legalBall =
-            true;
-
-    }
-
-    else if (type === "wicket") {
-
-        totalRuns =
-            0;
-
-        batsmanRuns =
-            0;
-
-        legalBall =
-            true;
-
-        wicket =
-            true;
-
-    }
-
-    else {
-
-        return;
-
-    }
-
-
-    if (
-        !Number.isFinite(totalRuns) ||
-        totalRuns < 0
-    ) {
-
-        return;
-
-    }
-
-
-    ensureBatsmanRecord(
-        striker.id
-    );
-
-
-    LiveState.batsmen[
-        striker.id
-    ].balls +=
-        legalBall ? 1 : 0;
-
-
-    LiveState.batsmen[
-        striker.id
-    ].runs +=
-        batsmanRuns;
-
-
-    LiveState.runs +=
-        totalRuns;
-
-
-    if (wicket) {
-
-        LiveState.wickets++;
-
-        LiveState.batsmen[
-            striker.id
-        ].out = true;
-
-    }
-
-
-    ensureBowlerRecord(
-        bowler.id
-    );
-
-
-    LiveState.bowlers[
-        bowler.id
-    ].runs +=
-        totalRuns;
-
-
-    if (wicket) {
-
-        LiveState.bowlers[
-            bowler.id
-        ].wickets++;
-
-    }
-
-
-    if (legalBall) {
-
-        LiveState.legalBalls++;
-
-
-        LiveState.bowlers[
-            bowler.id
-        ].legalBalls++;
-
-    }
-
-
-    const ball = {
-
-        id:
-            createId("ball"),
-
-        type:
-            type,
-
-        value:
-            Number(value),
-
-        totalRuns:
-            totalRuns,
-
-        batsmanRuns:
-            batsmanRuns,
-
-        legalBall:
-            legalBall,
-
-        wicket:
-            wicket,
-
-        strikerId:
-            striker.id,
-
-        nonStrikerId:
-            nonStriker.id,
-
-        bowlerId:
-            bowler.id,
-
-        overNumber:
-            Math.floor(
-                (
-                    LiveState.legalBalls - 1
-                ) / 6
-            ),
-
-        createdAt:
-            new Date().toISOString()
-    };
-
-
-    LiveState.currentOverBalls.push(
-        ball
-    );
-
-
-    LiveState.ballHistory.push({
-
-        ball:
-            ball,
-
-        snapshot:
-            snapshot
-
+    appState.liveMatchState.innings[0].battingTeam = appState.liveMatchState.battingTeam;
+    appState.liveMatchState.innings[0].bowlingTeam = appState.liveMatchState.bowlingTeam;
+
+    document.getElementById('tossSection').style.display = 'none';
+    document.getElementById('playingXISection').style.display = 'block';
+    loadPlayingXIForm();
+}
+
+async function loadPlayingXIForm() {
+    const teamA = await dbGet(STORES.TEAMS, appState.liveMatchState.teamA);
+    const teamB = await dbGet(STORES.TEAMS, appState.liveMatchState.teamB);
+    const allPlayers = await dbGetAll(STORES.PLAYERS);
+
+    const teamAPlayers = allPlayers.filter(p => p.teamId === appState.liveMatchState.teamA);
+    const teamBPlayers = allPlayers.filter(p => p.teamId === appState.liveMatchState.teamB);
+
+    let html = `<h4>${teamA.name} Playing XI (Select 11)</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-bottom: 16px;">`;
+    
+    teamAPlayers.forEach(p => {
+        html += `<label style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    <input type="checkbox" class="xi-check" data-team="${appState.liveMatchState.teamA}" value="${p.id}">
+                    #${p.jerseyNo} ${p.name}
+                 </label>`;
     });
 
+    html += `</div><h4>${teamB.name} Playing XI (Select 11)</h4>
+             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px;">`;
 
-    if (
-        match.innings &&
-        match.innings[LiveState.inningsIndex]
-    ) {
+    teamBPlayers.forEach(p => {
+        html += `<label style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    <input type="checkbox" class="xi-check" data-team="${appState.liveMatchState.teamB}" value="${p.id}">
+                    #${p.jerseyNo} ${p.name}
+                 </label>`;
+    });
 
-        const innings =
-            match.innings[LiveState.inningsIndex];
+    html += '</div>';
+    document.getElementById('playingXIContent').innerHTML = html;
+}
 
-        innings.runs =
-            LiveState.runs;
+async function savePlayingXI() {
+    const checks = document.querySelectorAll('.xi-check:checked');
+    const xiTeamA = [];
+    const xiTeamB = [];
 
-        innings.wickets =
-            LiveState.wickets;
-
-        innings.legalBalls =
-            LiveState.legalBalls;
-
-        innings.balls.push(
-            ball
-        );
-
-    }
-
-
-    if (
-        legalBall &&
-        !wicket &&
-        batsmanRuns % 2 === 1
-    ) {
-
-        swapStrikers();
-
-    }
-
-
-    if (wicket) {
-
-        replaceStriker();
-
-    }
-
-
-    if (
-        legalBall &&
-        LiveState.legalBalls % 6 === 0
-    ) {
-
-        completeOver();
-
-    }
-
-
-    if (
-        checkInningsCompletion(
-            match
-        )
-    ) {
-
-        if (LiveState.inningsIndex === 0) {
-
-            const inningsStarted =
-                startSecondInnings(
-                    match
-                );
-
-
-            if (!inningsStarted) {
-
-                match.status =
-                    "Completed";
-
-                determineMatchResult(
-                    match
-                );
-
-            }
-
-        } else if (LiveState.inningsIndex === 1) {
-
-            match.status =
-                "Completed";
-
-            determineMatchResult(
-                match
-            );
-
+    checks.forEach(check => {
+        const playerId = check.value;
+        const teamId = check.dataset.team;
+        if (teamId === appState.liveMatchState.teamA) {
+            xiTeamA.push(playerId);
+        } else {
+            xiTeamB.push(playerId);
         }
+    });
 
-    }
-
-
-    saveLiveStateToMatch(
-        match
-    );
-
-    saveData();
-
-    renderLiveScoring();
-
-    renderMatches();
-}
-
-
-/* =========================================================
-   SNAPSHOT FOR UNDO
-   ========================================================= */
-
-function createLiveSnapshot() {
-
-    return JSON.parse(
-        JSON.stringify({
-
-            inningsIndex:
-                LiveState.inningsIndex,
-
-            strikerId:
-                LiveState.strikerId,
-
-            nonStrikerId:
-                LiveState.nonStrikerId,
-
-            bowlerId:
-                LiveState.bowlerId,
-
-            runs:
-                LiveState.runs,
-
-            wickets:
-                LiveState.wickets,
-
-            legalBalls:
-                LiveState.legalBalls,
-
-            currentOverBalls:
-                LiveState.currentOverBalls,
-
-            batsmen:
-                LiveState.batsmen,
-
-            bowlers:
-                LiveState.bowlers,
-
-            innings:
-                LiveState.innings
-
-        })
-    );
-}
-
-
-/* =========================================================
-   UNDO LAST BALL
-   ========================================================= */
-
-function undoLastLiveBall() {
-
-    if (
-        LiveState.ballHistory.length ===
-        0
-    ) {
-
-        alert(
-            "There is no ball to undo."
-        );
-
+    if (xiTeamA.length !== 11 || xiTeamB.length !== 11) {
+        alert('Please select exactly 11 players per team');
         return;
-
     }
 
+    appState.liveMatchState.playingXI[appState.liveMatchState.teamA] = xiTeamA;
+    appState.liveMatchState.playingXI[appState.liveMatchState.teamB] = xiTeamB;
 
-    const last =
-        LiveState.ballHistory[
-            LiveState.ballHistory.length - 1
-        ];
-
-
-    const confirmed =
-        confirm(
-            "Undo the last ball?"
-        );
-
-
-    if (!confirmed) {
-
-        return;
-
-    }
-
-
-    const snapshot =
-        last.snapshot;
-
-
-    LiveState.inningsIndex =
-        snapshot.inningsIndex;
-
-
-    LiveState.strikerId =
-        snapshot.strikerId;
-
-
-    LiveState.nonStrikerId =
-        snapshot.nonStrikerId;
-
-
-    LiveState.bowlerId =
-        snapshot.bowlerId;
-
-
-    LiveState.runs =
-        snapshot.runs;
-
-
-    LiveState.wickets =
-        snapshot.wickets;
-
-
-    LiveState.legalBalls =
-        snapshot.legalBalls;
-
-
-    LiveState.currentOverBalls =
-        JSON.parse(
-            JSON.stringify(
-                snapshot.currentOverBalls
-            )
-        );
-
-
-    LiveState.batsmen =
-        JSON.parse(
-            JSON.stringify(
-                snapshot.batsmen
-            )
-        );
-
-
-    LiveState.bowlers =
-        JSON.parse(
-            JSON.stringify(
-                snapshot.bowlers
-            )
-        );
-
-
-    LiveState.innings =
-        JSON.parse(
-            JSON.stringify(
-                snapshot.innings
-            )
-        );
-
-
-    LiveState.ballHistory.pop();
-
-
-    const match =
-        getCurrentMatch();
-
-
-    if (match) {
-
-        match.status =
-            "Live";
-
-        saveLiveStateToMatch(
-            match
-        );
-
-        saveData();
-
-    }
-
-
-    renderLiveScoring();
-
-    renderMatches();
+    document.getElementById('playingXISection').style.display = 'none';
+    document.getElementById('startMatchSection').style.display = 'block';
 }
 
+async function startMatch() {
+    const match = appState.liveMatchState;
+    match.status = 'playing';
 
-/* =========================================================
-   BATSMAN HELPERS
-   ========================================================= */
+    const xi = match.playingXI[match.innings[0].battingTeam];
 
-function ensureBatsmanRecord(
-    playerId
-) {
-
-    if (
-        !LiveState.batsmen[playerId]
-    ) {
-
-        LiveState.batsmen[playerId] = {
-
+    xi.forEach((playerId, idx) => {
+        match.innings[0].batsmen[playerId] = {
+            playerId,
             runs: 0,
-
             balls: 0,
-
-            out: false
-
-        };
-
-    }
-}
-
-
-function replaceStriker() {
-
-    const match =
-        getCurrentMatch();
-
-
-    if (!match) {
-
-        return;
-
-    }
-
-
-    const battingTeamId =
-        getCurrentBattingTeamId(match);
-
-    const battingPlayers =
-        AppData.players.filter(
-            function (player) {
-
-                return player.teamId ===
-                    battingTeamId;
-
-            }
-        );
-
-
-    const usedIds =
-        Object.keys(
-            LiveState.batsmen
-        );
-
-
-    const nextPlayer =
-        battingPlayers.find(
-            function (player) {
-
-                return (
-                    !usedIds.includes(
-                        player.id
-                    ) &&
-                    player.id !==
-                        LiveState.nonStrikerId
-                );
-
-            }
-        );
-
-
-    if (nextPlayer) {
-
-        LiveState.strikerId =
-            nextPlayer.id;
-
-
-        ensureBatsmanRecord(
-            nextPlayer.id
-        );
-
-
-        return;
-
-    }
-
-
-    LiveState.strikerId =
-        null;
-}
-
-
-/* =========================================================
-   SWAP STRIKERS
-   ========================================================= */
-
-function swapStrikers() {
-
-    const temporary =
-        LiveState.strikerId;
-
-
-    LiveState.strikerId =
-        LiveState.nonStrikerId;
-
-
-    LiveState.nonStrikerId =
-        temporary;
-}
-
-
-/* =========================================================
-   OVER COMPLETION
-   ========================================================= */
-
-function completeOver() {
-
-    swapStrikers();
-
-    LiveState.currentOverBalls =
-        [];
-}
-
-
-/* =========================================================
-   BOWLER HELPERS
-   ========================================================= */
-
-function ensureBowlerRecord(
-    playerId
-) {
-
-    if (
-        !LiveState.bowlers[playerId]
-    ) {
-
-        LiveState.bowlers[playerId] = {
-
-            runs: 0,
-
-            wickets: 0,
-
-            legalBalls: 0
-
-        };
-
-    }
-}
-
-
-/* =========================================================
-   RENDER LIVE SCORING
-   ========================================================= */
-
-function renderLiveScoring() {
-
-    const match =
-        getCurrentMatch();
-
-
-    if (!match) {
-
-        return;
-
-    }
-
-
-    const battingTeamId =
-        getCurrentBattingTeamId(match);
-
-    const bowlingTeamId =
-        getCurrentBowlingTeamId(match);
-
-    const battingTeam =
-        getTeamName(battingTeamId);
-
-    const bowlingTeam =
-        getTeamName(bowlingTeamId);
-
-
-    setText(
-        "liveMatchTitle",
-        `${battingTeam} vs ${bowlingTeam}`
-    );
-
-
-    setText(
-        "liveBattingTeam",
-        battingTeam
-    );
-
-
-    setText(
-        "liveBowlingTeam",
-        bowlingTeam
-    );
-
-
-    setText(
-        "liveRuns",
-        LiveState.runs
-    );
-
-
-    setText(
-        "liveWickets",
-        LiveState.wickets
-    );
-
-
-    setText(
-        "liveOvers",
-        formatOvers(
-            LiveState.legalBalls
-        )
-    );
-
-
-    setText(
-        "liveRunRate",
-        calculateRunRate()
-    );
-
-
-    let targetDisplay = "—";
-
-    if (LiveState.inningsIndex === 1) {
-
-        const target =
-            getChaseTarget(match);
-
-        const runsRemaining =
-            getRunsRemaining(match);
-
-        targetDisplay =
-            target +
-            " (Remaining: " +
-            runsRemaining +
-            ")";
-
-    }
-
-
-    setText(
-        "liveTarget",
-        targetDisplay
-    );
-
-
-    renderCurrentOver();
-
-    renderBatsmen();
-
-    renderBowler();
-}
-
-
-/* =========================================================
-   CURRENT OVER
-   ========================================================= */
-
-function renderCurrentOver() {
-
-    const container =
-        document.getElementById(
-            "currentOverBalls"
-        );
-
-
-    if (!container) {
-
-        return;
-
-    }
-
-
-    if (
-        LiveState.currentOverBalls.length ===
-        0
-    ) {
-
-        container.innerHTML =
-            `
-            <span class="ball-placeholder">
-                No balls yet
-            </span>
-            `;
-
-        return;
-
-    }
-
-
-    container.innerHTML =
-        LiveState.currentOverBalls
-            .map(function (ball) {
-
-                let text = "";
-
-                let className =
-                    "ball";
-
-
-                if (ball.wicket) {
-
-                    text =
-                        "W";
-
-                    className +=
-                        " wicket-ball";
-
-                }
-
-                else if (
-                    ball.type ===
-                    "wide"
-                ) {
-
-                    text =
-                        "Wd";
-
-                    className +=
-                        " extra-ball";
-
-                }
-
-                else if (
-                    ball.type ===
-                    "noball"
-                ) {
-
-                    text =
-                        "Nb";
-
-                    className +=
-                        " extra-ball";
-
-                }
-
-                else if (
-                    ball.type ===
-                    "bye"
-                ) {
-
-                    text =
-                        "B" +
-                        ball.totalRuns;
-
-                    className +=
-                        " extra-ball";
-
-                }
-
-                else if (
-                    ball.type ===
-                    "legbye"
-                ) {
-
-                    text =
-                        "Lb" +
-                        ball.totalRuns;
-
-                    className +=
-                        " extra-ball";
-
-                }
-
-                else {
-
-                    text =
-                        String(
-                            ball.batsmanRuns
-                        );
-
-                }
-
-
-                return `
-                    <span class="${className}">
-                        ${text}
-                    </span>
-                `;
-
-            })
-            .join("");
-}
-
-
-/* =========================================================
-   BATSMEN DISPLAY
-   ========================================================= */
-
-function renderBatsmen() {
-
-    const striker =
-        getPlayerById(
-            LiveState.strikerId
-        );
-
-
-    const nonStriker =
-        getPlayerById(
-            LiveState.nonStrikerId
-        );
-
-
-    if (striker) {
-
-        const stats =
-            LiveState.batsmen[
-                striker.id
-            ] || {
-
-                runs: 0,
-
-                balls: 0
-
-            };
-
-
-        setText(
-            "strikerName",
-            striker.name
-        );
-
-
-        setText(
-            "strikerRuns",
-            stats.runs
-        );
-
-
-        setText(
-            "strikerBalls",
-            stats.balls
-        );
-
-
-    } else {
-
-        setText(
-            "strikerName",
-            "No Batter"
-        );
-
-
-        setText(
-            "strikerRuns",
-            "0"
-        );
-
-
-        setText(
-            "strikerBalls",
-            "0"
-        );
-
-    }
-
-
-    if (nonStriker) {
-
-        const stats =
-            LiveState.batsmen[
-                nonStriker.id
-            ] || {
-
-                runs: 0,
-
-                balls: 0
-
-            };
-
-
-        setText(
-            "nonStrikerName",
-            nonStriker.name
-        );
-
-
-        setText(
-            "nonStrikerRuns",
-            stats.runs
-        );
-
-
-        setText(
-            "nonStrikerBalls",
-            stats.balls
-        );
-
-
-    } else {
-
-        setText(
-            "nonStrikerName",
-            "No Batter"
-        );
-
-
-        setText(
-            "nonStrikerRuns",
-            "0"
-        );
-
-
-        setText(
-            "nonStrikerBalls",
-            "0"
-        );
-
-    }
-}
-
-
-/* =========================================================
-   BOWLER DISPLAY
-   ========================================================= */
-
-function renderBowler() {
-
-    const bowler =
-        getPlayerById(
-            LiveState.bowlerId
-        );
-
-
-    if (!bowler) {
-
-        setText(
-            "currentBowlerName",
-            "No Bowler"
-        );
-
-
-        setText(
-            "bowlerOvers",
-            "0.0"
-        );
-
-
-        setText(
-            "bowlerRuns",
-            "0"
-        );
-
-
-        setText(
-            "bowlerWickets",
-            "0"
-        );
-
-
-        return;
-
-    }
-
-
-    const stats =
-        LiveState.bowlers[
-            bowler.id
-        ] || {
-
-            runs: 0,
-
-            wickets: 0,
-
-            legalBalls: 0
-
-        };
-
-
-    setText(
-        "currentBowlerName",
-        bowler.name
-    );
-
-
-    setText(
-        "bowlerOvers",
-        formatOvers(
-            stats.legalBalls
-        )
-    );
-
-
-    setText(
-        "bowlerRuns",
-        stats.runs
-    );
-
-
-    setText(
-        "bowlerWickets",
-        stats.wickets
-    );
-}
-
-
-/* =========================================================
-   RUN RATE
-   ========================================================= */
-
-function calculateRunRate() {
-
-    if (
-        LiveState.legalBalls ===
-        0
-    ) {
-
-        return "0.00";
-
-    }
-
-
-    const overs =
-        LiveState.legalBalls / 6;
-
-
-    const rate =
-        LiveState.runs /
-        overs;
-
-
-    return rate.toFixed(2);
-}
-
-
-/* =========================================================
-   OVERS FORMAT
-   ========================================================= */
-
-function formatOvers(
-    legalBalls
-) {
-
-    const overs =
-        Math.floor(
-            legalBalls / 6
-        );
-
-
-    const balls =
-        legalBalls % 6;
-
-
-    return `${overs}.${balls}`;
-}
-
-
-/* =========================================================
-   CURRENT MATCH
-   ========================================================= */
-
-function getCurrentMatch() {
-
-    if (
-        !CurrentState.currentMatchId
-    ) {
-
-        return null;
-
-    }
-
-
-    return AppData.matches.find(
-        function (match) {
-
-            return match.id ===
-                CurrentState.currentMatchId;
-
-        }
-    ) || null;
-}
-
-
-/* =========================================================
-   VERSION 5 - MATCH HISTORY
-   ========================================================= */
-
-function renderMatchHistory() {
-
-    const container =
-        document.getElementById(
-            "matchHistoryList"
-        );
-
-
-    if (!container) {
-
-        return;
-
-    }
-
-
-    const completedMatches =
-        AppData.matches.filter(
-            function (match) {
-
-                return match.status ===
-                    "Completed";
-
-            }
-        );
-
-
-    if (completedMatches.length === 0) {
-
-        container.innerHTML =
-            `
-            <div class="empty-message">
-                No completed matches yet.
-            </div>
-            `;
-
-        return;
-
-    }
-
-
-    container.innerHTML =
-        completedMatches
-            .map(function (match) {
-
-                const teamA =
-                    getTeamName(
-                        match.teamAId
-                    );
-
-                const teamB =
-                    getTeamName(
-                        match.teamBId
-                    );
-
-                const tournament =
-                    getTournamentName(
-                        match.tournamentId
-                    );
-
-
-                return `
-                    <div class="list-item">
-
-                        <h3>
-                            🏏
-                            ${escapeHTML(teamA)}
-                            vs
-                            ${escapeHTML(teamB)}
-                        </h3>
-
-                        <p>
-                            Tournament:
-                            ${escapeHTML(tournament)}
-                        </p>
-
-                        <p>
-                            Date:
-                            ${escapeHTML(match.date)}
-                        </p>
-
-                        <p>
-                            Result:
-                            <strong>
-                                ${escapeHTML(
-                                    match.result ||
-                                    "Not Determined"
-                                )}
-                            </strong>
-                        </p>
-
-                        <div class="list-actions">
-
-                            <button
-                                class="small-btn manage-btn"
-                                onclick="viewMatchDetails('${match.id}')">
-                                View Details
-                            </button>
-
-                            <button
-                                class="small-btn delete-btn"
-                                onclick="deleteCompletedMatch('${match.id}')">
-                                Delete
-                            </button>
-
-                        </div>
-
-                    </div>
-                `;
-
-            })
-            .join("");
-}
-
-
-function viewMatchDetails(matchId) {
-
-    const match =
-        AppData.matches.find(
-            function (item) {
-
-                return item.id ===
-                    matchId;
-
-            }
-        );
-
-
-    if (!match) {
-
-        alert(
-            "Match not found."
-        );
-
-        return;
-
-    }
-
-
-    CurrentState.currentViewMatchId =
-        matchId;
-
-
-    const container =
-        document.getElementById(
-            "matchDetailsContent"
-        );
-
-
-    if (!container) {
-
-        return;
-
-    }
-
-
-    const teamA =
-        getTeamName(match.teamAId);
-
-    const teamB =
-        getTeamName(match.teamBId);
-
-    const tournament =
-        getTournamentName(match.tournamentId);
-
-
-    let details = `
-
-        <div class="score-card">
-            <h3>Match Information</h3>
-            <p><strong>Teams:</strong> ${escapeHTML(teamA)} vs ${escapeHTML(teamB)}</p>
-            <p><strong>Tournament:</strong> ${escapeHTML(tournament)}</p>
-            <p><strong>Date:</strong> ${escapeHTML(match.date)}</p>
-            <p><strong>Overs:</strong> ${match.overs}</p>
-            <p><strong>Toss Winner:</strong> ${escapeHTML(getTossTeamName(match))}</p>
-            <p><strong>Toss Decision:</strong> ${match.tossDecision === "bat" ? "Bat First" : "Bowl First"}</p>
-        </div>
-
-    `;
-
-
-    if (match.innings && match.innings.length > 0) {
-
-        details += `
-            <div class="score-card">
-                <h3>First Innings</h3>
-                <p><strong>Team:</strong> ${escapeHTML(getTeamName(match.innings[0].battingTeamId))}</p>
-                <p><strong>Runs:</strong> ${match.innings[0].runs}</p>
-                <p><strong>Wickets:</strong> ${match.innings[0].wickets}</p>
-                <p><strong>Overs:</strong> ${formatOvers(match.innings[0].legalBalls)}</p>
-            </div>
-        `;
-
-    }
-
-
-    if (match.innings && match.innings.length > 1) {
-
-        details += `
-            <div class="score-card">
-                <h3>Second Innings</h3>
-                <p><strong>Team:</strong> ${escapeHTML(getTeamName(match.innings[1].battingTeamId))}</p>
-                <p><strong>Runs:</strong> ${match.innings[1].runs}</p>
-                <p><strong>Wickets:</strong> ${match.innings[1].wickets}</p>
-                <p><strong>Overs:</strong> ${formatOvers(match.innings[1].legalBalls)}</p>
-            </div>
-        `;
-
-    }
-
-
-    if (match.result) {
-
-        details += `
-            <div class="score-card">
-                <h3>Match Result</h3>
-                <p><strong>Result:</strong> ${escapeHTML(match.result)}</p>
-            </div>
-        `;
-
-    }
-
-
-    container.innerHTML = details;
-
-    showScreen("matchDetailsScreen");
-}
-
-
-function deleteCompletedMatch(matchId) {
-
-    const match =
-        AppData.matches.find(
-            function (item) {
-
-                return item.id ===
-                    matchId;
-
-            }
-        );
-
-
-    if (!match) {
-
-        return;
-
-    }
-
-
-    const confirmed =
-        confirm(
-            "Delete this completed match from history?"
-        );
-
-
-    if (!confirmed) {
-
-        return;
-
-    }
-
-
-    AppData.matches =
-        AppData.matches.filter(
-            function (item) {
-
-                return item.id !==
-                    matchId;
-
-            }
-        );
-
-
-    saveData();
-
-    renderMatchHistory();
-}
-
-
-/* =========================================================
-   VERSION 5 - PLAYER RECORDS
-   ========================================================= */
-
-function renderPlayerRecords() {
-
-    const container =
-        document.getElementById(
-            "playerRecordsList"
-        );
-
-
-    if (!container) {
-
-        return;
-
-    }
-
-
-    const allPlayers =
-        AppData.players;
-
-
-    if (allPlayers.length === 0) {
-
-        container.innerHTML =
-            `
-            <div class="empty-message">
-                No players yet.
-            </div>
-            `;
-
-        return;
-
-    }
-
-
-    const playerStats = {};
-
-
-    allPlayers.forEach(function (player) {
-
-        playerStats[player.id] = {
-
-            id: player.id,
-
-            name: player.name,
-
-            teamId: player.teamId,
-
-            totalRuns: 0,
-
-            totalWickets: 0,
-
-            matchesPlayed: 0,
-
-            highestScore: 0,
-
             fours: 0,
-
-            sixes: 0
-
+            sixes: 0,
+            status: idx < 2 ? 'batting' : 'notout',
+            dismissal: null
         };
-
     });
 
+    match.innings[0].striker = xi[0];
+    match.innings[0].nonStriker = xi[1];
 
-    AppData.matches.forEach(function (match) {
+    const bowlingXI = match.playingXI[match.innings[0].bowlingTeam];
+    bowlingXI.forEach(playerId => {
+        match.innings[0].bowlers[playerId] = {
+            playerId,
+            overs: 0,
+            maidens: 0,
+            runs: 0,
+            wickets: 0,
+            ballsBowled: 0,
+            economy: 0
+        };
+    });
 
-        if (!match.innings) {
+    match.innings[0].bowler = bowlingXI[0];
 
-            return;
+    document.getElementById('startMatchSection').style.display = 'none';
+    document.getElementById('scoringSection').style.display = 'block';
+    document.getElementById('tossSection').style.display = 'none';
 
+    updateScoringDisplay();
+}
+
+// ============================================================================
+// LIVE SCORING
+// ============================================================================
+
+async function updateScoringDisplay() {
+    if (!appState.liveMatchState) return;
+
+    const match = appState.liveMatchState;
+    const innings = match.innings[match.innings[0].isCompleted ? 1 : 0];
+    const teamA = await dbGet(STORES.TEAMS, match.teamA);
+    const teamB = await dbGet(STORES.TEAMS, match.teamB);
+
+    document.getElementById('matchTeamsText').textContent = `${teamA?.name || 'Team A'} vs ${teamB?.name || 'Team B'}`;
+
+    if (innings.battingTeam) {
+        const battingTeamName = await getTeamName(innings.battingTeam);
+        const bowlingTeamName = await getTeamName(innings.bowlingTeam);
+        document.getElementById('matchStatusText').textContent = `Innings ${innings.number}: ${battingTeamName} batting`;
+    }
+
+    document.getElementById('currentScore').textContent = innings.runs;
+    document.getElementById('currentWickets').textContent = innings.wickets;
+
+    const overs = Math.floor(innings.legalBalls / 6);
+    const balls = innings.legalBalls % 6;
+    document.getElementById('currentOvers').textContent = `${overs}.${balls}`;
+
+    const rr = innings.legalBalls > 0 ? (innings.runs / innings.legalBalls * 6).toFixed(2) : '0.00';
+    document.getElementById('runRate').textContent = rr;
+
+    if (innings.striker) {
+        const strikerName = await getPlayerName(innings.striker);
+        const strikerBatsman = innings.batsmen[innings.striker];
+        document.getElementById('strikerDisplay').textContent = `${strikerName} (${strikerBatsman?.runs || 0})`;
+    }
+
+    if (innings.nonStriker) {
+        const nonStrikerName = await getPlayerName(innings.nonStriker);
+        document.getElementById('nonStrikerDisplay').textContent = nonStrikerName;
+    }
+
+    if (innings.bowler) {
+        const bowlerName = await getPlayerName(innings.bowler);
+        document.getElementById('bowlerDisplay').textContent = bowlerName;
+    }
+
+    document.getElementById('ballHistoryDisplay').textContent = 
+        innings.ballHistory.length > 0 
+        ? innings.ballHistory.slice(-50).join(' ') 
+        : 'No balls bowled';
+
+    const legalBalls = innings.legalBalls;
+    if (legalBalls >= match.totalOvers * 6 || innings.wickets >= 10) {
+        if (!innings.isCompleted) {
+            document.getElementById('inningsCompleteBox').style.display = 'block';
         }
+    }
 
+    if (match.innings[0].isCompleted && match.innings[1].isCompleted) {
+        document.getElementById('matchCompleteBox').style.display = 'block';
+    }
+}
 
-        match.innings.forEach(function (innings) {
+async function recordBall(runs) {
+    if (!appState.liveMatchState || appState.liveMatchState.status !== 'playing') {
+        alert('Match is not in playing status');
+        return;
+    }
 
-            if (!innings.balls) {
+    const match = appState.liveMatchState;
+    const innings = match.innings[match.innings[0].isCompleted ? 1 : 0];
 
-                return;
+    innings.runs += runs;
+    innings.legalBalls++;
+    innings.ballHistory.push(runs.toString());
 
+    const striker = innings.batsmen[innings.striker];
+    if (striker) {
+        striker.runs += runs;
+        striker.balls++;
+        if (runs === 4) striker.fours++;
+        if (runs === 6) striker.sixes++;
+    }
+
+    const bowler = innings.bowlers[innings.bowler];
+    if (bowler) {
+        bowler.ballsBowled++;
+        bowler.runs += runs;
+    }
+
+    innings.currentOver.push(runs);
+
+    if (innings.legalBalls % 6 === 0) {
+        const temp = innings.striker;
+        innings.striker = innings.nonStriker;
+        innings.nonStriker = temp;
+        innings.overs++;
+        innings.currentOver = [];
+    } else if (runs % 2 === 1) {
+        const temp = innings.striker;
+        innings.striker = innings.nonStriker;
+        innings.nonStriker = temp;
+    }
+
+    await updateScoringDisplay();
+}
+
+async function recordWicket() {
+    if (!appState.liveMatchState) return;
+    showModal('wicketTypeModal');
+}
+
+async function recordWicketType(type) {
+    if (!appState.liveMatchState) return;
+
+    const match = appState.liveMatchState;
+    const innings = match.innings[match.innings[0].isCompleted ? 1 : 0];
+
+    innings.legalBalls++;
+    innings.ballHistory.push('W');
+    innings.wickets++;
+
+    const striker = innings.batsmen[innings.striker];
+    if (striker) {
+        striker.status = 'out';
+        striker.dismissal = type;
+    }
+
+    innings.fallOfWickets.push({
+        wicket: innings.wickets,
+        runs: innings.runs,
+        bowler: innings.bowler,
+        batsman: innings.striker
+    });
+
+    const xi = match.playingXI[innings.battingTeam];
+    let nextBatsman = null;
+    for (let i = 0; i < xi.length; i++) {
+        const batsman = innings.batsmen[xi[i]];
+        if (batsman && batsman.status !== 'out') {
+            if (batsman.status === 'notout') {
+                nextBatsman = xi[i];
+                break;
             }
+        }
+    }
 
+    if (nextBatsman) {
+        innings.striker = nextBatsman;
+        innings.batsmen[nextBatsman].status = 'batting';
+    }
 
-            innings.balls.forEach(function (ball) {
+    if (innings.legalBalls % 6 === 0) {
+        const temp = innings.nonStriker;
+        innings.nonStriker = innings.striker;
+        innings.striker = temp;
+        innings.overs++;
+    }
 
-                if (playerStats[ball.strikerId]) {
+    closeModal('wicketTypeModal');
+    await updateScoringDisplay();
+}
 
-                    if (ball.batsmanRuns === 4) {
+async function recordExtra(type) {
+    if (!appState.liveMatchState) return;
 
-                        playerStats[ball.strikerId].fours++;
+    const match = appState.liveMatchState;
+    const innings = match.innings[match.innings[0].isCompleted ? 1 : 0];
 
-                    }
+    let runsAdded = 1;
+    if (type === 'wide') {
+        innings.extras.wides++;
+        innings.ballHistory.push('Wd');
+    } else if (type === 'noball') {
+        innings.extras.noBalls++;
+        innings.ballHistory.push('Nb');
+    } else if (type === 'bye') {
+        innings.extras.byes++;
+        innings.ballHistory.push('b');
+    } else if (type === 'legbye') {
+        innings.extras.legByes++;
+        innings.ballHistory.push('lb');
+    }
 
-                    if (ball.batsmanRuns === 6) {
+    innings.extras.total += runsAdded;
+    innings.runs += runsAdded;
 
-                        playerStats[ball.strikerId].sixes++;
+    if (type !== 'wide' && type !== 'noball') {
+        innings.legalBalls++;
+        if (innings.legalBalls % 6 === 0) {
+            const temp = innings.striker;
+            innings.striker = innings.nonStriker;
+            innings.nonStriker = temp;
+            innings.overs++;
+        }
+    }
 
-                    }
+    await updateScoringDisplay();
+}
 
-                }
+async function undoLastBall() {
+    if (!appState.liveMatchState) return;
 
+    const match = appState.liveMatchState;
+    const innings = match.innings[match.innings[0].isCompleted ? 1 : 0];
 
-                if (playerStats[ball.bowlerId]) {
+    if (innings.ballHistory.length === 0) {
+        alert('No balls to undo');
+        return;
+    }
 
-                    if (ball.wicket) {
+    innings.ballHistory.pop();
+    alert('Last ball removed (simplified undo)');
 
-                        playerStats[ball.bowlerId].totalWickets++;
+    await updateScoringDisplay();
+}
 
-                    }
+async function changeBatsman() {
+    if (!appState.liveMatchState) return;
 
-                }
+    const match = appState.liveMatchState;
+    const innings = match.innings[match.innings[0].isCompleted ? 1 : 0];
+    const xi = match.playingXI[innings.battingTeam];
 
-            });
+    const available = xi.filter(id => {
+        const batsman = innings.batsmen[id];
+        return batsman && batsman.status !== 'out' && id !== innings.nonStriker;
+    });
 
+    showPlayerSelectModal(available, async (playerId) => {
+        innings.striker = playerId;
+        innings.batsmen[playerId].status = 'batting';
+        await updateScoringDisplay();
+    });
+}
+
+async function changeBowler() {
+    if (!appState.liveMatchState) return;
+
+    const match = appState.liveMatchState;
+    const innings = match.innings[match.innings[0].isCompleted ? 1 : 0];
+    const xi = match.playingXI[innings.bowlingTeam];
+
+    showPlayerSelectModal(xi, async (playerId) => {
+        innings.bowler = playerId;
+        await updateScoringDisplay();
+    });
+}
+
+async function showPlayerSelectModal(playerIds, callback) {
+    const list = document.getElementById('playerSelectList');
+    let html = '';
+
+    for (const playerId of playerIds) {
+        const player = await dbGet(STORES.PLAYERS, playerId);
+        html += `<div class="modal-item" onclick="selectPlayer('${playerId}')">${player.name}</div>`;
+    }
+
+    list.innerHTML = html;
+    window.selectPlayer = (playerId) => {
+        closeModal('selectPlayerModal');
+        callback(playerId);
+    };
+    showModal('selectPlayerModal');
+}
+
+async function completeInnings() {
+    if (!appState.liveMatchState) return;
+
+    const match = appState.liveMatchState;
+    const inningsIndex = match.innings[0].isCompleted ? 1 : 0;
+    match.innings[inningsIndex].isCompleted = true;
+
+    if (inningsIndex === 0) {
+        // Setup second innings
+        const firstInningsRuns = match.innings[0].runs;
+        match.innings[1].battingTeam = 
+            match.innings[0].battingTeam === match.teamA ? match.teamB : match.teamA;
+        match.innings[1].bowlingTeam = match.innings[0].battingTeam;
+        match.innings[1].target = firstInningsRuns + 1;
+
+        const xi = match.playingXI[match.innings[1].battingTeam];
+        xi.forEach((playerId, idx) => {
+            match.innings[1].batsmen[playerId] = {
+                playerId,
+                runs: 0,
+                balls: 0,
+                fours: 0,
+                sixes: 0,
+                status: idx < 2 ? 'batting' : 'notout',
+                dismissal: null
+            };
         });
 
-    });
+        match.innings[1].striker = xi[0];
+        match.innings[1].nonStriker = xi[1];
 
+        const bowlingXI = match.playingXI[match.innings[1].bowlingTeam];
+        bowlingXI.forEach(playerId => {
+            match.innings[1].bowlers[playerId] = {
+                playerId,
+                overs: 0,
+                maidens: 0,
+                runs: 0,
+                wickets: 0,
+                ballsBowled: 0,
+                economy: 0
+            };
+        });
 
-    container.innerHTML =
-        Object.values(playerStats)
-            .map(function (player) {
+        match.innings[1].bowler = bowlingXI[0];
 
-                const teamName =
-                    getTeamName(player.teamId);
-
-
-                return `
-                    <div class="list-item">
-
-                        <h3>
-                            👤
-                            ${escapeHTML(
-                                player.name
-                            )}
-                        </h3>
-
-                        <p>
-                            Team:
-                            ${escapeHTML(teamName)}
-                        </p>
-
-                        <p>
-                            Runs: <strong>${player.totalRuns}</strong>
-                            | Wickets: <strong>${player.totalWickets}</strong>
-                        </p>
-
-                        <p>
-                            4s: ${player.fours} | 6s: ${player.sixes}
-                        </p>
-
-                    </div>
-                `;
-
-            })
-            .join("");
+        alert('First innings complete! Starting second innings...');
+        await updateScoringDisplay();
+    }
 }
 
+async function completeMatch() {
+    if (!appState.liveMatchState) return;
 
-/* =========================================================
-   VERSION 5 - STATISTICS
-   ========================================================= */
+    const match = appState.liveMatchState;
+    match.status = 'completed';
+    match.completedAt = new Date().toISOString();
 
-function renderStatistics() {
+    const inningsOne = match.innings[0];
+    const inningsTwo = match.innings[1];
 
-    const container =
-        document.getElementById(
-            "statisticsContent"
-        );
-
-
-    if (!container) {
-
-        return;
-
+    if (inningsTwo.runs > inningsOne.runs) {
+        const teamName = await getTeamName(inningsTwo.battingTeam);
+        match.result = `${teamName} won by ${10 - inningsTwo.wickets} wickets`;
+    } else if (inningsOne.runs > inningsTwo.runs) {
+        const teamName = await getTeamName(inningsOne.battingTeam);
+        match.result = `${teamName} won by ${inningsOne.runs - inningsTwo.runs} runs`;
+    } else {
+        match.result = 'Match Tied';
     }
 
+    try {
+        const completedMatchCopy = JSON.parse(JSON.stringify(match));
+        await dbPut(STORES.COMPLETED_MATCHES, completedMatchCopy);
+        await dbPut(STORES.MATCHES, match);
+        await updatePlayerStats(match);
 
-    const totalMatches =
-        AppData.matches.length;
+        appState.liveMatchState = match;
+        displayScorecard(match);
+        switchScreen('scorecard');
+        alert('Match completed!');
+    } catch (error) {
+        console.error('Error completing match:', error);
+        alert('Error completing match');
+    }
+}
 
-    const completedMatches =
-        AppData.matches.filter(
-            function (match) {
+// ============================================================================
+// SCORECARD DISPLAY
+// ============================================================================
 
-                return match.status ===
-                    "Completed";
+async function displayScorecard(match) {
+    const container = document.getElementById('scorecardContent');
+    const teamA = await dbGet(STORES.TEAMS, match.teamA);
+    const teamB = await dbGet(STORES.TEAMS, match.teamB);
+    const tournament = await dbGet(STORES.TOURNAMENTS, match.tournamentId);
 
-            }
-        ).length;
+    let html = '<div class="scorecard-section">';
 
-    const activeMatches =
-        totalMatches - completedMatches;
+    // Match Info
+    html += '<h3>Match Information</h3>';
+    html += '<div class="scorecard-info">';
+    html += `<div class="info-card"><div class="info-label">Teams</div><div class="info-value">${teamA?.name} vs ${teamB?.name}</div></div>`;
+    html += `<div class="info-card"><div class="info-label">Tournament</div><div class="info-value">${tournament?.name}</div></div>`;
+    html += `<div class="info-card"><div class="info-label">Format</div><div class="info-value">${match.format.toUpperCase()}</div></div>`;
+    html += `<div class="info-card"><div class="info-label">Date</div><div class="info-value">${new Date(match.createdAt).toLocaleDateString()}</div></div>`;
+    if (match.result) {
+        html += `<div class="info-card"><div class="info-label">Result</div><div class="info-value">${match.result}</div></div>`;
+    }
+    html += '</div></div>';
 
-    const totalTeams =
-        AppData.teams.length;
+    // Innings Scorecards
+    for (let i = 0; i < 2; i++) {
+        const innings = match.innings[i];
+        if (!innings.battingTeam) continue;
 
-    const totalPlayers =
-        AppData.players.length;
+        const battingTeam = await dbGet(STORES.TEAMS, innings.battingTeam);
 
-    const totalTournaments =
-        AppData.tournaments.length;
+        html += '<div class="scorecard-section">';
+        html += `<h3>${battingTeam?.name} Innings</h3>`;
 
-    let totalRuns = 0;
+        // Batting
+        html += '<h4>Batting</h4>';
+        html += '<table class="scorecard-table">';
+        html += '<tr><th>Player</th><th>Runs</th><th>Balls</th><th>4s</th><th>6s</th><th>Dismissal</th></tr>';
 
-    let totalWickets = 0;
+        for (const playerId in innings.batsmen) {
+            const batsman = innings.batsmen[playerId];
+            const player = await dbGet(STORES.PLAYERS, playerId);
+            const dismissal = batsman.dismissal ? batsman.dismissal : (batsman.status === 'out' ? 'Out' : 'Not Out');
 
-
-    AppData.matches.forEach(function (match) {
-
-        if (match.innings) {
-
-            match.innings.forEach(function (innings) {
-
-                totalRuns +=
-                    innings.runs || 0;
-
-                totalWickets +=
-                    innings.wickets || 0;
-
-            });
-
+            html += `<tr>
+                <td>${player?.name}</td>
+                <td>${batsman.runs}</td>
+                <td>${batsman.balls}</td>
+                <td>${batsman.fours}</td>
+                <td>${batsman.sixes}</td>
+                <td>${dismissal}</td>
+            </tr>`;
         }
 
-    });
+        html += '</table>';
 
+        // Bowling
+        html += '<h4>Bowling</h4>';
+        html += '<table class="scorecard-table">';
+        html += '<tr><th>Bowler</th><th>Overs</th><th>Runs</th><th>Wickets</th></tr>';
 
-    const html = `
+        for (const playerId in innings.bowlers) {
+            const bowler = innings.bowlers[playerId];
+            const player = await dbGet(STORES.PLAYERS, playerId);
+            const overs = Math.floor(bowler.ballsBowled / 6) + '.' + (bowler.ballsBowled % 6);
 
-        <div class="score-card">
-            <h3>Match Statistics</h3>
-            <p><strong>Total Matches:</strong> ${totalMatches}</p>
-            <p><strong>Completed Matches:</strong> ${completedMatches}</p>
-            <p><strong>Active Matches:</strong> ${activeMatches}</p>
-        </div>
+            html += `<tr>
+                <td>${player?.name}</td>
+                <td>${bowler.ballsBowled > 0 ? overs : '0'}</td>
+                <td>${bowler.runs}</td>
+                <td>${bowler.wickets}</td>
+            </tr>`;
+        }
 
-        <div class="score-card">
-            <h3>Team & Player Statistics</h3>
-            <p><strong>Total Teams:</strong> ${totalTeams}</p>
-            <p><strong>Total Players:</strong> ${totalPlayers}</p>
-            <p><strong>Total Tournaments:</strong> ${totalTournaments}</p>
-        </div>
+        html += '</table>';
 
-        <div class="score-card">
-            <h3>Overall Scoring</h3>
-            <p><strong>Total Runs Scored:</strong> ${totalRuns}</p>
-            <p><strong>Total Wickets Lost:</strong> ${totalWickets}</p>
-        </div>
+        // Innings Summary
+        html += '<div class="scorecard-info">';
+        html += `<div class="info-card"><div class="info-label">Total</div><div class="info-value">${innings.runs}</div></div>`;
+        html += `<div class="info-card"><div class="info-label">Wickets</div><div class="info-value">${innings.wickets}/10</div></div>`;
+        html += `<div class="info-card"><div class="info-label">Overs</div><div class="info-value">${innings.overs}.${innings.legalBalls % 6}</div></div>`;
+        html += `<div class="info-card"><div class="info-label">Extras</div><div class="info-value">${innings.extras.total}</div></div>`;
+        if (innings.target) {
+            html += `<div class="info-card"><div class="info-label">Target</div><div class="info-value">${innings.target}</div></div>`;
+        }
+        html += '</div>';
 
-    `;
-
+        html += '</div>';
+    }
 
     container.innerHTML = html;
 }
 
+// ============================================================================
+// MATCH HISTORY
+// ============================================================================
 
-/* =========================================================
-   LOOKUP HELPERS
-   ========================================================= */
+async function loadMatchHistory() {
+    try {
+        const completedMatches = await dbGetAll(STORES.COMPLETED_MATCHES);
+        const list = document.getElementById('matchHistoryList');
 
-function getTeamName(teamId) {
-
-    const team =
-        AppData.teams.find(
-            function (item) {
-
-                return item.id ===
-                    teamId;
-
-            }
-        );
-
-
-    return team
-        ? team.name
-        : "Unknown Team";
-}
-
-
-function getTournamentName(
-    tournamentId
-) {
-
-    const tournament =
-        AppData.tournaments.find(
-            function (item) {
-
-                return item.id ===
-                    tournamentId;
-
-            }
-        );
-
-
-    return tournament
-        ? tournament.name
-        : "Unknown Tournament";
-}
-
-
-function getPlayerById(
-    playerId
-) {
-
-    if (!playerId) {
-
-        return null;
-
-    }
-
-
-    return AppData.players.find(
-        function (player) {
-
-            return player.id ===
-                playerId;
-
+        if (completedMatches.length === 0) {
+            list.innerHTML = '<p class="empty-message">No completed matches</p>';
+            return;
         }
-    ) || null;
-}
 
+        list.innerHTML = await Promise.all(completedMatches.map(async (m) => {
+            const teamA = await dbGet(STORES.TEAMS, m.teamA);
+            const teamB = await dbGet(STORES.TEAMS, m.teamB);
 
-/* =========================================================
-   TEXT HELPER
-   ========================================================= */
-
-function setText(
-    elementId,
-    value
-) {
-
-    const element =
-        document.getElementById(
-            elementId
-        );
-
-
-    if (element) {
-
-        element.textContent =
-            String(value);
-
+            return `
+                <div class="item">
+                    <div class="item-info">
+                        <div class="item-name">${teamA?.name} vs ${teamB?.name}</div>
+                        <div class="item-detail">${m.format.toUpperCase()} | ${new Date(m.createdAt).toLocaleDateString()}</div>
+                        <div class="item-detail">Result: ${m.result}</div>
+                    </div>
+                    <div class="item-actions">
+                        <button class="btn-primary" onclick="viewCompletedMatch('${m.id}')">View</button>
+                    </div>
+                </div>
+            `;
+        })).then(items => items.join(''));
+    } catch (error) {
+        console.error('Error loading match history:', error);
     }
 }
 
+async function viewCompletedMatch(matchId) {
+    try {
+        const match = await dbGet(STORES.COMPLETED_MATCHES, matchId);
+        if (!match) {
+            alert('Match not found');
+            return;
+        }
 
-/* =========================================================
-   HTML SECURITY
-   ========================================================= */
-
-function escapeHTML(value) {
-
-    return String(value)
-
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-
-        .replace(
-            /</g,
-            "&lt;"
-        )
-
-        .replace(
-            />/g,
-            "&gt;"
-        )
-
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-
-        .replace(
-            /'/g,
-            "&#039;"
-        );
-}
-
-
-/* =========================================================
-   ENTER KEY SUPPORT
-   ========================================================= */
-
-function setupEnterKeys() {
-
-    const tournamentInput =
-        document.getElementById(
-            "tournamentName"
-        );
-
-
-    if (tournamentInput) {
-
-        tournamentInput.addEventListener(
-            "keydown",
-            function (event) {
-
-                if (
-                    event.key ===
-                    "Enter"
-                ) {
-
-                    addTournament();
-
-                }
-
-            }
-        );
-
-    }
-
-
-    const teamInput =
-        document.getElementById(
-            "teamName"
-        );
-
-
-    if (teamInput) {
-
-        teamInput.addEventListener(
-            "keydown",
-            function (event) {
-
-                if (
-                    event.key ===
-                    "Enter"
-                ) {
-
-                    addTeam();
-
-                }
-
-            }
-        );
-
-    }
-
-
-    const playerInput =
-        document.getElementById(
-            "playerName"
-        );
-
-
-    if (playerInput) {
-
-        playerInput.addEventListener(
-            "keydown",
-            function (event) {
-
-                if (
-                    event.key ===
-                    "Enter"
-                ) {
-
-                    addPlayer();
-
-                }
-
-            }
-        );
-
+        appState.liveMatchState = match;
+        displayScorecard(match);
+        switchScreen('scorecard');
+    } catch (error) {
+        console.error('Error viewing match:', error);
+        alert('Error viewing match');
     }
 }
+
+// ============================================================================
+// STATISTICS
+// ============================================================================
+
+async function updatePlayerStats(match) {
+    for (let inningsIdx = 0; inningsIdx < 2; inningsIdx++) {
+        const innings = match.innings[inningsIdx];
+
+        // Batting stats
+        for (const playerId in innings.batsmen) {
+            const batsman = innings.batsmen[playerId];
+            let stats = await dbGet(STORES.PLAYER_STATS, playerId) || {
+                playerId,
+                matches: 0,
+                innings: 0,
+                runs: 0,
+                balls: 0,
+                wickets: 0,
+                overs: 0,
+                runsConceded: 0,
+                fours: 0,
+                sixes: 0
+            };
+
+            stats.innings++;
+            stats.runs += batsman.runs;
+            stats.balls += batsman.balls;
+            stats.fours += batsman.fours;
+            stats.sixes += batsman.sixes;
+            stats.matches = 1;
+
+            await dbPut(STORES.PLAYER_STATS, stats);
+        }
+
+        // Bowling stats
+        for (const playerId in innings.bowlers) {
+            const bowler = innings.bowlers[playerId];
+            let stats = await dbGet(STORES.PLAYER_STATS, playerId) || {
+                playerId,
+                matches: 0,
+                innings: 0,
+                runs: 0,
+                balls: 0,
+                wickets: 0,
+                overs: 0,
+                runsConceded: 0,
+                fours: 0,
+                sixes: 0
+            };
+
+            stats.wickets += bowler.wickets;
+            stats.overs = (stats.overs || 0) + Math.floor(bowler.ballsBowled / 6);
+            stats.runsConceded += bowler.runs;
+
+            await dbPut(STORES.PLAYER_STATS, stats);
+        }
+    }
+}
+
+async function loadStatistics() {
+    try {
+        const stats = await dbGetAll(STORES.PLAYER_STATS);
+        const list = document.getElementById('statisticsList');
+
+        if (stats.length === 0) {
+            list.innerHTML = '<p class="empty-message">No statistics yet</p>';
+            return;
+        }
+
+        list.innerHTML = await Promise.all(stats.map(async (stat) => {
+            const player = await dbGet(STORES.PLAYERS, stat.playerId);
+            const team = player ? await dbGet(STORES.TEAMS, player.teamId) : null;
+            const sr = stat.balls > 0 ? (stat.runs / stat.balls * 100).toFixed(1) : '0.0';
+            const avg = stat.innings > 0 ? (stat.runs / stat.innings).toFixed(1) : '0.0';
+
+            return `
+                <div class="item">
+                    <div class="item-info">
+                        <div class="item-name">${player?.name}</div>
+                        <div class="item-detail">Team: ${team?.name} | Runs: ${stat.runs} | Wickets: ${stat.wickets}</div>
+                        <div class="item-detail">Avg: ${avg} | SR: ${sr}% | Runs Conceded: ${stat.runsConceded}</div>
+                    </div>
+                </div>
+            `;
+        })).then(items => items.join(''));
+    } catch (error) {
+        console.error('Error loading stats:', error);
+    }
+}
+
+// ============================================================================
+// UI SCREEN MANAGEMENT
+// ============================================================================
+
+function switchScreen(screenName) {
+    const screenId = screenName === 'livescoring' ? 'liveScoringScreen' : 
+                    screenName === 'history' ? 'historyScreen' :
+                    screenName === 'stats' ? 'statsScreen' :
+                    `${screenName}Screen`;
+
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const screen = document.getElementById(screenId);
+    if (screen) screen.classList.add('active');
+
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const navItem = document.querySelector(`[data-screen="${screenName}"]`);
+    if (navItem) navItem.classList.add('active');
+
+    appState.currentScreen = screenName;
+
+    if (screenName === 'tournaments') loadTournaments();
+    else if (screenName === 'teams') loadTeams();
+    else if (screenName === 'players') loadPlayers();
+    else if (screenName === 'matches') loadMatches();
+    else if (screenName === 'history') loadMatchHistory();
+    else if (screenName === 'stats') loadStatistics();
+}
+
+function showModal(modalId) {
+    document.getElementById(modalId).style.display = 'flex';
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+function goBack() {
+    switchScreen(appState.previousScreen);
+}
+
+// ============================================================================
+// EVENT LISTENERS & INITIALIZATION
+// ============================================================================
+
+document.addEventListener('DOMContentLoaded', async () => {
+    await initDB();
+
+    // Format selector
+    const formatSelect = document.getElementById('matchFormat');
+    if (formatSelect) {
+        formatSelect.addEventListener('change', (e) => {
+            const customInput = document.getElementById('matchCustomOvers');
+            customInput.style.display = e.target.value === 'custom' ? 'block' : 'none';
+        });
+    }
+
+    // Initialize displays
+    loadTournaments();
+    loadTeams();
+    loadPlayers();
+    loadMatches();
+});
+
+window.addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal')) {
+        e.target.style.display = 'none';
+    }
+});
