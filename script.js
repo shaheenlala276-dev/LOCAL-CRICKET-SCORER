@@ -1,6 +1,6 @@
 // ============================================================================
-// LOCAL CRICKET SCORER - VERSION 6
-// Complete JavaScript with Match Data Isolation Fix
+// LOCAL CRICKET SCORER - VERSION 6 - IMPROVED
+// Enhanced UI/UX, User Feedback, and Mobile Optimization
 // ============================================================================
 
 // ============================================================================
@@ -11,6 +11,7 @@ const DB_NAME = 'CricketScorerDB';
 const DB_VERSION = 1;
 
 let db;
+let dbReady = false;
 
 const STORES = {
     TOURNAMENTS: 'tournaments',
@@ -26,7 +27,9 @@ const appState = {
     currentScreen: 'home',
     currentMatchId: null,
     liveMatchState: null,
-    previousScreen: 'home'
+    previousScreen: 'home',
+    tossWinner: null,
+    pendingConfirmAction: null
 };
 
 // Initialize IndexedDB
@@ -41,7 +44,9 @@ function initDB() {
 
         request.onsuccess = () => {
             db = request.result;
+            dbReady = true;
             console.log('Database initialized');
+            hideLoadingOverlay();
             resolve(db);
         };
 
@@ -68,6 +73,13 @@ function initDB() {
             }
         };
     });
+}
+
+function hideLoadingOverlay() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
 }
 
 // Database utility functions
@@ -122,6 +134,36 @@ function dbDelete(storeName, key) {
 }
 
 // ============================================================================
+// USER FEEDBACK & NOTIFICATIONS
+// ============================================================================
+
+function showSuccessMessage(message) {
+    const toast = document.getElementById('successToast');
+    if (toast) {
+        toast.textContent = message;
+        toast.classList.add('show');
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    }
+}
+
+function showConfirmation(title, message, callback) {
+    appState.pendingConfirmAction = callback;
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmMessage').textContent = message;
+    showModal('confirmationModal');
+}
+
+function executeConfirmedAction() {
+    if (appState.pendingConfirmAction) {
+        appState.pendingConfirmAction();
+        appState.pendingConfirmAction = null;
+    }
+    closeModal('confirmationModal');
+}
+
+// ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
 
@@ -129,12 +171,14 @@ function generateUniqueId(prefix) {
     return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
-function getTeamName(teamId) {
-    return dbGet(STORES.TEAMS, teamId).then(team => team ? team.name : 'Unknown');
+async function getTeamName(teamId) {
+    const team = await dbGet(STORES.TEAMS, teamId);
+    return team ? team.name : 'Unknown';
 }
 
-function getPlayerName(playerId) {
-    return dbGet(STORES.PLAYERS, playerId).then(player => player ? player.name : 'Unknown');
+async function getPlayerName(playerId) {
+    const player = await dbGet(STORES.PLAYERS, playerId);
+    return player ? player.name : 'Unknown';
 }
 
 // ============================================================================
@@ -146,7 +190,7 @@ async function createTournament() {
     const desc = document.getElementById('tournamentDesc').value.trim();
 
     if (!name) {
-        alert('Please enter tournament name');
+        showSuccessMessage('❌ Please enter tournament name');
         return;
     }
 
@@ -163,10 +207,10 @@ async function createTournament() {
         document.getElementById('tournamentDesc').value = '';
         loadTournaments();
         updateTournamentSelects();
-        alert('Tournament created!');
+        showSuccessMessage('✓ Tournament created successfully');
     } catch (error) {
         console.error('Error creating tournament:', error);
-        alert('Error creating tournament');
+        showSuccessMessage('❌ Error creating tournament');
     }
 }
 
@@ -176,19 +220,19 @@ async function loadTournaments() {
         const list = document.getElementById('tournamentsList');
 
         if (tournaments.length === 0) {
-            list.innerHTML = '<p class="empty-message">No tournaments created yet</p>';
+            list.innerHTML = '<p class="empty-message">No tournaments yet. Create your first tournament above.</p>';
             return;
         }
 
         list.innerHTML = tournaments.map(t => `
             <div class="item">
                 <div class="item-info">
-                    <div class="item-name">${t.name}</div>
+                    <div class="item-name">🎯 ${t.name}</div>
                     <div class="item-detail">${t.description || 'No description'}</div>
                     <div class="item-detail">Created: ${new Date(t.createdAt).toLocaleDateString()}</div>
                 </div>
                 <div class="item-actions">
-                    <button class="btn-secondary" onclick="deleteTournament('${t.id}')">Delete</button>
+                    <button class="btn-secondary" onclick="confirmDeleteTournament('${t.id}')">Delete</button>
                 </div>
             </div>
         `).join('');
@@ -199,16 +243,22 @@ async function loadTournaments() {
     }
 }
 
-async function deleteTournament(id) {
-    if (confirm('Delete this tournament?')) {
-        try {
-            await dbDelete(STORES.TOURNAMENTS, id);
-            loadTournaments();
-            updateTournamentSelects();
-        } catch (error) {
-            console.error('Error deleting tournament:', error);
+async function confirmDeleteTournament(id) {
+    showConfirmation(
+        'Delete Tournament',
+        'Are you sure you want to delete this tournament? This action cannot be undone.',
+        async () => {
+            try {
+                await dbDelete(STORES.TOURNAMENTS, id);
+                loadTournaments();
+                updateTournamentSelects();
+                showSuccessMessage('✓ Tournament deleted');
+            } catch (error) {
+                console.error('Error deleting tournament:', error);
+                showSuccessMessage('❌ Error deleting tournament');
+            }
         }
-    }
+    );
 }
 
 async function updateTournamentSelects() {
@@ -235,7 +285,7 @@ async function createTeam() {
     const tournamentId = document.getElementById('teamTournament').value;
 
     if (!name || !tournamentId) {
-        alert('Please enter team name and select tournament');
+        showSuccessMessage('❌ Please fill all fields');
         return;
     }
 
@@ -252,10 +302,10 @@ async function createTeam() {
         document.getElementById('teamTournament').value = '';
         loadTeams();
         updateTeamSelects();
-        alert('Team created!');
+        showSuccessMessage('✓ Team created successfully');
     } catch (error) {
         console.error('Error creating team:', error);
-        alert('Error creating team');
+        showSuccessMessage('❌ Error creating team');
     }
 }
 
@@ -265,7 +315,7 @@ async function loadTeams() {
         const list = document.getElementById('teamsList');
 
         if (teams.length === 0) {
-            list.innerHTML = '<p class="empty-message">No teams created yet</p>';
+            list.innerHTML = '<p class="empty-message">No teams yet. Create your first team above.</p>';
             return;
         }
 
@@ -274,12 +324,12 @@ async function loadTeams() {
             return `
                 <div class="item">
                     <div class="item-info">
-                        <div class="item-name">${t.name}</div>
+                        <div class="item-name">👥 ${t.name}</div>
                         <div class="item-detail">Tournament: ${tournament ? tournament.name : 'Unknown'}</div>
                         <div class="item-detail">Created: ${new Date(t.createdAt).toLocaleDateString()}</div>
                     </div>
                     <div class="item-actions">
-                        <button class="btn-secondary" onclick="deleteTeam('${t.id}')">Delete</button>
+                        <button class="btn-secondary" onclick="confirmDeleteTeam('${t.id}')">Delete</button>
                     </div>
                 </div>
             `;
@@ -291,16 +341,22 @@ async function loadTeams() {
     }
 }
 
-async function deleteTeam(id) {
-    if (confirm('Delete this team?')) {
-        try {
-            await dbDelete(STORES.TEAMS, id);
-            loadTeams();
-            updateTeamSelects();
-        } catch (error) {
-            console.error('Error deleting team:', error);
+async function confirmDeleteTeam(id) {
+    showConfirmation(
+        'Delete Team',
+        'Are you sure you want to delete this team?',
+        async () => {
+            try {
+                await dbDelete(STORES.TEAMS, id);
+                loadTeams();
+                updateTeamSelects();
+                showSuccessMessage('✓ Team deleted');
+            } catch (error) {
+                console.error('Error deleting team:', error);
+                showSuccessMessage('❌ Error deleting team');
+            }
         }
-    }
+    );
 }
 
 async function updateTeamSelects() {
@@ -328,7 +384,7 @@ async function createPlayer() {
     const teamId = document.getElementById('playerTeam').value;
 
     if (!name || !jersey || !teamId) {
-        alert('Please fill all player details');
+        showSuccessMessage('❌ Please fill all fields');
         return;
     }
 
@@ -346,10 +402,10 @@ async function createPlayer() {
         document.getElementById('playerJerseyNo').value = '';
         document.getElementById('playerTeam').value = '';
         loadPlayers();
-        alert('Player created!');
+        showSuccessMessage('✓ Player created successfully');
     } catch (error) {
         console.error('Error creating player:', error);
-        alert('Error creating player');
+        showSuccessMessage('❌ Error creating player');
     }
 }
 
@@ -359,7 +415,7 @@ async function loadPlayers() {
         const list = document.getElementById('playersList');
 
         if (players.length === 0) {
-            list.innerHTML = '<p class="empty-message">No players created yet</p>';
+            list.innerHTML = '<p class="empty-message">No players yet. Create your first player above.</p>';
             return;
         }
 
@@ -368,11 +424,11 @@ async function loadPlayers() {
             return `
                 <div class="item">
                     <div class="item-info">
-                        <div class="item-name">#${p.jerseyNo} ${p.name}</div>
+                        <div class="item-name">🎮 #${p.jerseyNo} ${p.name}</div>
                         <div class="item-detail">Team: ${team ? team.name : 'Unknown'}</div>
                     </div>
                     <div class="item-actions">
-                        <button class="btn-secondary" onclick="deletePlayer('${p.id}')">Delete</button>
+                        <button class="btn-secondary" onclick="confirmDeletePlayer('${p.id}')">Delete</button>
                     </div>
                 </div>
             `;
@@ -382,15 +438,21 @@ async function loadPlayers() {
     }
 }
 
-async function deletePlayer(id) {
-    if (confirm('Delete this player?')) {
-        try {
-            await dbDelete(STORES.PLAYERS, id);
-            loadPlayers();
-        } catch (error) {
-            console.error('Error deleting player:', error);
+async function confirmDeletePlayer(id) {
+    showConfirmation(
+        'Delete Player',
+        'Are you sure you want to delete this player?',
+        async () => {
+            try {
+                await dbDelete(STORES.PLAYERS, id);
+                loadPlayers();
+                showSuccessMessage('✓ Player deleted');
+            } catch (error) {
+                console.error('Error deleting player:', error);
+                showSuccessMessage('❌ Error deleting player');
+            }
         }
-    }
+    );
 }
 
 // ============================================================================
@@ -472,12 +534,12 @@ async function createMatch() {
     const customOvers = document.getElementById('matchCustomOvers').value;
 
     if (!tournamentId || !teamAId || !teamBId) {
-        alert('Please select tournament and both teams');
+        showSuccessMessage('❌ Please select tournament and both teams');
         return;
     }
 
     if (teamAId === teamBId) {
-        alert('Please select different teams');
+        showSuccessMessage('❌ Please select different teams');
         return;
     }
 
@@ -501,10 +563,10 @@ async function createMatch() {
 
         loadMatches();
         switchScreen('livescoring');
-        alert('Match created!');
+        showSuccessMessage('✓ Match created successfully');
     } catch (error) {
         console.error('Error creating match:', error);
-        alert('Error creating match');
+        showSuccessMessage('❌ Error creating match');
     }
 }
 
@@ -515,7 +577,7 @@ async function loadMatches() {
         const list = document.getElementById('matchesList');
 
         if (activeMatches.length === 0) {
-            list.innerHTML = '<p class="empty-message">No active matches</p>';
+            list.innerHTML = '<p class="empty-message">No active matches. Create your first match above.</p>';
             return;
         }
 
@@ -525,12 +587,12 @@ async function loadMatches() {
             return `
                 <div class="item">
                     <div class="item-info">
-                        <div class="item-name">${teamA?.name || 'Team A'} vs ${teamB?.name || 'Team B'}</div>
+                        <div class="item-name">⚾ ${teamA?.name || 'Team A'} vs ${teamB?.name || 'Team B'}</div>
                         <div class="item-detail">${m.format.toUpperCase()} | Status: ${m.status}</div>
                     </div>
                     <div class="item-actions">
                         <button class="btn-primary" onclick="openMatch('${m.id}')">Play</button>
-                        <button class="btn-secondary" onclick="deleteMatch('${m.id}')">Delete</button>
+                        <button class="btn-secondary" onclick="confirmDeleteMatch('${m.id}')">Delete</button>
                     </div>
                 </div>
             `;
@@ -544,7 +606,7 @@ async function openMatch(matchId) {
     try {
         const match = await dbGet(STORES.MATCHES, matchId);
         if (!match) {
-            alert('Match not found');
+            showSuccessMessage('❌ Match not found');
             return;
         }
 
@@ -554,19 +616,25 @@ async function openMatch(matchId) {
         updateScoringDisplay();
     } catch (error) {
         console.error('Error opening match:', error);
-        alert('Error opening match');
+        showSuccessMessage('❌ Error opening match');
     }
 }
 
-async function deleteMatch(matchId) {
-    if (confirm('Delete this match?')) {
-        try {
-            await dbDelete(STORES.MATCHES, matchId);
-            loadMatches();
-        } catch (error) {
-            console.error('Error deleting match:', error);
+async function confirmDeleteMatch(matchId) {
+    showConfirmation(
+        'Delete Match',
+        'Are you sure you want to delete this match?',
+        async () => {
+            try {
+                await dbDelete(STORES.MATCHES, matchId);
+                loadMatches();
+                showSuccessMessage('✓ Match deleted');
+            } catch (error) {
+                console.error('Error deleting match:', error);
+                showSuccessMessage('❌ Error deleting match');
+            }
         }
-    }
+    );
 }
 
 // ============================================================================
@@ -576,33 +644,57 @@ async function deleteMatch(matchId) {
 async function conductToss() {
     if (!appState.liveMatchState) return;
 
-    const teams = [appState.liveMatchState.teamA, appState.liveMatchState.teamB];
-    const winner = teams[Math.floor(Math.random() * 2)];
-    const winnerName = await getTeamName(winner);
-
-    appState.liveMatchState.tossWinner = winner;
     appState.liveMatchState.status = 'toss';
 
-    document.getElementById('tossStatus').textContent = `${winnerName} won the toss!`;
+    const teamA = await dbGet(STORES.TEAMS, appState.liveMatchState.teamA);
+    const teamB = await dbGet(STORES.TEAMS, appState.liveMatchState.teamB);
+
+    document.getElementById('tossTeamAName').textContent = teamA?.name || 'Team A';
+    document.getElementById('tossTeamBName').textContent = teamB?.name || 'Team B';
+
     document.getElementById('conductTossBtn').style.display = 'none';
     document.getElementById('tossDecision').style.display = 'block';
+    
+    showSuccessMessage('✓ Select the toss winner');
+}
+
+async function selectTossWinner(team) {
+    const teamABtn = document.getElementById('tossWinnerA');
+    const teamBBtn = document.getElementById('tossWinnerB');
+
+    teamABtn.classList.remove('selected');
+    teamBBtn.classList.remove('selected');
+
+    if (team === 'teamA') {
+        appState.tossWinner = appState.liveMatchState.teamA;
+        teamABtn.classList.add('selected');
+    } else {
+        appState.tossWinner = appState.liveMatchState.teamB;
+        teamBBtn.classList.add('selected');
+    }
+
+    appState.liveMatchState.tossWinner = appState.tossWinner;
+    document.getElementById('tossChoiceSection').style.display = 'block';
+    
+    const winnerName = await getTeamName(appState.tossWinner);
+    document.getElementById('tossChoiceText').textContent = `What does ${winnerName} choose?`;
 }
 
 async function setTossDecision(decision) {
-    if (!appState.liveMatchState) return;
+    if (!appState.liveMatchState || !appState.tossWinner) return;
 
     appState.liveMatchState.tossDecision = decision;
 
     if (decision === 'bat') {
-        appState.liveMatchState.battingTeam = appState.liveMatchState.tossWinner;
+        appState.liveMatchState.battingTeam = appState.tossWinner;
         appState.liveMatchState.bowlingTeam = 
-            appState.liveMatchState.tossWinner === appState.liveMatchState.teamA 
+            appState.tossWinner === appState.liveMatchState.teamA 
             ? appState.liveMatchState.teamB 
             : appState.liveMatchState.teamA;
     } else {
-        appState.liveMatchState.bowlingTeam = appState.liveMatchState.tossWinner;
+        appState.liveMatchState.bowlingTeam = appState.tossWinner;
         appState.liveMatchState.battingTeam = 
-            appState.liveMatchState.tossWinner === appState.liveMatchState.teamA 
+            appState.tossWinner === appState.liveMatchState.teamA 
             ? appState.liveMatchState.teamB 
             : appState.liveMatchState.teamA;
     }
@@ -613,6 +705,7 @@ async function setTossDecision(decision) {
     document.getElementById('tossSection').style.display = 'none';
     document.getElementById('playingXISection').style.display = 'block';
     loadPlayingXIForm();
+    showSuccessMessage('✓ Toss completed');
 }
 
 async function loadPlayingXIForm() {
@@ -627,7 +720,7 @@ async function loadPlayingXIForm() {
                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-bottom: 16px;">`;
     
     teamAPlayers.forEach(p => {
-        html += `<label style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+        html += `<label style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
                     <input type="checkbox" class="xi-check" data-team="${appState.liveMatchState.teamA}" value="${p.id}">
                     #${p.jerseyNo} ${p.name}
                  </label>`;
@@ -637,7 +730,7 @@ async function loadPlayingXIForm() {
              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px;">`;
 
     teamBPlayers.forEach(p => {
-        html += `<label style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+        html += `<label style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
                     <input type="checkbox" class="xi-check" data-team="${appState.liveMatchState.teamB}" value="${p.id}">
                     #${p.jerseyNo} ${p.name}
                  </label>`;
@@ -663,7 +756,7 @@ async function savePlayingXI() {
     });
 
     if (xiTeamA.length !== 11 || xiTeamB.length !== 11) {
-        alert('Please select exactly 11 players per team');
+        showSuccessMessage('❌ Please select exactly 11 players per team');
         return;
     }
 
@@ -672,6 +765,7 @@ async function savePlayingXI() {
 
     document.getElementById('playingXISection').style.display = 'none';
     document.getElementById('startMatchSection').style.display = 'block';
+    showSuccessMessage('✓ Playing XI saved');
 }
 
 async function startMatch() {
@@ -715,6 +809,7 @@ async function startMatch() {
     document.getElementById('tossSection').style.display = 'none';
 
     updateScoringDisplay();
+    showSuccessMessage('✓ Match started');
 }
 
 // ============================================================================
@@ -733,7 +828,6 @@ async function updateScoringDisplay() {
 
     if (innings.battingTeam) {
         const battingTeamName = await getTeamName(innings.battingTeam);
-        const bowlingTeamName = await getTeamName(innings.bowlingTeam);
         document.getElementById('matchStatusText').textContent = `Innings ${innings.number}: ${battingTeamName} batting`;
     }
 
@@ -750,12 +844,13 @@ async function updateScoringDisplay() {
     if (innings.striker) {
         const strikerName = await getPlayerName(innings.striker);
         const strikerBatsman = innings.batsmen[innings.striker];
-        document.getElementById('strikerDisplay').textContent = `${strikerName} (${strikerBatsman?.runs || 0})`;
+        document.getElementById('strikerDisplay').textContent = `${strikerName} (${strikerBatsman?.runs || 0}*)`;
     }
 
     if (innings.nonStriker) {
         const nonStrikerName = await getPlayerName(innings.nonStriker);
-        document.getElementById('nonStrikerDisplay').textContent = nonStrikerName;
+        const nonStrikerBatsman = innings.batsmen[innings.nonStriker];
+        document.getElementById('nonStrikerDisplay').textContent = `${nonStrikerName} (${nonStrikerBatsman?.runs || 0})`;
     }
 
     if (innings.bowler) {
@@ -782,7 +877,7 @@ async function updateScoringDisplay() {
 
 async function recordBall(runs) {
     if (!appState.liveMatchState || appState.liveMatchState.status !== 'playing') {
-        alert('Match is not in playing status');
+        showSuccessMessage('❌ Match is not in playing status');
         return;
     }
 
@@ -878,6 +973,7 @@ async function recordWicketType(type) {
 
     closeModal('wicketTypeModal');
     await updateScoringDisplay();
+    showSuccessMessage('✓ Wicket recorded');
 }
 
 async function recordExtra(type) {
@@ -924,12 +1020,12 @@ async function undoLastBall() {
     const innings = match.innings[match.innings[0].isCompleted ? 1 : 0];
 
     if (innings.ballHistory.length === 0) {
-        alert('No balls to undo');
+        showSuccessMessage('❌ No balls to undo');
         return;
     }
 
     innings.ballHistory.pop();
-    alert('Last ball removed (simplified undo)');
+    showSuccessMessage('↶ Last ball removed');
 
     await updateScoringDisplay();
 }
@@ -950,6 +1046,7 @@ async function changeBatsman() {
         innings.striker = playerId;
         innings.batsmen[playerId].status = 'batting';
         await updateScoringDisplay();
+        showSuccessMessage('✓ Batsman changed');
     });
 }
 
@@ -963,6 +1060,7 @@ async function changeBowler() {
     showPlayerSelectModal(xi, async (playerId) => {
         innings.bowler = playerId;
         await updateScoringDisplay();
+        showSuccessMessage('✓ Bowler changed');
     });
 }
 
@@ -972,7 +1070,7 @@ async function showPlayerSelectModal(playerIds, callback) {
 
     for (const playerId of playerIds) {
         const player = await dbGet(STORES.PLAYERS, playerId);
-        html += `<div class="modal-item" onclick="selectPlayer('${playerId}')">${player.name}</div>`;
+        html += `<div class="modal-item" onclick="selectPlayer('${playerId}')">👤 #${player.jerseyNo} ${player.name}</div>`;
     }
 
     list.innerHTML = html;
@@ -983,6 +1081,14 @@ async function showPlayerSelectModal(playerIds, callback) {
     showModal('selectPlayerModal');
 }
 
+function confirmCompleteInnings() {
+    showConfirmation(
+        'Complete Innings',
+        'Are you sure you want to complete this innings?',
+        completeInnings
+    );
+}
+
 async function completeInnings() {
     if (!appState.liveMatchState) return;
 
@@ -991,7 +1097,6 @@ async function completeInnings() {
     match.innings[inningsIndex].isCompleted = true;
 
     if (inningsIndex === 0) {
-        // Setup second innings
         const firstInningsRuns = match.innings[0].runs;
         match.innings[1].battingTeam = 
             match.innings[0].battingTeam === match.teamA ? match.teamB : match.teamA;
@@ -1029,9 +1134,18 @@ async function completeInnings() {
 
         match.innings[1].bowler = bowlingXI[0];
 
-        alert('First innings complete! Starting second innings...');
+        document.getElementById('inningsCompleteBox').style.display = 'none';
         await updateScoringDisplay();
+        showSuccessMessage('✓ First innings completed. Starting second innings...');
     }
+}
+
+function confirmCompleteMatch() {
+    showConfirmation(
+        'Complete Match',
+        'Are you sure you want to complete this match? This action cannot be undone.',
+        completeMatch
+    );
 }
 
 async function completeMatch() {
@@ -1063,10 +1177,10 @@ async function completeMatch() {
         appState.liveMatchState = match;
         displayScorecard(match);
         switchScreen('scorecard');
-        alert('Match completed!');
+        showSuccessMessage('✓ Match completed successfully');
     } catch (error) {
         console.error('Error completing match:', error);
-        alert('Error completing match');
+        showSuccessMessage('❌ Error completing match');
     }
 }
 
@@ -1080,18 +1194,24 @@ async function displayScorecard(match) {
     const teamB = await dbGet(STORES.TEAMS, match.teamB);
     const tournament = await dbGet(STORES.TOURNAMENTS, match.tournamentId);
 
-    let html = '<div class="scorecard-section">';
+    let html = '';
+
+    // Match Result Card
+    if (match.result) {
+        html += `<div class="match-result-card">
+            <h2>🏆 MATCH RESULT</h2>
+            <p style="font-size: 18px; font-weight: 700;">${match.result}</p>
+        </div>`;
+    }
 
     // Match Info
+    html += '<div class="scorecard-section">';
     html += '<h3>Match Information</h3>';
     html += '<div class="scorecard-info">';
     html += `<div class="info-card"><div class="info-label">Teams</div><div class="info-value">${teamA?.name} vs ${teamB?.name}</div></div>`;
     html += `<div class="info-card"><div class="info-label">Tournament</div><div class="info-value">${tournament?.name}</div></div>`;
     html += `<div class="info-card"><div class="info-label">Format</div><div class="info-value">${match.format.toUpperCase()}</div></div>`;
     html += `<div class="info-card"><div class="info-label">Date</div><div class="info-value">${new Date(match.createdAt).toLocaleDateString()}</div></div>`;
-    if (match.result) {
-        html += `<div class="info-card"><div class="info-label">Result</div><div class="info-value">${match.result}</div></div>`;
-    }
     html += '</div></div>';
 
     // Innings Scorecards
@@ -1106,13 +1226,12 @@ async function displayScorecard(match) {
 
         // Batting
         html += '<h4>Batting</h4>';
-        html += '<table class="scorecard-table">';
-        html += '<tr><th>Player</th><th>Runs</th><th>Balls</th><th>4s</th><th>6s</th><th>Dismissal</th></tr>';
+        html += '<table class="scorecard-table"><tr><th>Player</th><th>Runs</th><th>Balls</th><th>4s</th><th>6s</th><th>Dismissal</th></tr>';
 
         for (const playerId in innings.batsmen) {
             const batsman = innings.batsmen[playerId];
             const player = await dbGet(STORES.PLAYERS, playerId);
-            const dismissal = batsman.dismissal ? batsman.dismissal : (batsman.status === 'out' ? 'Out' : 'Not Out');
+            const dismissal = batsman.dismissal ? batsman.dismissal.toUpperCase() : (batsman.status === 'out' ? 'OUT' : 'NOT OUT');
 
             html += `<tr>
                 <td>${player?.name}</td>
@@ -1127,18 +1246,17 @@ async function displayScorecard(match) {
         html += '</table>';
 
         // Bowling
-        html += '<h4>Bowling</h4>';
-        html += '<table class="scorecard-table">';
-        html += '<tr><th>Bowler</th><th>Overs</th><th>Runs</th><th>Wickets</th></tr>';
+        html += '<h4 style="margin-top: 12px;">Bowling</h4>';
+        html += '<table class="scorecard-table"><tr><th>Bowler</th><th>Overs</th><th>Runs</th><th>Wickets</th></tr>';
 
         for (const playerId in innings.bowlers) {
             const bowler = innings.bowlers[playerId];
             const player = await dbGet(STORES.PLAYERS, playerId);
-            const overs = Math.floor(bowler.ballsBowled / 6) + '.' + (bowler.ballsBowled % 6);
+            const overs = bowler.ballsBowled > 0 ? Math.floor(bowler.ballsBowled / 6) + '.' + (bowler.ballsBowled % 6) : '0';
 
             html += `<tr>
                 <td>${player?.name}</td>
-                <td>${bowler.ballsBowled > 0 ? overs : '0'}</td>
+                <td>${overs}</td>
                 <td>${bowler.runs}</td>
                 <td>${bowler.wickets}</td>
             </tr>`;
@@ -1147,7 +1265,7 @@ async function displayScorecard(match) {
         html += '</table>';
 
         // Innings Summary
-        html += '<div class="scorecard-info">';
+        html += '<div class="scorecard-info" style="margin-top: 12px;">';
         html += `<div class="info-card"><div class="info-label">Total</div><div class="info-value">${innings.runs}</div></div>`;
         html += `<div class="info-card"><div class="info-label">Wickets</div><div class="info-value">${innings.wickets}/10</div></div>`;
         html += `<div class="info-card"><div class="info-label">Overs</div><div class="info-value">${innings.overs}.${innings.legalBalls % 6}</div></div>`;
@@ -1173,7 +1291,7 @@ async function loadMatchHistory() {
         const list = document.getElementById('matchHistoryList');
 
         if (completedMatches.length === 0) {
-            list.innerHTML = '<p class="empty-message">No completed matches</p>';
+            list.innerHTML = '<p class="empty-message">No completed matches yet. Start playing to see history.</p>';
             return;
         }
 
@@ -1184,9 +1302,9 @@ async function loadMatchHistory() {
             return `
                 <div class="item">
                     <div class="item-info">
-                        <div class="item-name">${teamA?.name} vs ${teamB?.name}</div>
+                        <div class="item-name">⚾ ${teamA?.name} vs ${teamB?.name}</div>
                         <div class="item-detail">${m.format.toUpperCase()} | ${new Date(m.createdAt).toLocaleDateString()}</div>
-                        <div class="item-detail">Result: ${m.result}</div>
+                        <div class="item-detail" style="color: var(--success); font-weight: 600;">🏆 ${m.result}</div>
                     </div>
                     <div class="item-actions">
                         <button class="btn-primary" onclick="viewCompletedMatch('${m.id}')">View</button>
@@ -1203,7 +1321,7 @@ async function viewCompletedMatch(matchId) {
     try {
         const match = await dbGet(STORES.COMPLETED_MATCHES, matchId);
         if (!match) {
-            alert('Match not found');
+            showSuccessMessage('❌ Match not found');
             return;
         }
 
@@ -1212,7 +1330,7 @@ async function viewCompletedMatch(matchId) {
         switchScreen('scorecard');
     } catch (error) {
         console.error('Error viewing match:', error);
-        alert('Error viewing match');
+        showSuccessMessage('❌ Error viewing match');
     }
 }
 
@@ -1281,7 +1399,7 @@ async function loadStatistics() {
         const list = document.getElementById('statisticsList');
 
         if (stats.length === 0) {
-            list.innerHTML = '<p class="empty-message">No statistics yet</p>';
+            list.innerHTML = '<p class="empty-message">No statistics yet. Complete matches to see player stats.</p>';
             return;
         }
 
@@ -1294,9 +1412,9 @@ async function loadStatistics() {
             return `
                 <div class="item">
                     <div class="item-info">
-                        <div class="item-name">${player?.name}</div>
+                        <div class="item-name">📊 ${player?.name}</div>
                         <div class="item-detail">Team: ${team?.name} | Runs: ${stat.runs} | Wickets: ${stat.wickets}</div>
-                        <div class="item-detail">Avg: ${avg} | SR: ${sr}% | Runs Conceded: ${stat.runsConceded}</div>
+                        <div class="item-detail">Average: ${avg} | Strike Rate: ${sr}% | Runs Conceded: ${stat.runsConceded}</div>
                     </div>
                 </div>
             `;
@@ -1324,6 +1442,7 @@ function switchScreen(screenName) {
     const navItem = document.querySelector(`[data-screen="${screenName}"]`);
     if (navItem) navItem.classList.add('active');
 
+    appState.previousScreen = appState.currentScreen;
     appState.currentScreen = screenName;
 
     if (screenName === 'tournaments') loadTournaments();
@@ -1343,7 +1462,7 @@ function closeModal(modalId) {
 }
 
 function goBack() {
-    switchScreen(appState.previousScreen);
+    switchScreen(appState.previousScreen || 'home');
 }
 
 // ============================================================================
@@ -1351,22 +1470,27 @@ function goBack() {
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', async () => {
-    await initDB();
+    try {
+        await initDB();
 
-    // Format selector
-    const formatSelect = document.getElementById('matchFormat');
-    if (formatSelect) {
-        formatSelect.addEventListener('change', (e) => {
-            const customInput = document.getElementById('matchCustomOvers');
-            customInput.style.display = e.target.value === 'custom' ? 'block' : 'none';
-        });
+        // Format selector
+        const formatSelect = document.getElementById('matchFormat');
+        if (formatSelect) {
+            formatSelect.addEventListener('change', (e) => {
+                const customInput = document.getElementById('matchCustomOvers');
+                customInput.style.display = e.target.value === 'custom' ? 'block' : 'none';
+            });
+        }
+
+        // Initialize displays
+        loadTournaments();
+        loadTeams();
+        loadPlayers();
+        loadMatches();
+    } catch (error) {
+        console.error('Initialization error:', error);
+        hideLoadingOverlay();
     }
-
-    // Initialize displays
-    loadTournaments();
-    loadTeams();
-    loadPlayers();
-    loadMatches();
 });
 
 window.addEventListener('click', (e) => {
