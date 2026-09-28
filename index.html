@@ -3,574 +3,359 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Local Cricket Scorer - V5</title>
-
+    <title>Local Cricket Scorer - Version 6</title>
     <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-
-    <!-- ================= HEADER ================= -->
-    <header class="app-header">
-        <h1>🏏 Local Cricket Scorer</h1>
-        <p>Simple • Fast • Offline • Version 5</p>
-    </header>
-
-
-    <!-- ================= HOME SCREEN ================= -->
-    <main id="homeScreen" class="screen active">
-
-        <div class="screen-title">
-            <h2>🏠 Dashboard</h2>
-            <p>Manage your cricket matches</p>
-        </div>
-
-        <div class="action-grid">
-
-            <button class="action-card"
-                    onclick="showScreen('tournamentScreen')">
-                <span class="action-icon">🏆</span>
-                <span class="action-title">Tournaments</span>
-                <span class="action-description">
-                    Create and manage tournaments
-                </span>
-            </button>
-
-            <button class="action-card"
-                    onclick="showScreen('teamScreen')">
-                <span class="action-icon">👥</span>
-                <span class="action-title">Teams</span>
-                <span class="action-description">
-                    Create teams and players
-                </span>
-            </button>
-
-            <button class="action-card"
-                    onclick="showScreen('matchScreen')">
-                <span class="action-icon">🏏</span>
-                <span class="action-title">Matches</span>
-                <span class="action-description">
-                    Create and manage matches
-                </span>
-            </button>
-
-            <button class="action-card"
-                    onclick="showScreen('matchHistoryScreen')">
-                <span class="action-icon">📋</span>
-                <span class="action-title">History</span>
-                <span class="action-description">
-                    View completed matches
-                </span>
-            </button>
-
-            <button class="action-card"
-                    onclick="showScreen('playerRecordsScreen')">
-                <span class="action-icon">👤</span>
-                <span class="action-title">Player Records</span>
-                <span class="action-description">
-                    Player statistics
-                </span>
-            </button>
-
-            <button class="action-card"
-                    onclick="showScreen('statisticsScreen')">
-                <span class="action-icon">📊</span>
-                <span class="action-title">Statistics</span>
-                <span class="action-description">
-                    Overall app stats
-                </span>
-            </button>
-
-        </div>
-
-    </main>
-
-
-    <!-- ================= TOURNAMENT SCREEN ================= -->
-    <main id="tournamentScreen" class="screen">
-
-        <div class="screen-title">
-            <h2>🏆 Tournaments</h2>
-            <p>Create your cricket tournament</p>
-        </div>
-
-        <div class="form-card">
-
-            <h3 class="form-title">Add Tournament</h3>
-
-            <input
-                type="text"
-                id="tournamentName"
-                placeholder="Enter tournament name"
-                autocomplete="off"
-            >
-
-            <button class="primary-btn" onclick="addTournament()">
-                ➕ Add Tournament
-            </button>
-
-        </div>
-
-        <div id="tournamentList" class="list-container"></div>
-
-        <button class="secondary-btn"
-                onclick="showScreen('homeScreen')">
-            ← Back to Home
-        </button>
-
-    </main>
-
-
-    <!-- ================= TEAM SCREEN ================= -->
-    <main id="teamScreen" class="screen">
-
-        <div class="screen-title">
-            <h2>👥 Teams</h2>
-            <p>Create teams for your matches</p>
-        </div>
-
-        <div class="form-card">
-
-            <h3 class="form-title">Add Team</h3>
-
-            <input
-                type="text"
-                id="teamName"
-                placeholder="Enter team name"
-                autocomplete="off"
-            >
-
-            <button class="primary-btn" onclick="addTeam()">
-                ➕ Add Team
-            </button>
-
-        </div>
-
-        <div id="teamList" class="list-container"></div>
-
-        <button class="secondary-btn"
-                onclick="showScreen('homeScreen')">
-            ← Back to Home
-        </button>
-
-    </main>
-
-
-    <!-- ================= PLAYER SCREEN ================= -->
-    <main id="playerScreen" class="screen">
-
-        <div class="screen-title">
-            <h2>🏃 Players</h2>
-            <p>Manage players in your team</p>
-        </div>
-
-        <div id="selectedTeamInfo" class="selected-info"></div>
-
-        <div class="form-card">
-
-            <h3 class="form-title">Add Player</h3>
-
-            <input
-                type="text"
-                id="playerName"
-                placeholder="Enter player name"
-                autocomplete="off"
-            >
-
-            <button class="primary-btn" onclick="addPlayer()">
-                ➕ Add Player
-            </button>
-
-        </div>
-
-        <div id="playerList" class="list-container"></div>
-
-        <button class="secondary-btn"
-                onclick="showScreen('teamScreen')">
-            ← Back to Teams
-        </button>
-
-    </main>
-
-
-    <!-- ================= MATCH SETUP SCREEN ================= -->
-    <main id="matchScreen" class="screen">
-
-        <div class="screen-title">
-            <h2>🏏 Matches</h2>
-            <p>Create a match and prepare for scoring</p>
-        </div>
-
-        <div class="form-card">
-
-            <h3 class="form-title">Create Match</h3>
-
-            <label for="matchTournament">Tournament</label>
-
-            <select id="matchTournament">
-                <option value="">Select Tournament</option>
-            </select>
-
-
-            <label for="teamA">Team A</label>
-
-            <select id="teamA">
-                <option value="">Select Team A</option>
-            </select>
-
-
-            <label for="teamB">Team B</label>
-
-            <select id="teamB">
-                <option value="">Select Team B</option>
-            </select>
-
-
-            <label for="matchOvers">Overs</label>
-
-            <input
-                type="number"
-                id="matchOvers"
-                min="1"
-                max="50"
-                value="10"
-            >
-
-
-            <label for="matchDate">Match Date</label>
-
-            <input
-                type="date"
-                id="matchDate"
-            >
-
-
-            <label for="tossWinner">Toss Winner</label>
-
-            <select id="tossWinner">
-                <option value="">Select Toss Winner</option>
-                <option value="teamA">Team A</option>
-                <option value="teamB">Team B</option>
-            </select>
-
-
-            <label for="tossDecision">Toss Decision</label>
-
-            <select id="tossDecision">
-                <option value="">Select Decision</option>
-                <option value="bat">Bat First</option>
-                <option value="bowl">Bowl First</option>
-            </select>
-
-
-            <button class="primary-btn"
-                    onclick="createMatch()">
-                ➕ Create Match
-            </button>
-
-        </div>
-
-
-        <!-- Match List -->
-        <div id="matchList" class="list-container"></div>
-
-
-        <button class="secondary-btn"
-                onclick="showScreen('homeScreen')">
-            ← Back to Home
-        </button>
-
-    </main>
-
-
-    <!-- ================= LIVE SCORING SCREEN ================= -->
-    <main id="liveScoringScreen" class="screen">
-
-        <div class="screen-title">
-            <h2>🏏 Live Scoring</h2>
-            <p id="liveMatchTitle">Match</p>
-        </div>
-
-
-        <!-- Match Information -->
-        <div class="score-card">
-
-            <div class="score-teams">
-                <span id="liveBattingTeam">Batting Team</span>
-                <span class="vs-text">VS</span>
-                <span id="liveBowlingTeam">Bowling Team</span>
-            </div>
-
-            <div class="main-score">
-                <span id="liveRuns">0</span>
-                <span>/</span>
-                <span id="liveWickets">0</span>
-            </div>
-
-            <div class="score-details">
-
-                <div>
-                    <span class="detail-label">Overs</span>
-                    <strong id="liveOvers">0.0</strong>
+    <div id="app" class="app-container">
+        <!-- Header/Navigation -->
+        <header class="app-header">
+            <div class="header-top">
+                <h1 class="app-title">🏏 Local Cricket Scorer v6</h1>
+                <div class="header-actions">
+                    <button id="backBtn" class="btn-icon" onclick="goBack()" style="display:none;">← Back</button>
                 </div>
+            </div>
+            <nav class="app-nav">
+                <button class="nav-item active" data-screen="home" onclick="switchScreen('home')">Home</button>
+                <button class="nav-item" data-screen="tournaments" onclick="switchScreen('tournaments')">Tournaments</button>
+                <button class="nav-item" data-screen="teams" onclick="switchScreen('teams')">Teams</button>
+                <button class="nav-item" data-screen="players" onclick="switchScreen('players')">Players</button>
+                <button class="nav-item" data-screen="matches" onclick="switchScreen('matches')">Matches</button>
+                <button class="nav-item" data-screen="history" onclick="switchScreen('history')">History</button>
+            </nav>
+        </header>
 
-                <div>
-                    <span class="detail-label">Run Rate</span>
-                    <strong id="liveRunRate">0.00</strong>
+        <!-- Main Content Area -->
+        <main class="app-main">
+
+            <!-- HOME SCREEN -->
+            <section id="homeScreen" class="screen active">
+                <div class="screen-content">
+                    <div class="welcome-box">
+                        <h2>Welcome to Local Cricket Scorer</h2>
+                        <p>Manage tournaments, teams, players, and score matches offline</p>
+                    </div>
+
+                    <div class="quick-access-grid">
+                        <div class="quick-access-card" onclick="switchScreen('tournaments')">
+                            <div class="card-icon">🎯</div>
+                            <h3>Tournaments</h3>
+                            <p>Create & manage tournaments</p>
+                        </div>
+                        <div class="quick-access-card" onclick="switchScreen('teams')">
+                            <div class="card-icon">👥</div>
+                            <h3>Teams</h3>
+                            <p>Create & manage teams</p>
+                        </div>
+                        <div class="quick-access-card" onclick="switchScreen('players')">
+                            <div class="card-icon">🎮</div>
+                            <h3>Players</h3>
+                            <p>Create & manage players</p>
+                        </div>
+                        <div class="quick-access-card" onclick="switchScreen('matches')">
+                            <div class="card-icon">⚾</div>
+                            <h3>Matches</h3>
+                            <p>Create & play matches</p>
+                        </div>
+                        <div class="quick-access-card" onclick="switchScreen('history')">
+                            <div class="card-icon">📊</div>
+                            <h3>History</h3>
+                            <p>View completed matches</p>
+                        </div>
+                        <div class="quick-access-card" onclick="switchScreen('stats')">
+                            <div class="card-icon">📈</div>
+                            <h3>Statistics</h3>
+                            <p>Player performance stats</p>
+                        </div>
+                    </div>
                 </div>
+            </section>
 
-                <div>
-                    <span class="detail-label">Target</span>
-                    <strong id="liveTarget">—</strong>
+            <!-- TOURNAMENTS SCREEN -->
+            <section id="tournamentsScreen" class="screen">
+                <div class="screen-content">
+                    <h2>Tournaments</h2>
+
+                    <div class="form-box">
+                        <h3>Create Tournament</h3>
+                        <input type="text" id="tournamentName" placeholder="Tournament name" class="form-input">
+                        <textarea id="tournamentDesc" placeholder="Description (optional)" class="form-input form-textarea"></textarea>
+                        <button class="btn-primary" onclick="createTournament()">Create Tournament</button>
+                    </div>
+
+                    <div class="list-box">
+                        <h3>Your Tournaments</h3>
+                        <div id="tournamentsList" class="items-container">
+                            <p class="empty-message">No tournaments yet</p>
+                        </div>
+                    </div>
                 </div>
+            </section>
 
-            </div>
+            <!-- TEAMS SCREEN -->
+            <section id="teamsScreen" class="screen">
+                <div class="screen-content">
+                    <h2>Teams</h2>
 
-        </div>
+                    <div class="form-box">
+                        <h3>Create Team</h3>
+                        <input type="text" id="teamName" placeholder="Team name" class="form-input">
+                        <select id="teamTournament" class="form-input">
+                            <option value="">Select Tournament</option>
+                        </select>
+                        <button class="btn-primary" onclick="createTeam()">Create Team</button>
+                    </div>
 
-
-        <!-- Current Over -->
-        <div class="score-card">
-
-            <h3>Current Over</h3>
-
-            <div id="currentOverBalls" class="ball-display">
-                <span class="ball-placeholder">No balls yet</span>
-            </div>
-
-        </div>
-
-
-        <!-- Batsmen -->
-        <div class="score-card">
-
-            <h3>🏏 Batsmen</h3>
-
-            <div class="player-score-row">
-
-                <div>
-                    <strong id="strikerName">Striker</strong>
-                    <span id="strikerIndicator">★</span>
+                    <div class="list-box">
+                        <h3>Your Teams</h3>
+                        <div id="teamsList" class="items-container">
+                            <p class="empty-message">No teams yet</p>
+                        </div>
+                    </div>
                 </div>
+            </section>
 
-                <div>
-                    <span id="strikerRuns">0</span>
-                    <span>(</span>
-                    <span id="strikerBalls">0</span>
-                    <span>)</span>
+            <!-- PLAYERS SCREEN -->
+            <section id="playersScreen" class="screen">
+                <div class="screen-content">
+                    <h2>Players</h2>
+
+                    <div class="form-box">
+                        <h3>Create Player</h3>
+                        <input type="text" id="playerName" placeholder="Player name" class="form-input">
+                        <input type="number" id="playerJerseyNo" placeholder="Jersey number" class="form-input">
+                        <select id="playerTeam" class="form-input">
+                            <option value="">Select Team</option>
+                        </select>
+                        <button class="btn-primary" onclick="createPlayer()">Create Player</button>
+                    </div>
+
+                    <div class="list-box">
+                        <h3>Your Players</h3>
+                        <div id="playersList" class="items-container">
+                            <p class="empty-message">No players yet</p>
+                        </div>
+                    </div>
                 </div>
+            </section>
 
-            </div>
+            <!-- MATCHES SCREEN -->
+            <section id="matchesScreen" class="screen">
+                <div class="screen-content">
+                    <h2>Matches</h2>
 
+                    <div class="form-box">
+                        <h3>Create Match</h3>
+                        <select id="matchTournament" class="form-input">
+                            <option value="">Select Tournament</option>
+                        </select>
+                        <select id="matchTeamA" class="form-input">
+                            <option value="">Select Team A</option>
+                        </select>
+                        <select id="matchTeamB" class="form-input">
+                            <option value="">Select Team B</option>
+                        </select>
+                        <select id="matchFormat" class="form-input">
+                            <option value="t20">T20 (20 overs)</option>
+                            <option value="odi">ODI (50 overs)</option>
+                            <option value="test">Test (90 overs)</option>
+                            <option value="custom">Custom Overs</option>
+                        </select>
+                        <input type="number" id="matchCustomOvers" placeholder="Overs (for custom)" class="form-input" style="display:none;">
+                        <button class="btn-primary" onclick="createMatch()">Create Match</button>
+                    </div>
 
-            <div class="player-score-row">
-
-                <div>
-                    <strong id="nonStrikerName">Non-Striker</strong>
+                    <div class="list-box">
+                        <h3>Active Matches</h3>
+                        <div id="matchesList" class="items-container">
+                            <p class="empty-message">No active matches</p>
+                        </div>
+                    </div>
                 </div>
+            </section>
 
-                <div>
-                    <span id="nonStrikerRuns">0</span>
-                    <span>(</span>
-                    <span id="nonStrikerBalls">0</span>
-                    <span>)</span>
+            <!-- LIVE SCORING SCREEN -->
+            <section id="liveScoringScreen" class="screen">
+                <div class="screen-content">
+                    <h2>Live Scoring</h2>
+
+                    <!-- Match Header -->
+                    <div class="match-header-box">
+                        <div id="matchTeamsDisplay">
+                            <h3 id="matchTeamsText">Loading...</h3>
+                        </div>
+                        <div id="matchStatusDisplay">
+                            <p id="matchStatusText">Status: Setting up</p>
+                        </div>
+                    </div>
+
+                    <!-- TOSS SECTION -->
+                    <div id="tossSection" class="section-box">
+                        <h3>Toss</h3>
+                        <div class="toss-content">
+                            <p id="tossStatus">Toss not yet conducted</p>
+                            <button class="btn-primary" id="conductTossBtn" onclick="conductToss()">Conduct Toss</button>
+                            <div id="tossDecision" style="display:none;">
+                                <p>Toss winner decides:</p>
+                                <button class="btn-secondary" onclick="setTossDecision('bat')">Bat First</button>
+                                <button class="btn-secondary" onclick="setTossDecision('bowl')">Bowl First</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PLAYING XI SECTION -->
+                    <div id="playingXISection" class="section-box" style="display:none;">
+                        <h3>Select Playing XI</h3>
+                        <div id="playingXIContent"></div>
+                        <button class="btn-primary" onclick="savePlayingXI()">Save Playing XI</button>
+                    </div>
+
+                    <!-- START MATCH SECTION -->
+                    <div id="startMatchSection" class="section-box" style="display:none;">
+                        <button class="btn-success" onclick="startMatch()">Start Match</button>
+                    </div>
+
+                    <!-- LIVE SCORING SECTION -->
+                    <div id="scoringSection" class="section-box" style="display:none;">
+                        <!-- Score Board -->
+                        <div class="scoreboard">
+                            <div class="score-card">
+                                <div class="score-value" id="currentScore">0</div>
+                                <div class="score-label">Runs</div>
+                            </div>
+                            <div class="score-card">
+                                <div class="score-value" id="currentWickets">0</div>
+                                <div class="score-label">Wickets</div>
+                            </div>
+                            <div class="score-card">
+                                <div class="score-value" id="currentOvers">0.0</div>
+                                <div class="score-label">Overs</div>
+                            </div>
+                            <div class="score-card">
+                                <div class="score-value" id="runRate">0.00</div>
+                                <div class="score-label">Run Rate</div>
+                            </div>
+                        </div>
+
+                        <!-- Current Status -->
+                        <div class="status-box">
+                            <div class="status-item">
+                                <label>Striker:</label>
+                                <span id="strikerDisplay">-</span>
+                            </div>
+                            <div class="status-item">
+                                <label>Non-Striker:</label>
+                                <span id="nonStrikerDisplay">-</span>
+                            </div>
+                            <div class="status-item">
+                                <label>Bowler:</label>
+                                <span id="bowlerDisplay">-</span>
+                            </div>
+                        </div>
+
+                        <!-- Scoring Buttons -->
+                        <div class="scoring-panel">
+                            <div class="button-group">
+                                <button class="btn-run" onclick="recordBall(0)">0</button>
+                                <button class="btn-run" onclick="recordBall(1)">1</button>
+                                <button class="btn-run" onclick="recordBall(2)">2</button>
+                                <button class="btn-run" onclick="recordBall(3)">3</button>
+                                <button class="btn-run" onclick="recordBall(4)">4</button>
+                            </div>
+                            <div class="button-group">
+                                <button class="btn-run" onclick="recordBall(5)">5</button>
+                                <button class="btn-run" onclick="recordBall(6)">6</button>
+                                <button class="btn-wicket" onclick="recordWicket()">Wicket</button>
+                            </div>
+                            <div class="button-group">
+                                <button class="btn-extra" onclick="recordExtra('wide')">Wide</button>
+                                <button class="btn-extra" onclick="recordExtra('noball')">No Ball</button>
+                                <button class="btn-extra" onclick="recordExtra('bye')">Bye</button>
+                                <button class="btn-extra" onclick="recordExtra('legbye')">Leg Bye</button>
+                            </div>
+                            <div class="button-group">
+                                <button class="btn-undo" onclick="undoLastBall()">← Undo</button>
+                                <button class="btn-change" onclick="changeBatsman()">Change Batsman</button>
+                                <button class="btn-change" onclick="changeBowler()">Change Bowler</button>
+                            </div>
+                        </div>
+
+                        <!-- Ball History -->
+                        <div class="ball-history-box">
+                            <h4>Ball History</h4>
+                            <div id="ballHistoryDisplay" class="ball-history-text">
+                                No balls bowled
+                            </div>
+                        </div>
+
+                        <!-- Innings Controls -->
+                        <div id="inningsCompleteBox" style="display:none;">
+                            <button class="btn-primary" onclick="completeInnings()">Complete This Innings</button>
+                        </div>
+
+                        <div id="matchCompleteBox" style="display:none;">
+                            <button class="btn-success" onclick="completeMatch()">Complete Match</button>
+                        </div>
+                    </div>
                 </div>
+            </section>
 
+            <!-- SCORECARD SCREEN -->
+            <section id="scorecardScreen" class="screen">
+                <div class="screen-content">
+                    <h2>Scorecard</h2>
+                    <div id="scorecardContent" class="scorecard-container">
+                        <p class="empty-message">No scorecard to display</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MATCH HISTORY SCREEN -->
+            <section id="historyScreen" class="screen">
+                <div class="screen-content">
+                    <h2>Match History</h2>
+                    <div id="matchHistoryList" class="items-container">
+                        <p class="empty-message">No completed matches yet</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- STATISTICS SCREEN -->
+            <section id="statsScreen" class="screen">
+                <div class="screen-content">
+                    <h2>Player Statistics</h2>
+                    <div id="statisticsList" class="items-container">
+                        <p class="empty-message">No statistics yet</p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- MODALS -->
+        <div id="selectPlayerModal" class="modal" style="display:none;">
+            <div class="modal-content">
+                <h3>Select Player</h3>
+                <div id="playerSelectList" class="modal-list"></div>
+                <button class="btn-secondary" onclick="closeModal('selectPlayerModal')">Cancel</button>
             </div>
-
         </div>
 
-
-        <!-- Bowler -->
-        <div class="score-card">
-
-            <h3>🎯 Bowler</h3>
-
-            <div class="player-score-row">
-
-                <strong id="currentBowlerName">Bowler</strong>
-
-                <span>
-                    <span id="bowlerOvers">0.0</span> -
-                    <span id="bowlerRuns">0</span> -
-                    <span id="bowlerWickets">0</span>
-                </span>
-
+        <div id="wicketTypeModal" class="modal" style="display:none;">
+            <div class="modal-content">
+                <h3>Wicket Type</h3>
+                <button class="btn-secondary" onclick="recordWicketType('bowled')">Bowled</button>
+                <button class="btn-secondary" onclick="recordWicketType('lbw')">LBW</button>
+                <button class="btn-secondary" onclick="recordWicketType('caught')">Caught</button>
+                <button class="btn-secondary" onclick="recordWicketType('stumped')">Stumped</button>
+                <button class="btn-secondary" onclick="recordWicketType('runout')">Run Out</button>
+                <button class="btn-secondary" onclick="closeModal('wicketTypeModal')">Cancel</button>
             </div>
-
         </div>
 
+    </div>
 
-        <!-- Scoring Buttons -->
-        <div class="score-card">
-
-            <h3>⚡ Score Ball</h3>
-
-            <div class="scoring-grid">
-
-                <button class="score-btn"
-                        onclick="recordLiveBall('run', 0)">
-                    0
-                </button>
-
-                <button class="score-btn"
-                        onclick="recordLiveBall('run', 1)">
-                    1
-                </button>
-
-                <button class="score-btn"
-                        onclick="recordLiveBall('run', 2)">
-                    2
-                </button>
-
-                <button class="score-btn"
-                        onclick="recordLiveBall('run', 3)">
-                    3
-                </button>
-
-                <button class="score-btn"
-                        onclick="recordLiveBall('run', 4)">
-                    4
-                </button>
-
-                <button class="score-btn"
-                        onclick="recordLiveBall('run', 6)">
-                    6
-                </button>
-
-            </div>
-
-
-            <div class="extra-scoring-grid">
-
-                <button class="score-btn extra-btn"
-                        onclick="recordLiveBall('wide', 1)">
-                    Wide
-                </button>
-
-                <button class="score-btn extra-btn"
-                        onclick="recordLiveBall('noball', 1)">
-                    No Ball
-                </button>
-
-                <button class="score-btn extra-btn"
-                        onclick="recordLiveBall('bye', 1)">
-                    Bye
-                </button>
-
-                <button class="score-btn extra-btn"
-                        onclick="recordLiveBall('legbye', 1)">
-                    Leg Bye
-                </button>
-
-                <button class="score-btn wicket-btn"
-                        onclick="recordLiveBall('wicket', 0)">
-                    Wicket
-                </button>
-
-            </div>
-
-
-            <button class="undo-btn"
-                    onclick="undoLastLiveBall()">
-                ↩ Undo Last Ball
-            </button>
-
-        </div>
-
-
-        <!-- Navigation -->
-        <button class="secondary-btn"
-                onclick="showScreen('matchScreen')">
-            ← Back to Matches
-        </button>
-
-    </main>
-
-
-    <!-- ================= MATCH HISTORY SCREEN ================= -->
-    <main id="matchHistoryScreen" class="screen">
-
-        <div class="screen-title">
-            <h2>📋 Match History</h2>
-            <p>View all completed matches</p>
-        </div>
-
-        <div id="matchHistoryList" class="list-container"></div>
-
-        <button class="secondary-btn"
-                onclick="showScreen('homeScreen')">
-            ← Back to Home
-        </button>
-
-    </main>
-
-
-    <!-- ================= MATCH DETAILS SCREEN ================= -->
-    <main id="matchDetailsScreen" class="screen">
-
-        <div class="screen-title">
-            <h2>🏏 Match Details</h2>
-            <p id="matchDetailsTitle">Match Information</p>
-        </div>
-
-        <div id="matchDetailsContent" class="match-details-container"></div>
-
-        <button class="secondary-btn"
-                onclick="showScreen('matchHistoryScreen')">
-            ← Back to History
-        </button>
-
-    </main>
-
-
-    <!-- ================= PLAYER RECORDS SCREEN ================= -->
-    <main id="playerRecordsScreen" class="screen">
-
-        <div class="screen-title">
-            <h2>👤 Player Records</h2>
-            <p>Player statistics and performance</p>
-        </div>
-
-        <div id="playerRecordsList" class="list-container"></div>
-
-        <button class="secondary-btn"
-                onclick="showScreen('homeScreen')">
-            ← Back to Home
-        </button>
-
-    </main>
-
-
-    <!-- ================= STATISTICS SCREEN ================= -->
-    <main id="statisticsScreen" class="screen">
-
-        <div class="screen-title">
-            <h2>📊 Statistics</h2>
-            <p>Overall app statistics</p>
-        </div>
-
-        <div id="statisticsContent" class="stats-container"></div>
-
-        <button class="secondary-btn"
-                onclick="showScreen('homeScreen')">
-            ← Back to Home
-        </button>
-
-    </main>
-
-
-    <!-- ================= FOOTER ================= -->
-    <footer class="app-footer">
-        <p>Local Cricket Scorer • Version 5 (With History & Records)</p>
-        <p>✅ Match History • Player Records • Works Offline</p>
-    </footer>
-
-
-    <!-- ================= JAVASCRIPT ================= -->
     <script src="script.js"></script>
-
 </body>
 </html>
-
