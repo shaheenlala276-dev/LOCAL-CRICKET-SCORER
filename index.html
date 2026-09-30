@@ -3,735 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Local Cricket Scorer v7 - Professional Edition</title>
-    <style>
-        /* ============================================================================
-           LOCAL CRICKET SCORER v7 - COMPLETE STYLING
-           ============================================================================ */
-
-        :root {
-            --primary: #1e88e5;
-            --primary-dark: #1565c0;
-            --success: #43a047;
-            --danger: #e53935;
-            --warning: #fb8c00;
-            --info: #00acc1;
-            --secondary: #757575;
-            --light: #f5f5f5;
-            --dark: #212121;
-            --white: #ffffff;
-            --border: #e0e0e0;
-            --shadow: 0 2px 4px rgba(0,0,0,0.1);
-            --shadow-md: 0 4px 8px rgba(0,0,0,0.12);
-            --shadow-lg: 0 8px 16px rgba(0,0,0,0.15);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html, body {
-            height: 100%;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: var(--light);
-            color: var(--dark);
-        }
-
-        body {
-            padding-top: env(safe-area-inset-top, 0px);
-            padding-bottom: env(safe-area-inset-bottom, 0px);
-        }
-
-        /* NAVBAR */
-        .navbar {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: var(--white);
-            padding: 12px 0;
-            box-shadow: var(--shadow-md);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .nav-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 16px;
-        }
-
-        .app-title {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 12px;
-        }
-
-        .nav-pills {
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            padding-bottom: 4px;
-        }
-
-        .nav-pill {
-            background: rgba(255, 255, 255, 0.2);
-            color: var(--white);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            padding: 8px 16px;
-            border-radius: 20px;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: all 0.3s ease;
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        .nav-pill:hover,
-        .nav-pill.active {
-            background: rgba(255, 255, 255, 0.3);
-            border-color: rgba(255, 255, 255, 0.5);
-        }
-
-        /* SCREENS */
-        .screen {
-            display: none;
-            animation: slideIn 0.3s ease;
-        }
-
-        .screen.active {
-            display: block;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* CONTAINER */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px 16px;
-        }
-
-        .container h2 {
-            font-size: 28px;
-            margin-bottom: 8px;
-            color: var(--dark);
-        }
-
-        .subtitle {
-            font-size: 16px;
-            color: var(--secondary);
-            margin-bottom: 24px;
-        }
-
-        /* CARDS */
-        .card {
-            background: var(--white);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: var(--shadow);
-            transition: box-shadow 0.3s ease;
-        }
-
-        .card:hover {
-            box-shadow: var(--shadow-md);
-        }
-
-        .card h3 {
-            font-size: 18px;
-            margin-bottom: 16px;
-            color: var(--dark);
-        }
-
-        /* FORMS */
-        .form-group {
-            margin-bottom: 16px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: var(--dark);
-            font-size: 14px;
-        }
-
-        input[type="text"],
-        input[type="number"],
-        select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.3s ease;
-        }
-
-        input[type="text"]:focus,
-        input[type="number"]:focus,
-        select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.1);
-        }
-
-        input[type="checkbox"] {
-            margin-right: 8px;
-            cursor: pointer;
-        }
-
-        /* BUTTONS */
-        .btn {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            min-height: 44px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: var(--white);
-            box-shadow: var(--shadow);
-        }
-
-        .btn-primary:hover {
-            box-shadow: var(--shadow-md);
-            transform: translateY(-2px);
-        }
-
-        .btn-secondary {
-            background: var(--secondary);
-            color: var(--white);
-        }
-
-        .btn-secondary:hover {
-            background: #616161;
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, var(--success) 0%, #2e7d32 100%);
-            color: var(--white);
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, var(--danger) 0%, #c62828 100%);
-            color: var(--white);
-        }
-
-        .btn-warning {
-            background: linear-gradient(135deg, var(--warning) 0%, #e65100 100%);
-            color: var(--white);
-        }
-
-        .btn-info {
-            background: linear-gradient(135deg, var(--info) 0%, #00838f 100%);
-            color: var(--white);
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 2px solid var(--primary);
-            color: var(--primary);
-        }
-
-        .btn-outline:hover {
-            background: var(--primary);
-            color: var(--white);
-        }
-
-        .btn-sm {
-            padding: 8px 16px;
-            font-size: 14px;
-            min-height: 40px;
-        }
-
-        .btn-toss {
-            background: var(--light);
-            border: 3px solid var(--border);
-            color: var(--dark);
-            font-weight: 700;
-            font-size: 18px;
-            padding: 24px;
-            border-radius: 12px;
-            width: 100%;
-        }
-
-        .btn-toss:hover {
-            border-color: var(--primary);
-        }
-
-        .btn-toss.selected {
-            background: linear-gradient(135deg, var(--success) 0%, #2e7d32 100%);
-            color: var(--white);
-            border-color: var(--success);
-        }
-
-        .btn-run {
-            background: linear-gradient(135deg, var(--success) 0%, #2e7d32 100%);
-            color: var(--white);
-            font-weight: 700;
-            padding: 16px;
-            flex: 1;
-            min-height: 50px;
-        }
-
-        .btn-run:hover {
-            transform: scale(1.05);
-        }
-
-        .button-group {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .button-group.horizontal {
-            grid-template-columns: repeat(3, 1fr);
-        }
-
-        /* SCOREBOARD */
-        .scoreboard {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 12px;
-            margin-bottom: 24px;
-        }
-
-        .score-card {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: var(--white);
-            padding: 20px;
-            border-radius: 12px;
-            text-align: center;
-            box-shadow: var(--shadow-md);
-        }
-
-        .score-label {
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            opacity: 0.9;
-            margin-bottom: 8px;
-        }
-
-        .score-value {
-            font-size: 32px;
-            font-weight: 700;
-        }
-
-        /* STATUS BOX */
-        .status-box {
-            background: var(--white);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 24px;
-            box-shadow: var(--shadow);
-            border-left: 4px solid var(--primary);
-        }
-
-        .status-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px 0;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .status-row:last-child {
-            border-bottom: none;
-        }
-
-        .status-label {
-            font-weight: 600;
-            color: var(--secondary);
-            font-size: 14px;
-        }
-
-        .status-value {
-            color: var(--dark);
-            font-weight: 700;
-            font-size: 16px;
-        }
-
-        /* DELIVERY PREVIEW */
-        .delivery-preview {
-            background: var(--light);
-            border-radius: 8px;
-            padding: 16px;
-            margin: 16px 0;
-            border-left: 4px solid var(--info);
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            color: var(--dark);
-        }
-
-        /* LISTS */
-        .list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .list-item {
-            background: var(--white);
-            padding: 16px;
-            border-radius: 8px;
-            border-left: 4px solid var(--primary);
-            box-shadow: var(--shadow);
-            transition: all 0.3s ease;
-        }
-
-        .list-item:hover {
-            box-shadow: var(--shadow-md);
-        }
-
-        .list-item-title {
-            font-weight: 700;
-            font-size: 16px;
-            color: var(--dark);
-            margin-bottom: 8px;
-        }
-
-        .list-item-subtitle {
-            font-size: 14px;
-            color: var(--secondary);
-            margin-bottom: 12px;
-        }
-
-        .history-list {
-            max-height: 400px;
-            overflow-y: auto;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 12px;
-        }
-
-        .delivery-entry {
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
-            padding: 8px;
-            margin: 4px 0;
-            background: var(--light);
-            border-radius: 4px;
-            color: var(--dark);
-        }
-
-        /* FEATURE LIST */
-        .feature-list {
-            list-style: none;
-            padding: 0;
-        }
-
-        .feature-list li {
-            padding: 12px 0;
-            border-bottom: 1px solid var(--border);
-            font-size: 15px;
-            color: var(--dark);
-        }
-
-        .feature-list li:last-child {
-            border-bottom: none;
-        }
-
-        /* MODALS */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: var(--white);
-            border-radius: 12px;
-            padding: 24px;
-            max-width: 400px;
-            width: 100%;
-            box-shadow: var(--shadow-lg);
-            animation: slideUp 0.3s ease;
-        }
-
-        @keyframes slideUp {
-            from {
-                transform: translateY(20px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .modal-content h3 {
-            font-size: 20px;
-            margin-bottom: 12px;
-            color: var(--dark);
-        }
-
-        .modal-content p {
-            font-size: 16px;
-            color: var(--secondary);
-            margin-bottom: 24px;
-        }
-
-        .modal-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        /* TOASTS */
-        .success-toast,
-        .error-toast {
-            position: fixed;
-            bottom: -100px;
-            left: 16px;
-            right: 16px;
-            max-width: 400px;
-            margin: 0 auto;
-            padding: 16px;
-            border-radius: 8px;
-            box-shadow: var(--shadow-lg);
-            z-index: 2000;
-            transition: bottom 0.3s ease;
-            font-weight: 600;
-        }
-
-        .success-toast.show,
-        .error-toast.show {
-            bottom: 24px;
-            bottom: calc(24px + env(safe-area-inset-bottom, 0px));
-        }
-
-        .success-toast {
-            background: linear-gradient(135deg, var(--success) 0%, #2e7d32 100%);
-            color: var(--white);
-        }
-
-        .error-toast {
-            background: linear-gradient(135deg, var(--danger) 0%, #c62828 100%);
-            color: var(--white);
-        }
-
-        /* LOADING */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: var(--white);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 3000;
-        }
-
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid var(--border);
-            border-top: 4px solid var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 16px;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* PLAYER SELECTOR */
-        .player-selector {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .player-option {
-            padding: 16px;
-            border: 2px solid var(--border);
-            border-radius: 8px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background: var(--white);
-        }
-
-        .player-option:hover {
-            border-color: var(--primary);
-        }
-
-        .player-option.selected {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: var(--white);
-            border-color: var(--primary);
-        }
-
-        .player-option-name {
-            font-weight: 700;
-            font-size: 16px;
-            margin-bottom: 4px;
-        }
-
-        .player-option-jersey {
-            font-size: 12px;
-            opacity: 0.8;
-        }
-
-        /* RESPONSIVE */
-        @media (max-width: 768px) {
-            .container {
-                padding: 16px 12px;
-            }
-
-            .container h2 {
-                font-size: 24px;
-            }
-
-            .scoreboard {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .score-value {
-                font-size: 24px;
-            }
-
-            .button-group {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .button-group.horizontal {
-                grid-template-columns: 1fr;
-            }
-
-            .modal-content {
-                max-width: 100%;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .navbar {
-                padding: 8px 0;
-            }
-
-            .app-title {
-                font-size: 20px;
-                margin-bottom: 8px;
-            }
-
-            .nav-pills {
-                gap: 4px;
-            }
-
-            .nav-pill {
-                padding: 6px 12px;
-                font-size: 12px;
-            }
-
-            .btn {
-                padding: 10px 16px;
-                font-size: 14px;
-                min-height: 40px;
-            }
-
-            .btn-run {
-                padding: 12px;
-                font-size: 14px;
-                min-height: 44px;
-            }
-
-            .scoreboard {
-                grid-template-columns: 1fr 1fr;
-                gap: 8px;
-            }
-
-            .score-card {
-                padding: 12px;
-            }
-
-            .score-label {
-                font-size: 10px;
-            }
-
-            .score-value {
-                font-size: 20px;
-            }
-
-            .card {
-                padding: 16px;
-                margin-bottom: 16px;
-            }
-
-            .card h3 {
-                font-size: 16px;
-                margin-bottom: 12px;
-            }
-
-            .button-group {
-                grid-template-columns: 1fr;
-            }
-
-            .player-selector {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    <title>Cricket Scorer</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Loading Overlay -->
+    <!-- Loading overlay -->
     <div id="loadingOverlay" class="loading-overlay">
         <div class="spinner"></div>
-        <p>Initializing...</p>
+        <p>Loading...</p>
     </div>
 
-    <!-- Success Toast -->
-    <div id="successToast" class="success-toast">
-        <span id="toastMessage"></span>
-    </div>
+    <!-- Toasts -->
+    <div id="successToast" class="success-toast"><span id="toastMessage"></span></div>
+    <div id="errorToast" class="error-toast"><span id="errorToastMessage"></span></div>
 
-    <!-- Error Toast -->
-    <div id="errorToast" class="error-toast">
-        <span id="errorToastMessage"></span>
-    </div>
-
-    <!-- Confirmation Modal -->
+    <!-- Confirmation modal -->
     <div id="confirmationModal" class="modal">
         <div class="modal-content">
-            <h3 id="confirmTitle">Confirm Action</h3>
+            <h3 id="confirmTitle">Confirm</h3>
             <p id="confirmMessage">Are you sure?</p>
             <div class="modal-buttons">
                 <button class="btn btn-secondary" onclick="closeConfirmation()">Cancel</button>
@@ -740,62 +29,64 @@
         </div>
     </div>
 
-    <!-- Main App Container -->
+    <!-- Player picker modal -->
+    <div id="pickerModal" class="modal">
+        <div class="modal-content picker-content">
+            <h3 id="pickerTitle">Select player</h3>
+            <p id="pickerSub"></p>
+            <div id="pickerList" class="picker-list"></div>
+            <button id="pickerCancel" class="btn btn-secondary btn-block" onclick="closePicker()" style="display:none;">Cancel</button>
+        </div>
+    </div>
+
     <div id="app">
         <!-- Navigation -->
         <nav class="navbar">
             <div class="nav-container">
-                <h1 class="app-title">🏏 Cricket Scorer v7</h1>
+                <h1 class="app-title">🏏 Cricket Scorer</h1>
                 <div class="nav-pills">
-                    <button class="nav-pill" onclick="goToScreen('home')" data-screen="home">Home</button>
-                    <button class="nav-pill" onclick="goToScreen('tournaments')" data-screen="tournaments">Tournaments</button>
-                    <button class="nav-pill" onclick="goToScreen('stats')" data-screen="stats">Stats</button>
-                    <button class="nav-pill" onclick="goToScreen('history')" data-screen="history">History</button>
+                    <button class="nav-pill" data-screen="home">Home</button>
+                    <button class="nav-pill" data-screen="matchSetup">New Match</button>
+                    <button class="nav-pill" data-screen="tournaments">Tournaments</button>
+                    <button class="nav-pill" data-screen="history">History</button>
+                    <button class="nav-pill" data-screen="stats">Stats</button>
                 </div>
             </div>
         </nav>
 
-        <!-- Home Screen -->
+        <!-- HOME -->
         <div id="homeScreen" class="screen">
             <div class="container">
-                <h2>Welcome to Cricket Scorer v7</h2>
-                <p class="subtitle">Professional cricket scoring with proper edge case handling</p>
-                
-                <div class="card">
-                    <h3>🎯 Features</h3>
-                    <ul class="feature-list">
-                        <li>✓ Complete no-ball/wide/bye/leg-bye logic</li>
-                        <li>✓ Specific wicket types (bowled, caught, LBW, etc.)</li>
-                        <li>✓ Correct strike rotation</li>
-                        <li>✓ Legal ball counting</li>
-                        <li>✓ Full undo with state restoration</li>
-                        <li>✓ Comprehensive statistics</li>
-                        <li>✓ Dead ball handling</li>
-                        <li>✓ Competition-ready scoring</li>
-                    </ul>
+                <div class="hero">
+                    <h2>Ready to score?</h2>
+                    <p>Score every ball. Your matches are saved on this device.</p>
+                    <button class="btn btn-hero" onclick="goToScreen('matchSetup')">🏏 New Match</button>
                 </div>
 
-                <div class="button-group">
-                    <button class="btn btn-primary" onclick="goToScreen('tournaments')">Create Tournament</button>
-                    <button class="btn btn-secondary" onclick="goToScreen('history')">View History</button>
+                <div id="homeResume"></div>
+
+                <div class="tile-grid">
+                    <button class="tile" onclick="goToScreen('tournaments')"><span class="tile-icon">🏆</span><span>Tournaments</span></button>
+                    <button class="tile" onclick="goToScreen('history')"><span class="tile-icon">📋</span><span>Match History</span></button>
+                    <button class="tile" onclick="goToScreen('stats')"><span class="tile-icon">📊</span><span>Statistics</span></button>
                 </div>
             </div>
         </div>
 
-        <!-- Tournaments Screen -->
+        <!-- TOURNAMENTS -->
         <div id="tournamentsScreen" class="screen">
             <div class="container">
                 <h2>Tournaments</h2>
-                
+
                 <div class="card">
                     <h3>Create Tournament</h3>
                     <div class="form-group">
-                        <label>Tournament Name</label>
-                        <input type="text" id="tournamentName" placeholder="e.g., IPL 2024" />
+                        <label for="tournamentName">Tournament name</label>
+                        <input type="text" id="tournamentName" placeholder="e.g., Summer League 2026" />
                     </div>
                     <div class="form-group">
-                        <label>Format</label>
-                        <input type="text" id="tournamentFormat" placeholder="e.g., T20, ODI" />
+                        <label for="tournamentFormat">Format</label>
+                        <input type="text" id="tournamentFormat" placeholder="e.g., T20, 10 overs" />
                     </div>
                     <button class="btn btn-primary" onclick="createTournament()">Create Tournament</button>
                 </div>
@@ -807,17 +98,18 @@
             </div>
         </div>
 
-        <!-- Teams Screen -->
+        <!-- TEAMS -->
         <div id="teamsScreen" class="screen">
             <div class="container">
-                <button class="btn btn-secondary" onclick="goToScreen('tournaments')">← Back</button>
-                <h2>Teams</h2>
-                
+                <button class="btn btn-secondary btn-sm" onclick="goToScreen('tournaments')">← Back</button>
+                <h2 style="margin-top:12px;">Teams</h2>
+                <p class="subtitle" id="teamsSubtitle"></p>
+
                 <div class="card">
                     <h3>Create Team</h3>
                     <div class="form-group">
-                        <label>Team Name</label>
-                        <input type="text" id="teamName" placeholder="Team Name" />
+                        <label for="teamName">Team name</label>
+                        <input type="text" id="teamName" placeholder="Team name" />
                     </div>
                     <button class="btn btn-primary" onclick="createTeam()">Create Team</button>
                 </div>
@@ -826,24 +118,27 @@
                     <h3>Teams</h3>
                     <div id="teamsList" class="list"></div>
                 </div>
+
+                <button class="btn btn-success btn-block" onclick="goToScreen('matchSetup')">🏏 New Match in this Tournament</button>
             </div>
         </div>
 
-        <!-- Players Screen -->
+        <!-- PLAYERS -->
         <div id="playersScreen" class="screen">
             <div class="container">
-                <button class="btn btn-secondary" onclick="goToScreen('teams')">← Back</button>
-                <h2>Players</h2>
-                
+                <button class="btn btn-secondary btn-sm" onclick="goToScreen('teams')">← Back</button>
+                <h2 style="margin-top:12px;">Players</h2>
+                <p class="subtitle" id="playersSubtitle"></p>
+
                 <div class="card">
                     <h3>Add Player</h3>
                     <div class="form-group">
-                        <label>Player Name</label>
-                        <input type="text" id="playerName" placeholder="Player Name" />
+                        <label for="playerName">Player name</label>
+                        <input type="text" id="playerName" placeholder="Player name" />
                     </div>
                     <div class="form-group">
-                        <label>Jersey No.</label>
-                        <input type="number" id="playerJerseyNo" placeholder="Jersey No." />
+                        <label for="playerJerseyNo">Jersey number</label>
+                        <input type="number" id="playerJerseyNo" placeholder="Jersey number" min="0" />
                     </div>
                     <button class="btn btn-primary" onclick="createPlayer()">Add Player</button>
                 </div>
@@ -855,58 +150,123 @@
             </div>
         </div>
 
-        <!-- Match Setup Screen -->
+        <!-- MATCH SETUP -->
         <div id="matchSetupScreen" class="screen">
             <div class="container">
-                <button class="btn btn-secondary" onclick="goToScreen('players')">← Back</button>
-                <h2>Match Setup</h2>
-                
+                <h2>New Match</h2>
+                <p class="subtitle">Step 1 of 3 · Teams and match details</p>
+
                 <div class="card">
-                    <h3>Match Settings</h3>
+                    <h3>Teams</h3>
                     <div class="form-group">
-                        <label>Total Overs</label>
-                        <input type="number" id="totalOvers" value="20" min="1" />
+                        <label for="matchTournament">Tournament</label>
+                        <select id="matchTournament" onchange="populateMatchTeams()"></select>
                     </div>
                     <div class="form-group">
-                        <label>Format</label>
-                        <select id="matchFormat">
+                        <label for="matchTeamA">Team A</label>
+                        <select id="matchTeamA" onchange="updateTeamOptions()"></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="matchTeamB">Team B</label>
+                        <select id="matchTeamB" onchange="updateTeamOptions()"></select>
+                    </div>
+                    <p id="matchSetupHint" class="hint"></p>
+                </div>
+
+                <div class="card">
+                    <h3>Match Details</h3>
+                    <div class="form-group">
+                        <label for="matchTitle">Match name (optional)</label>
+                        <input type="text" id="matchTitle" placeholder="e.g., Semi-final, Sunday friendly" />
+                    </div>
+                    <div class="form-group">
+                        <label for="matchFormat">Format</label>
+                        <select id="matchFormat" onchange="onFormatChange()">
                             <option value="t20">T20</option>
                             <option value="odi">ODI</option>
                             <option value="test">Test</option>
+                            <option value="custom">Custom</option>
                         </select>
                     </div>
-                    <button class="btn btn-primary" onclick="proceedToToss()">Proceed to Toss</button>
+                    <div class="form-group">
+                        <label for="totalOvers">Overs per innings</label>
+                        <input type="number" id="totalOvers" value="20" min="1" max="100" />
+                    </div>
                 </div>
+
+                <button class="btn btn-primary btn-block" onclick="createMatch()">Create Match</button>
             </div>
         </div>
 
-        <!-- Toss Screen -->
+        <!-- PLAYING XI -->
+        <div id="playingXIScreen" class="screen">
+            <div class="container">
+                <button class="btn btn-secondary btn-sm" onclick="goToScreen('matchSetup')">← Back</button>
+                <h2 style="margin-top:12px;">Playing XI</h2>
+                <p class="subtitle">Step 2 of 3 · Choose 2 to 11 players for each team</p>
+
+                <div class="card">
+                    <h3 id="xiTitleA">Team A</h3>
+                    <div class="xi-count" id="xiCountA"></div>
+                    <div id="xiListA" class="player-selector"></div>
+                    <div class="quick-add">
+                        <input type="text" id="quickPlayerA" placeholder="Add a new player" />
+                        <button class="btn btn-outline btn-sm" onclick="quickAddPlayer('A')">Add</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 id="xiTitleB">Team B</h3>
+                    <div class="xi-count" id="xiCountB"></div>
+                    <div id="xiListB" class="player-selector"></div>
+                    <div class="quick-add">
+                        <input type="text" id="quickPlayerB" placeholder="Add a new player" />
+                        <button class="btn btn-outline btn-sm" onclick="quickAddPlayer('B')">Add</button>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary btn-block" onclick="savePlayingXI()">Continue to Toss</button>
+            </div>
+        </div>
+
+        <!-- TOSS -->
         <div id="tossScreen" class="screen">
             <div class="container">
-                <h2>Toss</h2>
-                
+                <button class="btn btn-secondary btn-sm" onclick="goToScreen('playingXI')">← Back</button>
+                <h2 style="margin-top:12px;">Toss</h2>
+                <p class="subtitle">Step 3 of 3 · Flip the coin, then record the result</p>
+
                 <div class="card">
                     <h3>Who won the toss?</h3>
-                    <div class="button-group">
-                        <button class="btn btn-toss" id="team1TossBtn" onclick="selectTossWinner(0)">Team 1</button>
-                        <button class="btn btn-toss" id="team2TossBtn" onclick="selectTossWinner(1)">Team 2</button>
+                    <div class="button-group two">
+                        <button class="btn btn-toss" id="team1TossBtn" onclick="selectTossWinner(0)">Team A</button>
+                        <button class="btn btn-toss" id="team2TossBtn" onclick="selectTossWinner(1)">Team B</button>
                     </div>
                 </div>
 
                 <div class="card" id="tossChoiceCard" style="display:none;">
                     <h3 id="tossChoiceTitle">What does this team choose?</h3>
-                    <div class="button-group">
-                        <button class="btn btn-success" onclick="tossChoice('bat')">🏏 Bat First</button>
-                        <button class="btn btn-info" onclick="tossChoice('bowl')">🎾 Bowl First</button>
+                    <div class="button-group two">
+                        <button class="btn btn-toss" id="tossBatBtn" onclick="tossChoice('bat')">🏏 Bat</button>
+                        <button class="btn btn-toss" id="tossBowlBtn" onclick="tossChoice('bowl')">⚾ Bowl</button>
                     </div>
+                </div>
+
+                <div class="card" id="tossSummaryCard" style="display:none;">
+                    <p id="tossSummaryText" class="toss-summary"></p>
+                    <button class="btn btn-success btn-block" onclick="startMatch()">Start Match</button>
                 </div>
             </div>
         </div>
 
-        <!-- Live Scoring Screen -->
+        <!-- LIVE SCORING -->
         <div id="liveScreen" class="screen">
             <div class="container">
-                <!-- Scoreboard -->
+                <div class="match-head">
+                    <div class="match-head-title" id="liveMatchTitle">-</div>
+                    <div class="match-head-sub" id="liveInningsInfo">-</div>
+                </div>
+
                 <div class="scoreboard">
                     <div class="score-card">
                         <div class="score-label">Runs</div>
@@ -926,75 +286,89 @@
                     </div>
                 </div>
 
-                <!-- Batting Order -->
+                <div class="chase-info" id="liveChaseInfo" style="display:none;"></div>
+                <div class="banner" id="liveBanner" style="display:none;"></div>
+
                 <div class="status-box">
                     <div class="status-row">
                         <span class="status-label">Striker</span>
                         <span class="status-value" id="strikerDisplay">-</span>
                     </div>
                     <div class="status-row">
-                        <span class="status-label">Non-Striker</span>
+                        <span class="status-label">Non-striker</span>
                         <span class="status-value" id="nonStrikerDisplay">-</span>
                     </div>
                     <div class="status-row">
                         <span class="status-label">Bowler</span>
                         <span class="status-value" id="bowlerDisplay">-</span>
                     </div>
+                    <div class="status-row">
+                        <span class="status-label">This over</span>
+                        <span class="status-value"><span id="thisOver" class="tokens"></span></span>
+                    </div>
                 </div>
 
-                <!-- Delivery Entry -->
                 <div class="card">
                     <h3>Record Delivery</h3>
-                    
+
                     <div class="form-group">
-                        <label>Delivery Type:</label>
+                        <label>Delivery</label>
                         <div class="button-group horizontal">
-                            <button class="btn btn-sm btn-outline" onclick="setDeliveryType('legal')">Legal</button>
-                            <button class="btn btn-sm btn-outline" onclick="setDeliveryType('no-ball')">No-ball</button>
-                            <button class="btn btn-sm btn-outline" onclick="setDeliveryType('wide')">Wide</button>
+                            <button class="btn btn-sm btn-outline" data-dtype="legal" onclick="setDeliveryType('legal')">Legal</button>
+                            <button class="btn btn-sm btn-outline" data-dtype="no-ball" onclick="setDeliveryType('no-ball')">No-ball</button>
+                            <button class="btn btn-sm btn-outline" data-dtype="wide" onclick="setDeliveryType('wide')">Wide</button>
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label>Bat Runs:</label>
-                        <div class="button-group">
-                            <button class="btn btn-run" onclick="addBatRuns(0)">Dot</button>
-                            <button class="btn btn-run" onclick="addBatRuns(1)">1</button>
-                            <button class="btn btn-run" onclick="addBatRuns(2)">2</button>
-                            <button class="btn btn-run" onclick="addBatRuns(3)">3</button>
-                            <button class="btn btn-run" onclick="addBatRuns(4)">4</button>
-                            <button class="btn btn-run" onclick="addBatRuns(6)">6</button>
+                        <label>Runs off the bat</label>
+                        <div class="button-group runs">
+                            <button class="btn btn-run" data-runs="0" onclick="addBatRuns(0)">Dot</button>
+                            <button class="btn btn-run" data-runs="1" onclick="addBatRuns(1)">1</button>
+                            <button class="btn btn-run" data-runs="2" onclick="addBatRuns(2)">2</button>
+                            <button class="btn btn-run" data-runs="3" onclick="addBatRuns(3)">3</button>
+                            <button class="btn btn-run" data-runs="4" onclick="addBatRuns(4)">4</button>
+                            <button class="btn btn-run" data-runs="5" onclick="addBatRuns(5)">5</button>
+                            <button class="btn btn-run" data-runs="6" onclick="addBatRuns(6)">6</button>
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label>Extras:</label>
-                        <div class="button-group">
-                            <button class="btn btn-sm btn-outline" onclick="addExtras('bye')">Bye</button>
-                            <button class="btn btn-sm btn-outline" onclick="addExtras('legbye')">Leg Bye</button>
-                            <button class="btn btn-sm btn-outline" onclick="addExtras('penalty')">Penalty</button>
+                        <label>Extras</label>
+                        <div class="button-group horizontal">
+                            <button class="btn btn-sm btn-outline" data-extra="bye" onclick="addExtras('bye')">Bye</button>
+                            <button class="btn btn-sm btn-outline" data-extra="legbye" onclick="addExtras('legbye')">Leg bye</button>
+                            <button class="btn btn-sm btn-outline" data-extra="penalty" onclick="addExtras('penalty')">Penalty</button>
                         </div>
-                        <input type="number" id="extraRuns" placeholder="Extra runs" min="0" value="0" />
+                        <label for="extraRuns" id="extraRunsLabel" class="small-label">Runs for the selected extra</label>
+                        <input type="number" id="extraRuns" min="0" value="0" oninput="updateDeliveryPreview()" />
                     </div>
 
                     <div class="form-group">
-                        <label>
+                        <label class="check-label">
                             <input type="checkbox" id="isWicketCheckbox" onchange="toggleWicketSection()" />
                             Wicket
                         </label>
                         <div id="wicketSection" style="display:none;">
-                            <select id="wicketType">
-                                <option value="">Select Wicket Type</option>
+                            <select id="wicketType" onchange="refreshEntryUI()">
+                                <option value="">Select wicket type</option>
                                 <option value="bowled">Bowled</option>
                                 <option value="caught">Caught</option>
                                 <option value="lbw">LBW</option>
                                 <option value="stumped">Stumped</option>
-                                <option value="runout">Run Out</option>
-                                <option value="hitwicket">Hit Wicket</option>
-                                <option value="hitball">Hit Ball Twice</option>
-                                <option value="obstruct">Obstructing Field</option>
-                                <option value="timeout">Timed Out</option>
+                                <option value="runout">Run out</option>
+                                <option value="hitwicket">Hit wicket</option>
+                                <option value="hitball">Hit ball twice</option>
+                                <option value="obstruct">Obstructing the field</option>
+                                <option value="timeout">Timed out</option>
                             </select>
+                            <div id="dismissedGroup" style="display:none; margin-top:10px;">
+                                <label for="dismissedBatter" class="small-label">Who is out?</label>
+                                <select id="dismissedBatter" onchange="refreshEntryUI()">
+                                    <option value="striker">Striker</option>
+                                    <option value="nonStriker">Non-striker</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
 
@@ -1002,30 +376,29 @@
                         <p id="deliveryText">No delivery entered</p>
                     </div>
 
-                    <div class="button-group">
-                        <button class="btn btn-success" onclick="recordDelivery()">✓ Confirm</button>
+                    <div class="button-group three">
+                        <button class="btn btn-success" id="recordBtn" onclick="recordDelivery()">Confirm</button>
                         <button class="btn btn-secondary" onclick="clearDeliveryEntry()">Clear</button>
-                        <button class="btn btn-warning" onclick="undoLastDelivery()">↶ Undo</button>
+                        <button class="btn btn-warning" onclick="undoLastDelivery()">Undo</button>
                     </div>
                 </div>
 
-                <!-- Match Actions -->
-                <div class="button-group">
+                <div class="button-group two">
                     <button class="btn btn-info" onclick="changeStrikerBatsman()">Change Striker</button>
-                    <button class="btn btn-info" onclick="changeNonStrikerBatsman()">Change Non-Striker</button>
+                    <button class="btn btn-info" onclick="changeNonStrikerBatsman()">Change Non-striker</button>
+                    <button class="btn btn-info" onclick="swapStrike()">Swap Strike</button>
                     <button class="btn btn-info" onclick="changeBowler()">Change Bowler</button>
-                    <button class="btn btn-warning" onclick="completeInnings()">Complete Innings</button>
                 </div>
+                <button class="btn btn-warning btn-block" id="endInningsBtn" onclick="completeInnings()">End Innings</button>
 
-                <!-- Delivery History -->
-                <div class="card">
-                    <h3>Delivery History</h3>
+                <div class="card" style="margin-top:20px;">
+                    <h3>Ball by Ball</h3>
                     <div id="deliveryHistory" class="history-list"></div>
                 </div>
             </div>
         </div>
 
-        <!-- History Screen -->
+        <!-- HISTORY -->
         <div id="historyScreen" class="screen">
             <div class="container">
                 <h2>Match History</h2>
@@ -1033,7 +406,15 @@
             </div>
         </div>
 
-        <!-- Stats Screen -->
+        <!-- SCORECARD -->
+        <div id="scorecardScreen" class="screen">
+            <div class="container">
+                <button class="btn btn-secondary btn-sm" onclick="goToScreen('history')">← Back to History</button>
+                <div id="scorecardContent" style="margin-top:16px;"></div>
+            </div>
+        </div>
+
+        <!-- STATS -->
         <div id="statsScreen" class="screen">
             <div class="container">
                 <h2>Statistics</h2>
@@ -1042,812 +423,6 @@
         </div>
     </div>
 
-    <script>
-        // ============================================================================
-        // DATABASE INITIALIZATION
-        // ============================================================================
-
-        const DB_NAME = 'CricketScorerDBv7';
-        const DB_VERSION = 1;
-
-        let db;
-        let dbReady = false;
-
-        const STORES = {
-            TOURNAMENTS: 'tournaments',
-            TEAMS: 'teams',
-            PLAYERS: 'players',
-            MATCHES: 'matches',
-            DELIVERIES: 'deliveries',
-            COMPLETED_MATCHES: 'completedMatches',
-            PLAYER_STATS: 'playerStats'
-        };
-
-        // ============================================================================
-        // DELIVERY CLASS
-        // ============================================================================
-
-        class Delivery {
-            constructor() {
-                this.id = Date.now() + Math.random();
-                this.over = 0;
-                this.ballNumber = 0;
-                this.isLegal = true;
-                this.deliveryType = 'legal';
-                this.batRuns = 0;
-                this.extraRuns = 0;
-                this.totalRuns = 0;
-                this.extraType = null;
-                this.extraCount = 0;
-                this.isWicket = false;
-                this.wicketType = null;
-                this.striker = null;
-                this.nonStriker = null;
-                this.bowler = null;
-                this.timestamp = new Date().toISOString();
-                this.isDeadBall = false;
-            }
-
-            isLegalBall() {
-                return this.isLegal && this.deliveryType === 'legal' && !this.isDeadBall;
-            }
-
-            toString() {
-                let desc = `Over ${this.over}.${this.ballNumber || '?'}`;
-                if (this.deliveryType === 'no-ball') desc += ' [NB]';
-                else if (this.deliveryType === 'wide') desc += ' [W]';
-                if (this.batRuns > 0) desc += ` ${this.batRuns}r`;
-                if (this.extraRuns > 0) {
-                    if (this.extraType === 'bye') desc += ` ${this.extraRuns}b`;
-                    else if (this.extraType === 'legbye') desc += ` ${this.extraRuns}lb`;
-                    else desc += ` ${this.extraRuns}e`;
-                }
-                if (this.isWicket) desc += ` W-${this.wicketType}`;
-                return desc;
-            }
-        }
-
-        // ============================================================================
-        // APPLICATION STATE
-        // ============================================================================
-
-        const appState = {
-            currentScreen: 'home',
-            currentTournamentId: null,
-            currentTeamId: null,
-            currentMatchId: null,
-            liveMatchState: null,
-            deliveryEntry: {
-                type: 'legal',
-                batRuns: 0,
-                extras: null,
-                extraCount: 0,
-                isWicket: false,
-                wicketType: null
-            },
-            previousScreen: 'home',
-            tossWinner: null,
-            team1Id: null,
-            team2Id: null
-        };
-
-        // ============================================================================
-        // DATABASE FUNCTIONS
-        // ============================================================================
-
-        function initDB() {
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-                request.onerror = () => reject(request.error);
-                request.onsuccess = () => {
-                    db = request.result;
-                    dbReady = true;
-                    console.log('✅ Database initialized');
-                    hideLoadingOverlay();
-                    resolve(db);
-                };
-
-                request.onupgradeneeded = (event) => {
-                    const db = event.target.result;
-                    if (!db.objectStoreNames.contains(STORES.TOURNAMENTS)) db.createObjectStore(STORES.TOURNAMENTS, { keyPath: 'id' });
-                    if (!db.objectStoreNames.contains(STORES.TEAMS)) db.createObjectStore(STORES.TEAMS, { keyPath: 'id' });
-                    if (!db.objectStoreNames.contains(STORES.PLAYERS)) db.createObjectStore(STORES.PLAYERS, { keyPath: 'id' });
-                    if (!db.objectStoreNames.contains(STORES.MATCHES)) db.createObjectStore(STORES.MATCHES, { keyPath: 'id' });
-                    if (!db.objectStoreNames.contains(STORES.DELIVERIES)) db.createObjectStore(STORES.DELIVERIES, { keyPath: 'id' });
-                    if (!db.objectStoreNames.contains(STORES.COMPLETED_MATCHES)) db.createObjectStore(STORES.COMPLETED_MATCHES, { keyPath: 'id' });
-                    if (!db.objectStoreNames.contains(STORES.PLAYER_STATS)) db.createObjectStore(STORES.PLAYER_STATS, { keyPath: 'playerId' });
-                };
-            });
-        }
-
-        function hideLoadingOverlay() {
-            const overlay = document.getElementById('loadingOverlay');
-            if (overlay) overlay.style.display = 'none';
-        }
-
-        function dbAdd(storeName, data) {
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction([storeName], 'readwrite');
-                const store = tx.objectStore(storeName);
-                const req = store.add(data);
-                req.onsuccess = () => resolve(req.result);
-                req.onerror = () => reject(req.error);
-            });
-        }
-
-        function dbPut(storeName, data) {
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction([storeName], 'readwrite');
-                const store = tx.objectStore(storeName);
-                const req = store.put(data);
-                req.onsuccess = () => resolve(req.result);
-                req.onerror = () => reject(req.error);
-            });
-        }
-
-        function dbGet(storeName, key) {
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction([storeName], 'readonly');
-                const store = tx.objectStore(storeName);
-                const req = store.get(key);
-                req.onsuccess = () => resolve(req.result);
-                req.onerror = () => reject(req.error);
-            });
-        }
-
-        function dbGetAll(storeName) {
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction([storeName], 'readonly');
-                const store = tx.objectStore(storeName);
-                const req = store.getAll();
-                req.onsuccess = () => resolve(req.result);
-                req.onerror = () => reject(req.error);
-            });
-        }
-
-        function dbDelete(storeName, key) {
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction([storeName], 'readwrite');
-                const store = tx.objectStore(storeName);
-                const req = store.delete(key);
-                req.onsuccess = () => resolve();
-                req.onerror = () => reject(req.error);
-            });
-        }
-
-        // ============================================================================
-        // UI STATE MANAGEMENT
-        // ============================================================================
-
-        function goToScreen(screenName) {
-            document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
-            const screenId = screenName + 'Screen';
-            const screen = document.getElementById(screenId);
-            if (screen) {
-                screen.classList.add('active');
-                appState.previousScreen = appState.currentScreen;
-                appState.currentScreen = screenName;
-            }
-        }
-
-        function showSuccessMessage(message) {
-            const toast = document.getElementById('successToast');
-            const msg = document.getElementById('toastMessage');
-            msg.textContent = '✓ ' + message;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3000);
-        }
-
-        function showErrorMessage(message) {
-            const toast = document.getElementById('errorToast');
-            const msg = document.getElementById('errorToastMessage');
-            msg.textContent = '❌ ' + message;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3000);
-        }
-
-        function showConfirmation(title, message, callback) {
-            const modal = document.getElementById('confirmationModal');
-            document.getElementById('confirmTitle').textContent = title;
-            document.getElementById('confirmMessage').textContent = message;
-            document.getElementById('confirmButton').onclick = () => {
-                callback();
-                closeConfirmation();
-            };
-            modal.classList.add('active');
-        }
-
-        function closeConfirmation() {
-            const modal = document.getElementById('confirmationModal');
-            modal.classList.remove('active');
-        }
-
-        // ============================================================================
-        // TOURNAMENT MANAGEMENT
-        // ============================================================================
-
-        async function createTournament() {
-            const name = document.getElementById('tournamentName').value;
-            const format = document.getElementById('tournamentFormat').value;
-
-            if (!name || !format) {
-                showErrorMessage('Please enter tournament details');
-                return;
-            }
-
-            const tournament = {
-                id: Date.now(),
-                name,
-                format,
-                createdAt: new Date().toISOString()
-            };
-
-            try {
-                await dbAdd(STORES.TOURNAMENTS, tournament);
-                showSuccessMessage('Tournament created!');
-                document.getElementById('tournamentName').value = '';
-                document.getElementById('tournamentFormat').value = '';
-                loadTournaments();
-            } catch (error) {
-                showErrorMessage('Error creating tournament');
-            }
-        }
-
-        async function loadTournaments() {
-            try {
-                const tournaments = await dbGetAll(STORES.TOURNAMENTS);
-                const list = document.getElementById('tournamentsList');
-                list.innerHTML = '';
-
-                if (tournaments.length === 0) {
-                    list.innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">No tournaments yet. Create one above!</p>';
-                    return;
-                }
-
-                tournaments.forEach(tournament => {
-                    const item = document.createElement('div');
-                    item.className = 'list-item';
-                    item.innerHTML = `
-                        <div class="list-item-title">${tournament.name}</div>
-                        <div class="list-item-subtitle">Format: ${tournament.format}</div>
-                        <button class="btn btn-primary btn-sm" onclick="selectTournament('${tournament.id}')">Manage</button>
-                    `;
-                    list.appendChild(item);
-                });
-            } catch (error) {
-                console.error('Error loading tournaments:', error);
-            }
-        }
-
-        function selectTournament(tournamentId) {
-            appState.currentTournamentId = tournamentId;
-            goToScreen('teams');
-            loadTeams();
-        }
-
-        // ============================================================================
-        // TEAM MANAGEMENT
-        // ============================================================================
-
-        async function createTeam() {
-            const name = document.getElementById('teamName').value;
-
-            if (!name) {
-                showErrorMessage('Please enter team name');
-                return;
-            }
-
-            if (!appState.currentTournamentId) {
-                showErrorMessage('No tournament selected');
-                return;
-            }
-
-            const team = {
-                id: Date.now(),
-                tournamentId: appState.currentTournamentId,
-                name,
-                createdAt: new Date().toISOString()
-            };
-
-            try {
-                await dbAdd(STORES.TEAMS, team);
-                showSuccessMessage('Team created!');
-                document.getElementById('teamName').value = '';
-                loadTeams();
-            } catch (error) {
-                showErrorMessage('Error creating team');
-            }
-        }
-
-        async function loadTeams() {
-            try {
-                const teams = await dbGetAll(STORES.TEAMS);
-                const filtered = teams.filter(t => t.tournamentId == appState.currentTournamentId);
-                const list = document.getElementById('teamsList');
-                list.innerHTML = '';
-
-                if (filtered.length === 0) {
-                    list.innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">No teams yet. Create one above!</p>';
-                    return;
-                }
-
-                filtered.forEach(team => {
-                    const item = document.createElement('div');
-                    item.className = 'list-item';
-                    item.innerHTML = `
-                        <div class="list-item-title">${team.name}</div>
-                        <button class="btn btn-primary btn-sm" onclick="selectTeam('${team.id}')">Manage Players</button>
-                        <button class="btn btn-secondary btn-sm" onclick="deleteTeam('${team.id}')">Delete</button>
-                    `;
-                    list.appendChild(item);
-                });
-            } catch (error) {
-                console.error('Error loading teams:', error);
-            }
-        }
-
-        function selectTeam(teamId) {
-            appState.currentTeamId = teamId;
-            goToScreen('players');
-            loadPlayers();
-        }
-
-        async function deleteTeam(teamId) {
-            showConfirmation('Delete Team', 'Are you sure?', async () => {
-                try {
-                    await dbDelete(STORES.TEAMS, teamId);
-                    showSuccessMessage('Team deleted');
-                    loadTeams();
-                } catch (error) {
-                    showErrorMessage('Error deleting team');
-                }
-            });
-        }
-
-        // ============================================================================
-        // PLAYER MANAGEMENT
-        // ============================================================================
-
-        async function createPlayer() {
-            const name = document.getElementById('playerName').value;
-            const jersey = document.getElementById('playerJerseyNo').value;
-
-            if (!name || !jersey) {
-                showErrorMessage('Please enter player details');
-                return;
-            }
-
-            const player = {
-                id: Date.now(),
-                teamId: appState.currentTeamId,
-                name,
-                jersey: parseInt(jersey),
-                createdAt: new Date().toISOString()
-            };
-
-            try {
-                await dbAdd(STORES.PLAYERS, player);
-                showSuccessMessage('Player added!');
-                document.getElementById('playerName').value = '';
-                document.getElementById('playerJerseyNo').value = '';
-                loadPlayers();
-            } catch (error) {
-                showErrorMessage('Error adding player');
-            }
-        }
-
-        async function loadPlayers() {
-            try {
-                const players = await dbGetAll(STORES.PLAYERS);
-                const filtered = players.filter(p => p.teamId == appState.currentTeamId);
-                const list = document.getElementById('playersList');
-                list.innerHTML = '';
-
-                if (filtered.length === 0) {
-                    list.innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">No players yet. Add one above!</p>';
-                    return;
-                }
-
-                filtered.forEach(player => {
-                    const item = document.createElement('div');
-                    item.className = 'list-item';
-                    item.innerHTML = `
-                        <div class="list-item-title">${player.name}</div>
-                        <div class="list-item-subtitle">Jersey #${player.jersey}</div>
-                        <button class="btn btn-secondary btn-sm" onclick="deletePlayer('${player.id}')">Delete</button>
-                    `;
-                    list.appendChild(item);
-                });
-            } catch (error) {
-                console.error('Error loading players:', error);
-            }
-        }
-
-        async function deletePlayer(playerId) {
-            showConfirmation('Delete Player', 'Are you sure?', async () => {
-                try {
-                    await dbDelete(STORES.PLAYERS, playerId);
-                    showSuccessMessage('Player deleted');
-                    loadPlayers();
-                } catch (error) {
-                    showErrorMessage('Error deleting player');
-                }
-            });
-        }
-
-        // ============================================================================
-        // MATCH SETUP
-        // ============================================================================
-
-        async function proceedToToss() {
-            const overs = document.getElementById('totalOvers').value;
-            const format = document.getElementById('matchFormat').value;
-
-            if (!overs) {
-                showErrorMessage('Please enter overs');
-                return;
-            }
-
-            // Get teams
-            const teams = await dbGetAll(STORES.TEAMS);
-            const filtered = teams.filter(t => t.tournamentId == appState.currentTournamentId);
-
-            if (filtered.length < 2) {
-                showErrorMessage('Please create at least 2 teams');
-                return;
-            }
-
-            appState.team1Id = filtered[0].id;
-            appState.team2Id = filtered[1].id;
-
-            const match = {
-                id: Date.now(),
-                tournamentId: appState.currentTournamentId,
-                team1Id: appState.team1Id,
-                team2Id: appState.team2Id,
-                totalOvers: parseInt(overs),
-                format,
-                status: 'toss',
-                createdAt: new Date().toISOString()
-            };
-
-            appState.currentMatchId = match.id;
-
-            try {
-                await dbAdd(STORES.MATCHES, match);
-                showSuccessMessage('Match created!');
-                goToScreen('toss');
-                loadTossOptions();
-            } catch (error) {
-                showErrorMessage('Error creating match');
-            }
-        }
-
-        async function loadTossOptions() {
-            try {
-                const teams = await dbGetAll(STORES.TEAMS);
-                const filtered = teams.filter(t => t.tournamentId == appState.currentTournamentId);
-
-                if (filtered.length >= 2) {
-                    document.getElementById('team1TossBtn').textContent = filtered[0].name;
-                    document.getElementById('team2TossBtn').textContent = filtered[1].name;
-                    document.getElementById('tossChoiceTitle').textContent = `What does ${filtered[0].name} choose?`;
-                }
-            } catch (error) {
-                console.error('Error loading toss options:', error);
-            }
-        }
-
-        function selectTossWinner(teamIndex) {
-            const buttons = [
-                document.getElementById('team1TossBtn'),
-                document.getElementById('team2TossBtn')
-            ];
-
-            buttons.forEach(btn => btn.classList.remove('selected'));
-            buttons[teamIndex].classList.add('selected');
-
-            appState.tossWinner = teamIndex;
-            document.getElementById('tossChoiceCard').style.display = 'block';
-        }
-
-        function tossChoice(choice) {
-            appState.matchTossChoice = choice;
-            showSuccessMessage(`Toss recorded!`);
-
-            setTimeout(() => {
-                goToScreen('live');
-                initializeLiveScoring();
-            }, 800);
-        }
-
-        // ============================================================================
-        // LIVE SCORING
-        // ============================================================================
-
-        async function initializeLiveScoring() {
-            try {
-                appState.liveMatchState = {
-                    runs: 0,
-                    wickets: 0,
-                    overs: 0,
-                    balls: 0,
-                    deliveries: [],
-                    striker: 'Player 1',
-                    nonStriker: 'Player 2',
-                    bowler: 'Bowler 1'
-                };
-
-                updateLiveDisplay();
-                showSuccessMessage('Live scoring started!');
-            } catch (error) {
-                showErrorMessage('Error starting match');
-            }
-        }
-
-        function setDeliveryType(type) {
-            appState.deliveryEntry.type = type;
-            updateDeliveryPreview();
-        }
-
-        function addBatRuns(runs) {
-            appState.deliveryEntry.batRuns = runs;
-            updateDeliveryPreview();
-        }
-
-        function addExtras(type) {
-            appState.deliveryEntry.extras = type;
-            updateDeliveryPreview();
-        }
-
-        function toggleWicketSection() {
-            const checkbox = document.getElementById('isWicketCheckbox');
-            const section = document.getElementById('wicketSection');
-            section.style.display = checkbox.checked ? 'block' : 'none';
-        }
-
-        function updateDeliveryPreview() {
-            const entry = appState.deliveryEntry;
-            let preview = '';
-
-            if (entry.type === 'no-ball') preview += '[NO-BALL] ';
-            else if (entry.type === 'wide') preview += '[WIDE] ';
-
-            if (entry.batRuns > 0) preview += `${entry.batRuns} bat runs `;
-            if (entry.extras) {
-                const extraRuns = parseInt(document.getElementById('extraRuns').value) || 0;
-                preview += `+ ${extraRuns} ${entry.extras}s `;
-            }
-
-            if (document.getElementById('isWicketCheckbox').checked) {
-                const wicketType = document.getElementById('wicketType').value;
-                if (wicketType) preview += `- WICKET (${wicketType})`;
-            }
-
-            document.getElementById('deliveryText').textContent = preview || 'No delivery entered';
-        }
-
-        function clearDeliveryEntry() {
-            appState.deliveryEntry = {
-                type: 'legal',
-                batRuns: 0,
-                extras: null,
-                extraCount: 0,
-                isWicket: false,
-                wicketType: null
-            };
-            document.getElementById('isWicketCheckbox').checked = false;
-            document.getElementById('wicketSection').style.display = 'none';
-            document.getElementById('extraRuns').value = '0';
-            updateDeliveryPreview();
-        }
-
-        async function recordDelivery() {
-            const entry = appState.deliveryEntry;
-
-            try {
-                if (entry.type === 'legal' && entry.batRuns === 0 && !entry.extras && !entry.isWicket) {
-                    showErrorMessage('Please enter a delivery');
-                    return;
-                }
-
-                const delivery = new Delivery();
-                delivery.deliveryType = entry.type;
-                delivery.batRuns = entry.batRuns;
-                delivery.extraType = entry.extras;
-                delivery.extraCount = parseInt(document.getElementById('extraRuns').value) || 0;
-                delivery.isWicket = document.getElementById('isWicketCheckbox').checked;
-                delivery.wicketType = document.getElementById('wicketType').value;
-
-                delivery.totalRuns = delivery.batRuns + (entry.extras ? delivery.extraCount : 0);
-                if (entry.type === 'no-ball') delivery.totalRuns += 1;
-                else if (entry.type === 'wide') delivery.totalRuns += 1;
-
-                if (!appState.liveMatchState) appState.liveMatchState = { deliveries: [] };
-                appState.liveMatchState.deliveries.push(delivery);
-
-                await updateMatchState();
-                await dbAdd(STORES.DELIVERIES, delivery);
-
-                showSuccessMessage('Delivery recorded!');
-                clearDeliveryEntry();
-                updateLiveDisplay();
-
-            } catch (error) {
-                showErrorMessage('Error recording delivery');
-            }
-        }
-
-        async function updateMatchState() {
-            if (!appState.liveMatchState) return;
-
-            let runs = 0, wickets = 0, legalBalls = 0;
-
-            appState.liveMatchState.deliveries.forEach(d => {
-                runs += d.totalRuns;
-                if (d.isWicket) wickets++;
-                if (d.isLegalBall()) legalBalls++;
-            });
-
-            appState.liveMatchState.runs = runs;
-            appState.liveMatchState.wickets = wickets;
-            appState.liveMatchState.overs = Math.floor(legalBalls / 6);
-            appState.liveMatchState.balls = legalBalls % 6;
-        }
-
-        function updateLiveDisplay() {
-            if (!appState.liveMatchState) return;
-
-            const state = appState.liveMatchState;
-
-            const scoreEl = document.getElementById('currentScore');
-            const wicketsEl = document.getElementById('currentWickets');
-            const oversEl = document.getElementById('currentOvers');
-            const rrEl = document.getElementById('currentRunRate');
-
-            if (scoreEl) scoreEl.textContent = state.runs || 0;
-            if (wicketsEl) wicketsEl.textContent = (state.wickets || 0) + '/10';
-            if (oversEl) oversEl.textContent = (state.overs || 0) + '.' + (state.balls || 0);
-
-            const totalOvers = (state.overs || 0) + (state.balls || 0) / 6;
-            const runRate = totalOvers > 0 ? ((state.runs || 0) / totalOvers).toFixed(2) : '0.00';
-            if (rrEl) rrEl.textContent = runRate;
-
-            const strikerEl = document.getElementById('strikerDisplay');
-            const nonStrikerEl = document.getElementById('nonStrikerDisplay');
-            const bowlerEl = document.getElementById('bowlerDisplay');
-
-            if (strikerEl) strikerEl.textContent = state.striker || '-';
-            if (nonStrikerEl) nonStrikerEl.textContent = state.nonStriker || '-';
-            if (bowlerEl) bowlerEl.textContent = state.bowler || '-';
-
-            const historyDiv = document.getElementById('deliveryHistory');
-            if (historyDiv) {
-                historyDiv.innerHTML = '';
-                if (state.deliveries && state.deliveries.length > 0) {
-                    state.deliveries.forEach(d => {
-                        const entry = document.createElement('div');
-                        entry.className = 'delivery-entry';
-                        entry.textContent = d.toString();
-                        historyDiv.appendChild(entry);
-                    });
-                } else {
-                    historyDiv.innerHTML = '<p style="color: #999;">No deliveries yet</p>';
-                }
-            }
-        }
-
-        async function undoLastDelivery() {
-            showConfirmation('Undo Last Ball', 'Remove the last delivery?', async () => {
-                try {
-                    if (!appState.liveMatchState || appState.liveMatchState.deliveries.length === 0) {
-                        showErrorMessage('No deliveries to undo');
-                        return;
-                    }
-
-                    appState.liveMatchState.deliveries.pop();
-                    await updateMatchState();
-                    showSuccessMessage('Delivery undone!');
-                    updateLiveDisplay();
-
-                } catch (error) {
-                    showErrorMessage('Error undoing delivery');
-                }
-            });
-        }
-
-        function changeStrikerBatsman() {
-            showSuccessMessage('Striker changed!');
-        }
-
-        function changeNonStrikerBatsman() {
-            showSuccessMessage('Non-striker changed!');
-        }
-
-        function changeBowler() {
-            showSuccessMessage('Bowler changed!');
-        }
-
-        function completeInnings() {
-            showConfirmation('Complete Innings', 'End this innings?', () => {
-                showSuccessMessage('Innings completed!');
-                goToScreen('history');
-                loadHistory();
-            });
-        }
-
-        // ============================================================================
-        // HISTORY & STATS
-        // ============================================================================
-
-        async function loadHistory() {
-            try {
-                const matches = await dbGetAll(STORES.MATCHES);
-                const historyList = document.getElementById('historyList');
-                historyList.innerHTML = '';
-
-                if (matches.length === 0) {
-                    historyList.innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">No matches yet.</p>';
-                    return;
-                }
-
-                matches.forEach(match => {
-                    const item = document.createElement('div');
-                    item.className = 'list-item';
-                    item.innerHTML = `
-                        <div class="list-item-title">⚾ Match ${match.id}</div>
-                        <div class="list-item-subtitle">${new Date(match.createdAt).toLocaleDateString()}</div>
-                        <div class="list-item-subtitle">Status: ${match.status}</div>
-                    `;
-                    historyList.appendChild(item);
-                });
-            } catch (error) {
-                console.error('Error loading history:', error);
-            }
-        }
-
-        async function loadStats() {
-            try {
-                const players = await dbGetAll(STORES.PLAYERS);
-                const statsContent = document.getElementById('statsContent');
-
-                statsContent.innerHTML = '';
-
-                if (players.length === 0) {
-                    statsContent.innerHTML = '<div class="card"><p>No player statistics yet.</p></div>';
-                    return;
-                }
-
-                const statsHTML = `
-                    <div class="card">
-                        <h3>Player Statistics</h3>
-                        <p>Total Players: ${players.length}</p>
-                        <p>Statistics tracking coming soon...</p>
-                    </div>
-                `;
-
-                statsContent.innerHTML = statsHTML;
-            } catch (error) {
-                console.error('Error loading stats:', error);
-            }
-        }
-
-        // ============================================================================
-        // INITIALIZATION
-        // ============================================================================
-
-        document.addEventListener('DOMContentLoaded', async () => {
-            try {
-                await initDB();
-                goToScreen('home');
-                loadTournaments();
-                console.log('✅ Application ready!');
-            } catch (error) {
-                console.error('❌ Initialization error:', error);
-                showErrorMessage('Failed to initialize app');
-            }
-        });
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
