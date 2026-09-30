@@ -1,17 +1,17 @@
 /* ============================================================================
-   LOCAL CRICKET SCORER v7 - STYLING
-   Professional Cricket Scoring with Proper Edge Case Handling
+   CRICKET SCORER - STYLES
    ============================================================================ */
 
 :root {
     --primary: #1e88e5;
     --primary-dark: #1565c0;
+    --navy: #0d2f5c;
     --success: #43a047;
     --danger: #e53935;
     --warning: #fb8c00;
     --info: #00acc1;
     --secondary: #757575;
-    --light: #f5f5f5;
+    --light: #f0f4f8;
     --dark: #212121;
     --white: #ffffff;
     --border: #e0e0e0;
@@ -27,7 +27,7 @@
 }
 
 html, body {
-    height: 100%;
+    min-height: 100%;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     background: var(--light);
     color: var(--dark);
@@ -38,9 +38,7 @@ body {
     padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* ============================================================================
-   NAVBAR
-   ============================================================================ */
+/* ============================== NAVBAR ============================== */
 
 .navbar {
     background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
@@ -69,6 +67,7 @@ body {
     gap: 8px;
     overflow-x: auto;
     padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
 }
 
 .nav-pill {
@@ -79,49 +78,37 @@ body {
     border-radius: 20px;
     cursor: pointer;
     white-space: nowrap;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     font-size: 14px;
     font-weight: 500;
 }
 
 .nav-pill:hover,
 .nav-pill.active {
-    background: rgba(255, 255, 255, 0.3);
-    border-color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.35);
+    border-color: rgba(255, 255, 255, 0.6);
 }
 
-/* ============================================================================
-   SCREENS
-   ============================================================================ */
+/* ============================== SCREENS ============================== */
 
 .screen {
     display: none;
-    animation: slideIn 0.3s ease;
 }
 
 .screen.active {
     display: block;
+    animation: slideIn 0.25s ease;
 }
 
 @keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
 }
-
-/* ============================================================================
-   CONTAINER & LAYOUT
-   ============================================================================ */
 
 .container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 20px 16px;
+    padding: 20px 16px 40px;
 }
 
 .container h2 {
@@ -136,9 +123,98 @@ body {
     margin-bottom: 24px;
 }
 
-/* ============================================================================
-   CARDS
-   ============================================================================ */
+.hint {
+    font-size: 14px;
+    color: var(--warning);
+    min-height: 0;
+}
+
+/* ============================== HOME ============================== */
+
+.hero {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--primary-dark) 55%, var(--primary) 100%);
+    color: var(--white);
+    border-radius: 16px;
+    padding: 28px 22px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-lg);
+}
+
+.hero h2 {
+    color: var(--white);
+    font-size: 30px;
+    margin-bottom: 8px;
+}
+
+.hero p {
+    opacity: 0.92;
+    margin-bottom: 20px;
+    font-size: 16px;
+}
+
+.btn-hero {
+    background: var(--white);
+    color: var(--primary-dark);
+    font-size: 18px;
+    padding: 14px 26px;
+    box-shadow: var(--shadow-md);
+}
+
+.tile-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.tile {
+    background: var(--white);
+    border: none;
+    border-radius: 12px;
+    padding: 18px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--dark);
+    cursor: pointer;
+    box-shadow: var(--shadow);
+}
+
+.tile:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.tile-icon {
+    font-size: 28px;
+}
+
+.resume-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-left: 4px solid var(--success);
+}
+
+.resume-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--success);
+}
+
+.resume-title {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.resume-sub {
+    font-size: 14px;
+    color: var(--secondary);
+}
+
+/* ============================== CARDS ============================== */
 
 .card {
     background: var(--white);
@@ -146,11 +222,6 @@ body {
     padding: 20px;
     margin-bottom: 20px;
     box-shadow: var(--shadow);
-    transition: box-shadow 0.3s ease;
-}
-
-.card:hover {
-    box-shadow: var(--shadow-md);
 }
 
 .card h3 {
@@ -159,20 +230,30 @@ body {
     color: var(--dark);
 }
 
-/* ============================================================================
-   FORMS & INPUTS
-   ============================================================================ */
+/* ============================== FORMS ============================== */
 
 .form-group {
     margin-bottom: 16px;
 }
 
-.form-group label {
+.form-group label,
+.small-label {
     display: block;
     margin-bottom: 8px;
     font-weight: 500;
     color: var(--dark);
     font-size: 14px;
+}
+
+.small-label {
+    margin-top: 10px;
+}
+
+.check-label {
+    display: flex !important;
+    align-items: center;
+    font-size: 16px !important;
+    font-weight: 600 !important;
 }
 
 input[type="text"],
@@ -183,7 +264,9 @@ select {
     border: 1px solid var(--border);
     border-radius: 8px;
     font-size: 16px;
-    transition: border-color 0.3s ease;
+    background: var(--white);
+    color: var(--dark);
+    transition: border-color 0.2s ease;
 }
 
 input[type="text"]:focus,
@@ -191,17 +274,27 @@ input[type="number"]:focus,
 select:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.1);
+    box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.15);
 }
 
 input[type="checkbox"] {
-    margin-right: 8px;
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
     cursor: pointer;
 }
 
-/* ============================================================================
-   BUTTONS
-   ============================================================================ */
+.quick-add {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.quick-add input {
+    flex: 1;
+}
+
+/* ============================== BUTTONS ============================== */
 
 .btn {
     padding: 12px 20px;
@@ -210,12 +303,22 @@ input[type="checkbox"] {
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     min-height: 44px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
+}
+
+.btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.btn-block {
+    width: 100%;
+    margin-top: 4px;
 }
 
 .btn-primary {
@@ -226,11 +329,6 @@ input[type="checkbox"] {
 
 .btn-primary:hover {
     box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
-}
-
-.btn-primary:active {
-    transform: translateY(0);
 }
 
 .btn-secondary {
@@ -268,7 +366,8 @@ input[type="checkbox"] {
     color: var(--primary);
 }
 
-.btn-outline:hover {
+.btn-outline:hover,
+.btn-outline.selected {
     background: var(--primary);
     color: var(--white);
 }
@@ -285,7 +384,7 @@ input[type="checkbox"] {
     color: var(--dark);
     font-weight: 700;
     font-size: 18px;
-    padding: 24px;
+    padding: 24px 12px;
     border-radius: 12px;
     width: 100%;
 }
@@ -304,13 +403,22 @@ input[type="checkbox"] {
     background: linear-gradient(135deg, var(--success) 0%, #2e7d32 100%);
     color: var(--white);
     font-weight: 700;
-    padding: 16px;
-    flex: 1;
+    padding: 16px 8px;
     min-height: 50px;
 }
 
-.btn-run:hover {
-    transform: scale(1.05);
+.btn-run.selected {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--primary-dark) 100%);
+    box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.35);
+}
+
+.btn-run.disabled {
+    opacity: 0.35;
+}
+
+.list-item .btn {
+    margin-right: 8px;
+    margin-top: 4px;
 }
 
 .button-group {
@@ -320,25 +428,52 @@ input[type="checkbox"] {
     margin-bottom: 16px;
 }
 
-.button-group.horizontal {
+.button-group.horizontal,
+.button-group.three {
     grid-template-columns: repeat(3, 1fr);
 }
 
-/* ============================================================================
-   SCOREBOARD
-   ============================================================================ */
+.button-group.two {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.button-group.runs {
+    grid-template-columns: repeat(4, 1fr);
+    margin-bottom: 0;
+}
+
+/* ============================== LIVE SCORING ============================== */
+
+.match-head {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--primary-dark) 100%);
+    color: var(--white);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 14px;
+}
+
+.match-head-title {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.match-head-sub {
+    font-size: 14px;
+    opacity: 0.9;
+    margin-top: 2px;
+}
 
 .scoreboard {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    grid-template-columns: repeat(4, 1fr);
     gap: 12px;
-    margin-bottom: 24px;
+    margin-bottom: 16px;
 }
 
 .score-card {
     background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
     color: var(--white);
-    padding: 20px;
+    padding: 16px 8px;
     border-radius: 12px;
     text-align: center;
     box-shadow: var(--shadow-md);
@@ -347,25 +482,40 @@ input[type="checkbox"] {
 .score-label {
     font-size: 12px;
     font-weight: 600;
-    text-transform: uppercase;
     opacity: 0.9;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
 .score-value {
-    font-size: 32px;
+    font-size: 28px;
     font-weight: 700;
 }
 
-/* ============================================================================
-   STATUS BOX
-   ============================================================================ */
+.chase-info {
+    background: #fff8e1;
+    border-left: 4px solid var(--warning);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.banner {
+    background: #e8f5e9;
+    border-left: 4px solid var(--success);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    font-weight: 600;
+    font-size: 15px;
+}
 
 .status-box {
     background: var(--white);
     border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 24px;
+    padding: 8px 20px;
+    margin-bottom: 20px;
     box-shadow: var(--shadow);
     border-left: 4px solid var(--primary);
 }
@@ -373,6 +523,8 @@ input[type="checkbox"] {
 .status-row {
     display: flex;
     justify-content: space-between;
+    align-items: center;
+    gap: 12px;
     padding: 12px 0;
     border-bottom: 1px solid var(--border);
 }
@@ -391,26 +543,73 @@ input[type="checkbox"] {
     color: var(--dark);
     font-weight: 700;
     font-size: 16px;
+    text-align: right;
 }
 
-/* ============================================================================
-   DELIVERY PREVIEW
-   ============================================================================ */
+.tokens {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: flex-end;
+}
+
+.token {
+    min-width: 28px;
+    height: 28px;
+    padding: 0 6px;
+    border-radius: 14px;
+    background: var(--light);
+    border: 1px solid var(--border);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.token.boundary { background: #e3f2fd; border-color: var(--primary); color: var(--primary-dark); }
+.token.wicket { background: var(--danger); border-color: var(--danger); color: var(--white); }
+.token.extra { background: #fff3e0; border-color: var(--warning); color: #e65100; }
 
 .delivery-preview {
     background: var(--light);
     border-radius: 8px;
-    padding: 16px;
+    padding: 14px;
     margin: 16px 0;
     border-left: 4px solid var(--info);
-    font-family: 'Courier New', monospace;
-    font-size: 14px;
+    font-size: 15px;
     color: var(--dark);
 }
 
-/* ============================================================================
-   LISTS & HISTORY
-   ============================================================================ */
+.history-list {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.delivery-entry {
+    font-size: 14px;
+    padding: 8px 10px;
+    margin: 4px 0;
+    background: var(--light);
+    border-radius: 6px;
+    color: var(--dark);
+}
+
+.delivery-entry.wicket {
+    background: #ffebee;
+    border-left: 3px solid var(--danger);
+}
+
+.empty {
+    padding: 16px;
+    text-align: center;
+    color: #888;
+}
+
+/* ============================== LISTS ============================== */
 
 .list {
     display: flex;
@@ -424,67 +623,87 @@ input[type="checkbox"] {
     border-radius: 8px;
     border-left: 4px solid var(--primary);
     box-shadow: var(--shadow);
-    transition: all 0.3s ease;
-}
-
-.list-item:hover {
-    box-shadow: var(--shadow-md);
 }
 
 .list-item-title {
     font-weight: 700;
     font-size: 16px;
     color: var(--dark);
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
 .list-item-subtitle {
     font-size: 14px;
     color: var(--secondary);
+    margin-bottom: 8px;
+}
+
+.card .list-item {
+    box-shadow: none;
+    background: var(--light);
+}
+
+/* ============================== TABLES ============================== */
+
+.table-wrap {
+    overflow-x: auto;
     margin-bottom: 12px;
 }
 
-.history-list {
-    max-height: 400px;
-    overflow-y: auto;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px;
+table.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    min-width: 360px;
 }
 
-.delivery-entry {
-    font-family: 'Courier New', monospace;
-    font-size: 13px;
-    padding: 8px;
-    margin: 4px 0;
-    background: var(--light);
-    border-radius: 4px;
-    color: var(--dark);
-}
-
-/* ============================================================================
-   FEATURE LIST
-   ============================================================================ */
-
-.feature-list {
-    list-style: none;
-    padding: 0;
-}
-
-.feature-list li {
-    padding: 12px 0;
+.table th,
+.table td {
+    padding: 8px 6px;
+    text-align: right;
     border-bottom: 1px solid var(--border);
-    font-size: 15px;
-    color: var(--dark);
+    white-space: nowrap;
 }
 
-.feature-list li:last-child {
-    border-bottom: none;
+.table th:first-child,
+.table td:first-child {
+    text-align: left;
 }
 
-/* ============================================================================
-   MODALS
-   ============================================================================ */
+.table th {
+    color: var(--secondary);
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.table .sub {
+    display: block;
+    font-size: 12px;
+    color: var(--secondary);
+}
+
+.result-text {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--success);
+}
+
+.status-pill {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.status-pill.live {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+/* ============================== MODALS ============================== */
 
 .modal {
     display: none;
@@ -493,7 +712,7 @@ input[type="checkbox"] {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.55);
     z-index: 1000;
     align-items: center;
     justify-content: center;
@@ -510,31 +729,27 @@ input[type="checkbox"] {
     padding: 24px;
     max-width: 400px;
     width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
     box-shadow: var(--shadow-lg);
-    animation: slideUp 0.3s ease;
+    animation: slideUp 0.2s ease;
 }
 
 @keyframes slideUp {
-    from {
-        transform: translateY(20px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
 }
 
 .modal-content h3 {
     font-size: 20px;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     color: var(--dark);
 }
 
 .modal-content p {
-    font-size: 16px;
+    font-size: 15px;
     color: var(--secondary);
-    margin-bottom: 24px;
+    margin-bottom: 18px;
 }
 
 .modal-buttons {
@@ -543,14 +758,45 @@ input[type="checkbox"] {
     gap: 12px;
 }
 
-/* ============================================================================
-   TOASTS
-   ============================================================================ */
+.picker-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.picker-option {
+    background: var(--light);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    text-align: left;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--dark);
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.picker-option:hover {
+    border-color: var(--primary);
+    background: #e3f2fd;
+}
+
+.picker-sub {
+    font-weight: 400;
+    color: var(--secondary);
+    font-size: 14px;
+}
+
+/* ============================== TOASTS ============================== */
 
 .success-toast,
 .error-toast {
     position: fixed;
-    bottom: -100px;
+    bottom: -120px;
     left: 16px;
     right: 16px;
     max-width: 400px;
@@ -561,6 +807,7 @@ input[type="checkbox"] {
     z-index: 2000;
     transition: bottom 0.3s ease;
     font-weight: 600;
+    color: var(--white);
 }
 
 .success-toast.show,
@@ -571,17 +818,13 @@ input[type="checkbox"] {
 
 .success-toast {
     background: linear-gradient(135deg, var(--success) 0%, #2e7d32 100%);
-    color: var(--white);
 }
 
 .error-toast {
     background: linear-gradient(135deg, var(--danger) 0%, #c62828 100%);
-    color: var(--white);
 }
 
-/* ============================================================================
-   LOADING
-   ============================================================================ */
+/* ============================== LOADING ============================== */
 
 .loading-overlay {
     position: fixed;
@@ -608,30 +851,34 @@ input[type="checkbox"] {
 }
 
 @keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
+    to { transform: rotate(360deg); }
 }
 
-/* ============================================================================
-   PLAYER SELECTOR
-   ============================================================================ */
+/* ============================== PLAYING XI ============================== */
+
+.xi-count {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--secondary);
+    margin: -8px 0 12px;
+}
 
 .player-selector {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 12px;
-    margin-bottom: 16px;
+    gap: 10px;
+    margin-bottom: 14px;
 }
 
 .player-option {
-    padding: 16px;
+    padding: 12px;
     border: 2px solid var(--border);
     border-radius: 8px;
     text-align: center;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     background: var(--white);
+    user-select: none;
 }
 
 .player-option:hover {
@@ -646,8 +893,8 @@ input[type="checkbox"] {
 
 .player-option-name {
     font-weight: 700;
-    font-size: 16px;
-    margin-bottom: 4px;
+    font-size: 15px;
+    margin-bottom: 2px;
 }
 
 .player-option-jersey {
@@ -655,103 +902,41 @@ input[type="checkbox"] {
     opacity: 0.8;
 }
 
-/* ============================================================================
-   RESPONSIVE DESIGN
-   ============================================================================ */
+.toss-summary {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--dark) !important;
+    margin-bottom: 16px !important;
+}
+
+/* ============================== RESPONSIVE ============================== */
 
 @media (max-width: 768px) {
-    .container {
-        padding: 16px 12px;
-    }
-
-    .container h2 {
-        font-size: 24px;
-    }
-
-    .scoreboard {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .score-value {
-        font-size: 24px;
-    }
-
-    .button-group {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .button-group.horizontal {
-        grid-template-columns: 1fr;
-    }
-
-    .modal-content {
-        max-width: 100%;
-    }
+    .container { padding: 16px 12px 40px; }
+    .container h2 { font-size: 24px; }
+    .score-value { font-size: 24px; }
 }
 
 @media (max-width: 480px) {
-    .navbar {
-        padding: 8px 0;
-    }
+    .navbar { padding: 8px 0; }
+    .app-title { font-size: 20px; margin-bottom: 8px; }
+    .nav-pills { gap: 4px; }
+    .nav-pill { padding: 6px 12px; font-size: 12px; }
 
-    .app-title {
-        font-size: 20px;
-        margin-bottom: 8px;
-    }
+    .btn { padding: 10px 14px; font-size: 14px; min-height: 42px; }
+    .btn-run { padding: 12px 4px; font-size: 15px; min-height: 46px; }
 
-    .nav-pills {
-        gap: 4px;
-    }
+    .scoreboard { gap: 6px; }
+    .score-card { padding: 10px 4px; }
+    .score-label { font-size: 10px; }
+    .score-value { font-size: 18px; }
 
-    .nav-pill {
-        padding: 6px 12px;
-        font-size: 12px;
-    }
+    .card { padding: 16px; margin-bottom: 16px; }
+    .card h3 { font-size: 16px; margin-bottom: 12px; }
 
-    .btn {
-        padding: 10px 16px;
-        font-size: 14px;
-        min-height: 40px;
-    }
+    .hero h2 { font-size: 24px; }
+    .tile { font-size: 12px; padding: 14px 4px; }
 
-    .btn-run {
-        padding: 12px;
-        font-size: 14px;
-        min-height: 44px;
-    }
-
-    .scoreboard {
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-    }
-
-    .score-card {
-        padding: 12px;
-    }
-
-    .score-label {
-        font-size: 10px;
-    }
-
-    .score-value {
-        font-size: 20px;
-    }
-
-    .card {
-        padding: 16px;
-        margin-bottom: 16px;
-    }
-
-    .card h3 {
-        font-size: 16px;
-        margin-bottom: 12px;
-    }
-
-    .button-group {
-        grid-template-columns: 1fr;
-    }
-
-    .player-selector {
-        grid-template-columns: 1fr;
-    }
+    .player-selector { grid-template-columns: 1fr 1fr; }
+    .resume-card { flex-direction: column; align-items: flex-start; }
 }
