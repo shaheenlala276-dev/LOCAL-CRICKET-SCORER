@@ -1,1 +1,11 @@
 
+{
+  "name": "LOCAL CRICKET SCORER",
+  "short_name": "Cricket Scorer",
+  "description": "Offline cricket scoring app for teams, players, matches and tournaments.",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#16a34a"
+}
