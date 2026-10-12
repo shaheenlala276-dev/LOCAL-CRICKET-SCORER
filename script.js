@@ -337,6 +337,55 @@ function closePicker() {
 }
 
 // ============================================================================
+// VISUAL EFFECTS HELPERS (display only - these never touch scoring data)
+// ============================================================================
+
+// Marks the scoreboard with data-fx="four" | "six" | "wicket" for about a second.
+// The animation itself lives in style.css. If the CSS has no rule for it, nothing happens.
+let _fxTimer = null;
+
+function triggerHitEffect(d) {
+    try {
+        let kind = null;
+        if (d.isWicket) kind = 'wicket';
+        else if (d.batRuns === 6) kind = 'six';
+        else if (d.batRuns === 4) kind = 'four';
+        if (!kind) return;
+
+        const board = document.querySelector('.scoreboard');
+        if (!board) return;
+
+        board.removeAttribute('data-fx');
+        void board.offsetWidth; // restart the animation if it is already running
+        board.setAttribute('data-fx', kind);
+
+        clearTimeout(_fxTimer);
+        _fxTimer = setTimeout(() => board.removeAttribute('data-fx'), 1000);
+    } catch (err) {
+        console.error('Effect error:', err);
+    }
+}
+
+// Opening splash: it fades out by itself (CSS). Tapping it skips it.
+// If there is no #splash element, this does nothing.
+function setupSplash() {
+    const splash = $('splash');
+    if (!splash) return;
+
+    const remove = () => {
+        if (splash.parentNode) splash.parentNode.removeChild(splash);
+    };
+
+    splash.addEventListener('click', () => {
+        splash.classList.add('splash-hide');
+        setTimeout(remove, 400);
+    });
+
+    // Safety net: the splash can never stay on screen and block scoring
+    setTimeout(remove, 2600);
+}
+
+// ============================================================================
 // HOME
 // ============================================================================
 
@@ -412,7 +461,8 @@ async function loadTournaments() {
             '<div class="list-item-title">' + esc(t.name) + '</div>' +
             '<div class="list-item-subtitle">Format: ' + esc(t.format) + '</div>' +
             '<button class="btn btn-primary btn-sm" onclick="selectTournament(' + t.id + ')">Manage Teams</button>' +
-            '<button class="btn btn-success btn-sm" onclick="newMatchInTournament(' + t.id + ')">New Match</button>';
+            '<button class="btn btn-success btn-sm" onclick="newMatchInTournament(' + t.id + ')">New Match</button>' +
+            '<button class="btn btn-danger btn-sm" onclick="deleteTournament(' + t.id + ')">Delete Tournament</button>';
         list.appendChild(item);
     });
 }
@@ -425,6 +475,175 @@ function selectTournament(tournamentId) {
 function newMatchInTournament(tournamentId) {
     appState.currentTournamentId = Number(tournamentId);
     goToScreen('matchSetup');
+}
+
+// ----------------------------------------------------------------------------
+// DELETE TOURNAMENT
+//
+// Relationships in the database (checked in the code):
+//   teams.tournamentId            -> tournaments.id
+//   players.teamId                -> teams.id
+//   matches.tournamentId          -> tournaments.id
+//   completedMatches              -> copy of a finished match (same id as matches)
+//   playerStats (key: playerId)   -> players.id
+// Teams, players and matches each belong to exactly one tournament, so everything
+// that belongs to the selected tournament is removed and nothing else is touched.
+// ----------------------------------------------------------------------------
+
+let _deletingTournament = false;
+
+function plural(count, word) {
+    return count + ' ' + word + (count === 1 ? '' : 's');
+}
+
+async function deleteTournament(tournamentId) {
+    tournamentId = Number(tournamentId);
+    if (_deletingTournament) return;
+
+    let tournament;
+    let message;
+
+    try {
+        tournament = await dbGet(STORES.TOURNAMENTS, tournamentId);
+        if (!tournament) {
+            showErrorMessage('This tournament no longer exists');
+            await loadTournaments();
+            return;
+        }
+
+        const teams = (await dbGetAll(STORES.TEAMS)).filter(t => Number(t.tournamentId) === tournamentId);
+        const teamIds = new Set(teams.map(t => t.id));
+        const players = (await dbGetAll(STORES.PLAYERS)).filter(p => teamIds.has(p.teamId));
+        const matches = (await dbGetAll(STORES.MATCHES)).filter(m => Number(m.tournamentId) === tournamentId);
+        const unfinished = matches.filter(m => m.status !== 'completed').length;
+
+        message = 'Permanently delete "' + tournament.name + '"? ';
+        if (teams.length === 0 && matches.length === 0) {
+            message += 'This tournament has no teams or matches.';
+        } else {
+            message += 'This will also permanently delete its ' +
+                plural(teams.length, 'team') + ', ' +
+                plural(players.length, 'player') + ' and ' +
+                plural(matches.length, 'match') +
+                (unfinished > 0 ? ' (including ' + unfinished + ' match' + (unfinished === 1 ? '' : 'es') + ' still in progress)' : '') +
+                ', with their scorecards.';
+        }
+        message += ' Other tournaments are not affected. This cannot be undone.';
+    } catch (error) {
+        console.error(error);
+        showErrorMessage('Could not read the tournament. Nothing was deleted.');
+        return;
+    }
+
+    showConfirmation('Delete Tournament', message, async () => {
+        if (_deletingTournament) return;
+        _deletingTournament = true;
+        try {
+            const removed = await deleteTournamentCascade(tournamentId);
+
+            // Forget anything in memory that pointed at the deleted data
+            if (appState.currentTournamentId === tournamentId) appState.currentTournamentId = null;
+            if (removed.teamIds.includes(appState.currentTeamId)) appState.currentTeamId = null;
+            if (removed.matchIds.includes(appState.currentMatchId)) {
+                appState.currentMatchId = null;
+                appState.liveMatchState = null;
+            }
+            if (appState.draft && Number(appState.draft.tournamentId) === tournamentId) appState.draft = null;
+
+            showSuccessMessage('Tournament "' + tournament.name + '" deleted');
+            await loadTournaments();
+        } catch (error) {
+            console.error(error);
+            showErrorMessage('Could not delete the tournament. Nothing was removed.');
+            try { await loadTournaments(); } catch (e) { console.error(e); }
+        } finally {
+            _deletingTournament = false;
+        }
+    });
+}
+
+/**
+ * Deletes one tournament and everything that belongs to it in ONE transaction.
+ * If any step fails the whole transaction is aborted and nothing is deleted.
+ * Resolves with the ids that were removed.
+ */
+function deleteTournamentCascade(tournamentId) {
+    return new Promise((resolve, reject) => {
+        let tx;
+        try {
+            tx = db.transaction([
+                STORES.TOURNAMENTS, STORES.TEAMS, STORES.PLAYERS,
+                STORES.MATCHES, STORES.COMPLETED_MATCHES, STORES.PLAYER_STATS
+            ], 'readwrite');
+        } catch (err) {
+            reject(err);
+            return;
+        }
+
+        const removed = { teamIds: [], playerIds: [], matchIds: [] };
+        let failure = null;
+
+        tx.oncomplete = () => resolve(removed);
+        tx.onabort = () => reject(failure || tx.error || new Error('Deletion was cancelled'));
+
+        const fail = (err) => {
+            failure = err || new Error('Database error');
+            try { tx.abort(); } catch (e) { /* already finished */ }
+        };
+
+        const tournamentsStore = tx.objectStore(STORES.TOURNAMENTS);
+        const teamsStore = tx.objectStore(STORES.TEAMS);
+        const playersStore = tx.objectStore(STORES.PLAYERS);
+        const matchesStore = tx.objectStore(STORES.MATCHES);
+        const completedStore = tx.objectStore(STORES.COMPLETED_MATCHES);
+        const statsStore = tx.objectStore(STORES.PLAYER_STATS);
+
+        const teamsReq = teamsStore.getAll();
+        teamsReq.onerror = () => fail(teamsReq.error);
+        teamsReq.onsuccess = () => {
+            const teamIds = teamsReq.result
+                .filter(t => Number(t.tournamentId) === tournamentId)
+                .map(t => t.id);
+            removed.teamIds = teamIds;
+            teamIds.forEach(id => teamsStore.delete(id));
+
+            const playersReq = playersStore.getAll();
+            playersReq.onerror = () => fail(playersReq.error);
+            playersReq.onsuccess = () => {
+                const teamSet = new Set(teamIds);
+                const playerIds = playersReq.result
+                    .filter(p => teamSet.has(p.teamId))
+                    .map(p => p.id);
+                removed.playerIds = playerIds;
+                playerIds.forEach(id => {
+                    playersStore.delete(id);
+                    statsStore.delete(id);
+                });
+
+                const matchesReq = matchesStore.getAll();
+                matchesReq.onerror = () => fail(matchesReq.error);
+                matchesReq.onsuccess = () => {
+                    const matchIds = matchesReq.result
+                        .filter(m => Number(m.tournamentId) === tournamentId)
+                        .map(m => m.id);
+                    removed.matchIds = matchIds;
+                    matchIds.forEach(id => matchesStore.delete(id));
+
+                    const completedReq = completedStore.getAll();
+                    completedReq.onerror = () => fail(completedReq.error);
+                    completedReq.onsuccess = () => {
+                        const matchSet = new Set(matchIds);
+                        completedReq.result
+                            .filter(m => Number(m.tournamentId) === tournamentId || matchSet.has(m.id))
+                            .forEach(m => completedStore.delete(m.id));
+
+                        // Last step: the tournament itself, by its real id
+                        tournamentsStore.delete(tournamentId);
+                    };
+                };
+            };
+        };
+    });
 }
 
 // ============================================================================
@@ -1275,6 +1494,7 @@ async function recordDelivery() {
 
     clearDeliveryEntry();
     updateLiveDisplay();
+    triggerHitEffect(d); // display only: four / six / wicket flash
     promptNext();
 }
 
@@ -1724,6 +1944,7 @@ function setupNavigation() {
 
 document.addEventListener('DOMContentLoaded', async () => {
     setupNavigation();
+    setupSplash();
 
     try {
         await initDB();
