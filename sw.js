@@ -1,6 +1,6 @@
 // Local Cricket Scorer - offline support
-// To release an update later, change the version number below (v1 -> v2).
-const CACHE_NAME = "local-cricket-scorer-v1";
+// To release an update later, change the version number below (v2 -> v3).
+const CACHE_NAME = "local-cricket-scorer-v2";
 
 const APP_FILES = [
   "./",
